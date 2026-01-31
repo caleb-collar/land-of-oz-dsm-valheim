@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "denoland.vscode-deno",
+    "EditorConfig.EditorConfig",
+    "streetsidesoftware.code-spell-checker"
+  ],
+  "unwantedRecommendations": ["ms-vscode.vscode-typescript-next"]
+}

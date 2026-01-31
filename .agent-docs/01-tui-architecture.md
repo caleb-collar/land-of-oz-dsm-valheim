@@ -2,7 +2,7 @@
 
 ## Overview
 
-The TUI is built with Ink 5.x (React for terminals) using a three-zone layout.
+The TUI is built with Ink 6.x (React for terminals) using a three-zone layout.
 This document covers component structure, state management, and rendering
 patterns.
 

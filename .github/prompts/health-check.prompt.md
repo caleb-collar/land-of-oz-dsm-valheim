@@ -35,7 +35,7 @@ Execute each phase in order, fixing issues as you find them.
 2. **Verify import map correctness:**
    - All imports resolve correctly
    - No duplicate or conflicting entries
-   - React 18 compatibility with Ink 5
+   - React 19 compatibility with Ink 6
 
 3. **Check for security advisories:**
    - Review npm packages for known vulnerabilities

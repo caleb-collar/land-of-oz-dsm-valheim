@@ -11,7 +11,7 @@ for terminals) with ASCII Motion animations.
 | Aspect         | Details                          |
 | -------------- | -------------------------------- |
 | Runtime        | Deno 2.x (TypeScript)            |
-| TUI            | Ink 5.x (React) with Yoga layout |
+| TUI            | Ink 6.x (React) with Yoga layout |
 | State          | Zustand                          |
 | Config Storage | Deno KV                          |
 | Animation      | ASCII Motion MCP tooling         |
@@ -130,10 +130,10 @@ Key tools to search for:
     "@std/assert": "jsr:@std/assert@1",
     "@std/path": "jsr:@std/path@1",
     "@std/fs": "jsr:@std/fs@1",
-    "react": "npm:react@18",
-    "ink": "npm:ink@5",
+    "react": "npm:react@19",
+    "ink": "npm:ink@6",
     "zustand": "npm:zustand@5",
-    "zod": "npm:zod@3"
+    "zod": "npm:zod@4"
   },
   "compilerOptions": {
     "jsx": "react-jsx",
@@ -236,7 +236,7 @@ For detailed implementation guidance, see `.agent-docs/`:
 
 ## Common Pitfalls
 
-1. **Ink requires React 18**: Use `npm:react@18` not `npm:react`
+1. **Ink requires React 19**: Use `npm:react@19` not `npm:react`
 2. **JSX config**: Ensure `jsx: "react-jsx"` in deno.json
 3. **Permissions**: Always use `--allow-all` during dev
 4. **Windows paths**: Use `@std/path` join, not string concatenation
@@ -311,7 +311,7 @@ deno task start --help
 | `JSR package not installed`     | Run `deno install` or check deno.json imports                 |
 | `Deno.openKv is not a function` | Add `--unstable-kv` flag or `"unstable": ["kv"]` to deno.json |
 | `Password validation failed`    | Check Zod schema allows empty strings where needed            |
-| `Cannot find module 'react'`    | Ensure `"react": "npm:react@18"` in deno.json imports         |
+| `Cannot find module 'react'`    | Ensure `"react": "npm:react@19"` in deno.json imports         |
 
 ### Handoff Protocol
 

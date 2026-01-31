@@ -42,7 +42,7 @@ the executable and manage your server through an intuitive terminal interface.
 ### Why Zustand?
 
 - Minimal boilerplate
-- React 18 compatible
+- React 19 compatible
 - TypeScript-first
 - No providers needed
 - Works great with Ink

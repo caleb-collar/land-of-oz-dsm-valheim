@@ -40,5 +40,15 @@ jobs:
       - name: Type check
         run: deno check main.ts src/**/*.ts src/**/*.tsx
 
-      - name: Test
-        run: deno task test
+      - name: Test with coverage
+        run: deno test --allow-all --unstable-kv --coverage=coverage/
+
+      - name: Generate coverage report
+        run: deno coverage coverage/ --lcov --output=coverage/lcov.info
+
+      - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          fail_ci_if_error: false

@@ -62,7 +62,7 @@ via Ink. Motion is created using ASCII Motion.
 | Layer            | Technology       | Purpose                                                |
 | ---------------- | ---------------- | ------------------------------------------------------ |
 | Runtime          | Deno 2.x         | TypeScript-first, secure by default, npm compatibility |
-| TUI Framework    | Ink 5.x          | React-based terminal UI with Yoga flexbox layout       |
+| TUI Framework    | Ink 6.x          | React-based terminal UI with Yoga flexbox layout       |
 | State Management | Zustand          | Lightweight, React-compatible global state             |
 | Animation        | ASCII Motion MCP | Animated ASCII art for headers and transitions         |
 | Process Control  | Deno.Command     | Cross-platform subprocess management                   |
