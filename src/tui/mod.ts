@@ -1,23 +1,65 @@
 /**
  * TUI module exports
- * Placeholder for Phase 3 implementation
+ * Ink-based terminal user interface
  */
 
-// TUI components will be implemented in Phase 3
-// This module will export:
-// - App component
-// - Zustand store
-// - UI components (Header, StatusBar, LogFeed, etc.)
-// - Screen components (Dashboard, Settings, Worlds, Console)
-// - Custom hooks (useServer, useLogs, useConfig)
+import React from "react";
+import { render } from "ink";
+import { App } from "./App.tsx";
 
+// Version
 export const TUI_VERSION = "0.1.0";
 
+// Core exports
+export { App } from "./App.tsx";
+export { useStore } from "./store.ts";
+export type {
+  LogEntry,
+  LogLevel,
+  Screen,
+  ServerStatus,
+  Store,
+} from "./store.ts";
+
+// Theme
+export { getStatusColor, logColors, theme } from "./theme.ts";
+
+// Components
+export {
+  ConfirmModal,
+  Header,
+  LogEntry as LogEntryComponent,
+  LogFeed,
+  Menu,
+  MenuItem,
+  Modal,
+  StatusBar,
+} from "./components/mod.ts";
+
+// Screens
+export { Console, Dashboard, Settings, Worlds } from "./screens/mod.ts";
+
+// Hooks
+export {
+  useConfig,
+  useConfigSync,
+  useLogs,
+  useLogStream,
+  useServer,
+} from "./hooks/mod.ts";
+
 /**
- * Placeholder for launching the TUI
- * Will be implemented in Phase 3
+ * Launches the TUI application
+ * Renders the Ink-based terminal interface
  */
 export function launchTui(): void {
-  console.log("TUI not yet implemented. Coming in Phase 3!");
-  console.log("Use --help to see available CLI commands.");
+  const { waitUntilExit } = render(React.createElement(App));
+
+  waitUntilExit()
+    .then(() => {
+      // Cleanup after exit
+    })
+    .catch(() => {
+      // Handle errors silently
+    });
 }

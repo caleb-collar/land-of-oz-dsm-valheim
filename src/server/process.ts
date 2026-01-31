@@ -155,7 +155,7 @@ export class ValheimProcess {
       // Wait for exit or timeout
       const exitPromise = this.process.status;
       const timeoutPromise = new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), timeout),
+        setTimeout(() => resolve(null), timeout)
       );
 
       const result = await Promise.race([exitPromise, timeoutPromise]);

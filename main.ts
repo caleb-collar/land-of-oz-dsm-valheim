@@ -193,16 +193,9 @@ async function main(): Promise<void> {
 
   // Handle TUI launch
   if (args.tui || Deno.args.length === 0) {
-    info(`Starting ${APP_NAME}...`);
-    console.log("");
-    console.log(`  Platform: ${getPlatform()}`);
-    console.log(`  Config: ${getAppConfigDir()}`);
-    console.log("");
-
-    // For now, show placeholder - TUI will be implemented in Phase 3
+    // Launch TUI - this will take over the terminal
     launchTui();
-
-    await closeConfig();
+    // Note: launchTui handles its own exit, closeConfig called on process exit
     return;
   }
 

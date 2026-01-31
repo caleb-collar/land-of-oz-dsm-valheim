@@ -218,8 +218,7 @@ export class Watchdog {
     }
 
     // Calculate delay with exponential backoff
-    const delay =
-      this.config.restartDelay *
+    const delay = this.config.restartDelay *
       Math.pow(this.config.backoffMultiplier, this.restartCount - 1);
 
     this.events.onWatchdogRestart(this.restartCount, this.config.maxRestarts);
