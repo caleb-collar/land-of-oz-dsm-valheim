@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "ASCII Motion MCP Server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["ascii-motion-mcp", "--live"]
+    }
+  },
+  "inputs": []
+}

@@ -61,11 +61,7 @@ Deno.test("encodePacket - throws on body too large", () => {
     body: "x".repeat(5000), // Exceeds max body size
   };
 
-  assertThrows(
-    () => encodePacket(packet),
-    RconError,
-    "Body too large",
-  );
+  assertThrows(() => encodePacket(packet), RconError, "Body too large");
 });
 
 Deno.test("decodePacket - decodes valid packet", () => {
@@ -94,7 +90,7 @@ Deno.test("decodePacket - decodes valid packet", () => {
 
 Deno.test("decodePacket - returns null for incomplete packet", () => {
   // Only 2 bytes - not enough for size field
-  const bytes = new Uint8Array([0x0A, 0x00]);
+  const bytes = new Uint8Array([0x0a, 0x00]);
   const result = decodePacket(bytes);
 
   assertEquals(result, null);

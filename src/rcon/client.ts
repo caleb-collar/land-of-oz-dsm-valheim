@@ -200,10 +200,7 @@ export class RconClient {
     }
 
     if (!isAuthSuccess(response, id)) {
-      throw new RconError(
-        "AUTH_FAILED",
-        "Unexpected authentication response",
-      );
+      throw new RconError("AUTH_FAILED", "Unexpected authentication response");
     }
   }
 
@@ -243,9 +240,7 @@ export class RconClient {
         }
 
         // Append to receive buffer
-        const newBuffer = new Uint8Array(
-          this.receiveBuffer.length + bytesRead,
-        );
+        const newBuffer = new Uint8Array(this.receiveBuffer.length + bytesRead);
         newBuffer.set(this.receiveBuffer);
         newBuffer.set(buffer.subarray(0, bytesRead), this.receiveBuffer.length);
         this.receiveBuffer = newBuffer;
@@ -257,9 +252,8 @@ export class RconClient {
       // Connection error
       if (this.state === "connected") {
         this.state = "error";
-        const errorMessage = error instanceof Error
-          ? error.message
-          : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         // Reject all pending requests
         for (const [id, request] of this.pendingRequests) {
           request.reject(
@@ -289,9 +283,8 @@ export class RconClient {
         this.handlePacket(packet);
       } catch (error) {
         // Protocol error, reject all pending requests
-        const errorMessage = error instanceof Error
-          ? error.message
-          : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         for (const [id, request] of this.pendingRequests) {
           request.reject(new RconError("PROTOCOL_ERROR", errorMessage));
           this.pendingRequests.delete(id);
@@ -312,7 +305,7 @@ export class RconClient {
 
   private nextRequestId(): number {
     // Use incrementing IDs, wrap at max safe int
-    this.requestId = (this.requestId + 1) % 0x7FFFFFFF;
+    this.requestId = (this.requestId + 1) % 0x7fffffff;
     return this.requestId;
   }
 

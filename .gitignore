@@ -1,71 +1,60 @@
 # Deno
 .deno/
-deno.lock
 
 # Node modules (for npm: specifiers)
 node_modules/
 
 # Build outputs
-dist/
-build/
-*.js
-*.js.map
-!deno.json
+/dist/
+/build/
 
 # Test coverage
-coverage/
+/coverage/
 .nyc_output/
 
-# Deno KV database
-*.db
+# Deno KV database files
 *.sqlite
 *.sqlite3
-kv_data/
+/kv_data/
 
 # Logs
-logs/
+/logs/
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# SteamCMD and Valheim server files
-steamcmd/
-valheim_server/
-server_data/
+# SteamCMD and Valheim server files (root-level installation directories only)
+/steamcmd/
+/valheim_server/
+/server_data/
 *.pak
 
-# World saves and backups
-worlds/
-backups/
+# World saves and backups (root-level directories)
+/worlds/
+/backups/
 *.fwl
 *.db.old
 
 # Config files with sensitive data
-config/secrets.json
 .env
 .env.local
+.env.*.local
 
 # IDE / Editor
-.vscode/
 .idea/
 *.swp
 *.swo
 *~
-.DS_Store
 
-# OS
-Thumbs.db
-desktop.ini
+# OS-specific
 .DS_Store
 .AppleDouble
 .LSOverride
+Thumbs.db
+Desktop.ini
 
 # Temporary files
-tmp/
-temp/
+/tmp/
+/temp/
 *.tmp
 
 # Debug files
-debug.log
-crash_reports/
+/crash_reports/
