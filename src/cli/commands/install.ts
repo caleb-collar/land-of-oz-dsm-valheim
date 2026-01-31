@@ -227,7 +227,9 @@ function createProgressBar(percent: number): string {
   const width = 20;
   const filled = Math.round((percent / 100) * width);
   const empty = width - filled;
-  return `[${"█".repeat(filled)}${"░".repeat(empty)}] ${percent
-    .toString()
-    .padStart(3)}%`;
+  return `[${"█".repeat(filled)}${"░".repeat(empty)}] ${
+    percent
+      .toString()
+      .padStart(3)
+  }%`;
 }
