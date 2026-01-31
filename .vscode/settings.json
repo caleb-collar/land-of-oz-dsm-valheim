@@ -14,5 +14,8 @@
     "**/node_modules": true,
     "**/dist": true,
     "**/coverage": true
+  },
+  "chat.tools.terminal.autoApprove": {
+    "mv": true
   }
 }

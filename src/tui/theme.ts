@@ -1,45 +1,72 @@
 /**
  * TUI Color Theme
- * Defines the color palette for the terminal UI
+ * Defines the Valheim-inspired color palette for the terminal UI
+ *
+ * Official Valheim Color Palette:
+ * - #F37A47 | Mandarin      - Primary (main titles, UI)
+ * - #FCF983 | Straw Gold    - Secondary accents, DSM text
+ * - #B63C21 | Bricky Brick  - Warnings, errors
+ * - #691E11 | Prune         - Dark accents
+ * - #000000 | Black         - Backgrounds
+ * - #001018 | Black Knight  - Deep backgrounds
+ * - #01657C | Blue-Collar   - Info, links
+ * - #018DA6 | Waikiki       - Highlights, active states
  */
+
+/**
+ * Valheim color palette constants
+ */
+export const valheimPalette = {
+  mandarin: "#F37A47",
+  strawGold: "#FCF983",
+  brickyBrick: "#B63C21",
+  prune: "#691E11",
+  black: "#000000",
+  blackKnight: "#001018",
+  blueCollar: "#01657C",
+  waikiki: "#018DA6",
+} as const;
 
 /**
  * Base color palette for the TUI
  */
 export const theme = {
   /** Main accent color for active items and highlights */
-  primary: "cyan",
+  primary: valheimPalette.mandarin,
 
   /** Default text color */
-  secondary: "white",
+  secondary: valheimPalette.strawGold,
 
   /** Special highlights and animations */
-  accent: "magenta",
+  accent: valheimPalette.waikiki,
 
   /** Success states (server online, confirmations) */
   success: "green",
 
   /** Warning states (starting, stopping) */
-  warning: "yellow",
+  warning: valheimPalette.strawGold,
 
   /** Error states (offline, failures) */
-  error: "red",
+  error: valheimPalette.brickyBrick,
 
   /** Inactive items, borders, dimmed text */
   muted: "gray",
+
+  /** Info/link color */
+  info: valheimPalette.blueCollar,
 
   // Status-specific colors
   /** Server online indicator */
   serverOnline: "green",
 
   /** Server starting indicator */
-  serverStarting: "yellow",
+  serverStarting: valheimPalette.strawGold,
 
   /** Server offline indicator */
-  serverOffline: "red",
+  serverOffline: valheimPalette.brickyBrick,
 
   /** Server stopping indicator */
-  serverStopping: "yellow",
+  serverStopping: valheimPalette.strawGold,
 } as const;
 
 /** Type for theme color keys */

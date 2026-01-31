@@ -1454,6 +1454,16 @@ polish features, and ensuring the project is ready for production use.
 
 #### 12.5 TUI Improvements
 
+- [x] Add animated ASCII header with VALHEIM DSM branding
+  - Scramble/decode entry animation
+  - Uses Valheim color palette (Mandarin #F37A47, Straw Gold #FCF983)
+  - Box-drawing characters progressively "decrypt" into final text
+  - 20-step animation with smoothstep easing (~1 second)
+- [x] Add responsive header for different terminal sizes
+  - Large (≥60 columns): Full animated ASCII art
+  - Medium (40-59 columns): Compact box-drawing logo
+  - Small (<40 columns): Plain text fallback
+- [x] Add Valheim color palette to theme system
 - [ ] Add keyboard shortcut help overlay (press `?`)
 - [ ] Add confirmation dialogs for destructive actions
 - [ ] Improve error message display in TUI
@@ -1489,12 +1499,16 @@ polish features, and ensuring the project is ready for production use.
 
 ### Files Updated
 
-| File                            | Changes Made                      |
-| ------------------------------- | --------------------------------- |
-| `.vscode/extensions.json`       | Biome instead of Deno extension   |
-| `.vscode/settings.json`         | Biome formatting, TS settings     |
-| `vitest.config.ts`              | Added lcov reporter for Codecov   |
-| `package.json`                  | Added `prepare` script for hooks  |
+| File                            | Changes Made                             |
+| ------------------------------- | ---------------------------------------- |
+| `.vscode/extensions.json`       | Biome instead of Deno extension          |
+| `.vscode/settings.json`         | Biome formatting, TS settings            |
+| `vitest.config.ts`              | Added lcov reporter for Codecov          |
+| `package.json`                  | Added `prepare` script for hooks         |
+| `src/tui/components/Header.tsx` | Scramble/decode animation, responsive    |
+| `src/tui/theme.ts`              | Added Valheim color palette              |
+| `assets/ascii/header.json`      | Updated for scramble-decode animation    |
+| `AGENTS.md`                     | Added Valheim color palette section      |
 
 ### Verification Results
 
@@ -1514,6 +1528,9 @@ polish features, and ensuring the project is ready for production use.
 - [x] VS Code integration configured with Biome
 - [x] Issue/PR templates created
 - [x] CONTRIBUTING.md created with dev setup guide
+- [x] Animated header with scramble/decode effect
+- [x] Responsive header for all terminal sizes
+- [x] Valheim color palette integrated
 
 ---
 

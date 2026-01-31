@@ -17,6 +17,27 @@ for terminals) with ASCII Motion animations.
 | Animation      | ASCII Motion MCP tooling         |
 | Entry Point    | `main.ts`                        |
 
+## Valheim Color Palette
+
+The official Valheim-inspired color palette for the application:
+
+| Hex Code  | Name          | Usage                          |
+| --------- | ------------- | ------------------------------ |
+| `#F37A47` | Mandarin      | **Primary** - Main titles, UI  |
+| `#FCF983` | Straw Gold    | Secondary accents, DSM text    |
+| `#B63C21` | Bricky Brick  | Warnings, errors               |
+| `#691E11` | Prune         | Dark accents                   |
+| `#000000` | Black         | Backgrounds                    |
+| `#001018` | Black Knight  | Deep backgrounds               |
+| `#01657C` | Blue-Collar   | Info, links                    |
+| `#018DA6` | Waikiki       | Highlights, active states      |
+
+**Design Rules:**
+- Primary color (`#F37A47` Mandarin) for main titles and primary UI elements
+- Secondary color (`#FCF983` Straw Gold) for accents and subtitle text
+- Use dark variants (`#001018`, `#000000`) for backgrounds
+- Blue tones (`#01657C`, `#018DA6`) for interactive elements
+
 ### Implementation Priorities
 
 ### Phase 1: Foundation
