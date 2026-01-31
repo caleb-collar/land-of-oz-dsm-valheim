@@ -59,6 +59,15 @@ type ConfigState = {
   backups: number;
 };
 
+/** RCON state slice */
+type RconState = {
+  enabled: boolean;
+  connected: boolean;
+  port: number;
+  password: string;
+  host: string;
+};
+
 /** Store actions */
 type Actions = {
   // Server actions
@@ -84,6 +93,10 @@ type Actions = {
   // Config actions
   updateConfig: (partial: Partial<ConfigState>) => void;
   loadConfigFromStore: (config: ConfigState) => void;
+
+  // RCON actions
+  updateRcon: (partial: Partial<RconState>) => void;
+  setRconConnected: (connected: boolean) => void;
 };
 
 /** Complete store type */
@@ -92,6 +105,7 @@ export type Store = {
   logs: LogsState;
   ui: UiState;
   config: ConfigState;
+  rcon: RconState;
   actions: Actions;
 };
 
@@ -140,6 +154,15 @@ export const useStore = create<Store>((set) => ({
     crossplay: false,
     saveInterval: 1800,
     backups: 4,
+  },
+
+  // Initial RCON state
+  rcon: {
+    enabled: false,
+    connected: false,
+    port: 25575,
+    password: "",
+    host: "localhost",
   },
 
   // Actions
@@ -245,6 +268,17 @@ export const useStore = create<Store>((set) => ({
       set(() => ({
         config,
       })),
+
+    // RCON actions
+    updateRcon: (partial) =>
+      set((state) => ({
+        rcon: { ...state.rcon, ...partial },
+      })),
+
+    setRconConnected: (connected) =>
+      set((state) => ({
+        rcon: { ...state.rcon, connected },
+      })),
   },
 }));
 
@@ -275,6 +309,11 @@ export const selectUi = (state: Store) => state.ui;
  * Selector for config
  */
 export const selectConfig = (state: Store) => state.config;
+
+/**
+ * Selector for RCON state
+ */
+export const selectRcon = (state: Store) => state.rcon;
 
 /**
  * Selector for actions

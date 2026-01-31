@@ -5,6 +5,7 @@
 
 export { configCommand } from "./config.ts";
 export { installCommand } from "./install.ts";
+export { interactiveRcon, rconCommand } from "./rcon.ts";
 export {
   clearActiveWatchdog,
   getActiveWatchdog,

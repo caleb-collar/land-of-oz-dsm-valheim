@@ -8,7 +8,9 @@ import {
   configCommand,
   getHelpText,
   installCommand,
+  interactiveRcon,
   parseArgs,
+  rconCommand,
   startCommand,
   stopCommand,
   worldsCommand,
@@ -93,6 +95,14 @@ async function main(): Promise<void> {
 
       case "worlds":
         await worldsCommand(args);
+        break;
+
+      case "rcon":
+        if (args.interactive) {
+          await interactiveRcon(args);
+        } else {
+          await rconCommand(args);
+        }
         break;
 
       case "tui":

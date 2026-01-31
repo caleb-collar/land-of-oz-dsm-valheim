@@ -140,12 +140,27 @@ export const TuiConfigSchema = z.object({
   refreshRate: z.number().int().min(100).max(5000).default(1000),
 });
 
+// RCON (Remote Console) configuration
+export const RconConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  port: z
+    .number()
+    .int()
+    .min(1024, "Port must be >= 1024")
+    .max(65535, "Port must be <= 65535")
+    .default(25575),
+  password: z.string().default(""),
+  timeout: z.number().int().min(1000).max(60000).default(5000),
+  autoReconnect: z.boolean().default(false),
+});
+
 // Complete app configuration
 export const AppConfigSchema = z.object({
   version: z.number().int().default(1),
   server: ServerConfigSchema.default({}),
   watchdog: WatchdogConfigSchema.default({}),
   tui: TuiConfigSchema.default({}),
+  rcon: RconConfigSchema.default({}),
   worlds: z.array(WorldSchema).default([]),
   activeWorld: z.string().nullable().default(null),
   steamcmdAutoInstall: z.boolean().default(true),
@@ -164,4 +179,5 @@ export type World = z.infer<typeof WorldSchema>;
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;
 export type WatchdogConfig = z.infer<typeof WatchdogConfigSchema>;
 export type TuiConfig = z.infer<typeof TuiConfigSchema>;
+export type RconConfig = z.infer<typeof RconConfigSchema>;
 export type AppConfig = z.infer<typeof AppConfigSchema>;

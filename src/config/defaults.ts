@@ -40,6 +40,13 @@ export const defaultConfig: AppConfig = {
     logMaxLines: 100,
     refreshRate: 1000,
   },
+  rcon: {
+    enabled: false,
+    port: 25575,
+    password: "",
+    timeout: 5000,
+    autoReconnect: false,
+  },
   worlds: [],
   activeWorld: null,
   steamcmdAutoInstall: true,

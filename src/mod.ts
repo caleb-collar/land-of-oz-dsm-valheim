@@ -15,6 +15,9 @@ export * from "./steamcmd/mod.ts";
 // Server management
 export * from "./server/mod.ts";
 
+// RCON
+export * from "./rcon/mod.ts";
+
 // Valheim utilities (explicitly re-export to avoid naming conflicts with server module)
 export {
   backupWorld,

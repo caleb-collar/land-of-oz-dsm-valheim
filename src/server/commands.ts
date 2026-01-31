@@ -1,10 +1,12 @@
 /**
- * Valheim admin list management
+ * Valheim admin list management and command execution
  * Manages admin, banned, and permitted player lists
+ * Supports RCON when available, falls back to file-based lists
  */
 
 import { join } from "@std/path";
 import { ensureFile } from "@std/fs";
+import { RconClient, RconError } from "../rcon/mod.ts";
 
 /** Types of player lists */
 export type ListType = "admin" | "banned" | "permitted";
@@ -30,6 +32,121 @@ export const VALHEIM_COMMANDS: AdminCommand[] = [
   { name: "save", description: "Force world save", requiresAdmin: true },
   { name: "info", description: "Show server info", requiresAdmin: false },
 ];
+
+/** RCON configuration for command execution */
+export type RconCommandConfig = {
+  host: string;
+  port: number;
+  password: string;
+  timeout?: number;
+};
+
+/** Global RCON client for persistent connection */
+let rconClient: RconClient | null = null;
+
+/**
+ * Connect to RCON server
+ * @param config RCON configuration
+ */
+export async function connectRcon(config: RconCommandConfig): Promise<void> {
+  if (rconClient?.isConnected()) {
+    return;
+  }
+
+  rconClient = new RconClient({
+    host: config.host,
+    port: config.port,
+    password: config.password,
+    timeout: config.timeout ?? 5000,
+  });
+
+  await rconClient.connect();
+}
+
+/**
+ * Disconnect from RCON server
+ */
+export function disconnectRcon(): void {
+  if (rconClient) {
+    rconClient.disconnect();
+    rconClient = null;
+  }
+}
+
+/**
+ * Check if RCON is connected
+ */
+export function isRconConnected(): boolean {
+  return rconClient?.isConnected() ?? false;
+}
+
+/**
+ * Send a command via RCON
+ * @param command Command to send
+ * @returns Response from server
+ * @throws RconError if not connected or command fails
+ */
+export async function sendRconCommand(command: string): Promise<string> {
+  if (!rconClient?.isConnected()) {
+    throw new RconError("DISCONNECTED", "RCON not connected");
+  }
+
+  return await rconClient.send(command);
+}
+
+/**
+ * Send a command, preferring RCON if available
+ * Falls back to returning an error message if RCON is not connected
+ * @param command Command to send
+ * @param rconConfig Optional RCON config for one-shot connection
+ * @returns Response or error message
+ */
+export async function sendServerCommand(
+  command: string,
+  rconConfig?: RconCommandConfig,
+): Promise<{ success: boolean; response: string }> {
+  // Try existing RCON connection first
+  if (rconClient?.isConnected()) {
+    try {
+      const response = await rconClient.send(command);
+      return { success: true, response };
+    } catch (error) {
+      if (error instanceof RconError) {
+        return { success: false, response: `RCON error: ${error.message}` };
+      }
+      throw error;
+    }
+  }
+
+  // Try one-shot RCON if config provided
+  if (rconConfig) {
+    const client = new RconClient({
+      host: rconConfig.host,
+      port: rconConfig.port,
+      password: rconConfig.password,
+      timeout: rconConfig.timeout ?? 5000,
+    });
+
+    try {
+      await client.connect();
+      const response = await client.send(command);
+      client.disconnect();
+      return { success: true, response };
+    } catch (error) {
+      if (error instanceof RconError) {
+        return { success: false, response: `RCON error: ${error.message}` };
+      }
+      throw error;
+    }
+  }
+
+  // No RCON available
+  return {
+    success: false,
+    response:
+      "RCON not available. Configure RCON or use file-based management.",
+  };
+}
 
 /**
  * Gets the file path for a player list

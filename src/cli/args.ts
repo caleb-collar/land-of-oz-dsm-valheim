@@ -12,6 +12,7 @@ export type Command =
   | "install"
   | "config"
   | "worlds"
+  | "rcon"
   | "tui"
   | "help"
   | "version";
@@ -68,6 +69,17 @@ export type WorldsArgs = GlobalArgs & {
   force?: boolean;
 };
 
+/** RCON command arguments */
+export type RconArgs = GlobalArgs & {
+  command: "rcon";
+  rconCommand?: string;
+  host?: string;
+  port?: number;
+  password?: string;
+  timeout?: number;
+  interactive?: boolean;
+};
+
 /** TUI command arguments */
 export type TuiArgs = GlobalArgs & {
   command: "tui";
@@ -91,6 +103,7 @@ export type ParsedArgs =
   | InstallArgs
   | ConfigArgs
   | WorldsArgs
+  | RconArgs
   | TuiArgs
   | HelpArgs
   | VersionArgs
@@ -148,6 +161,8 @@ export function parseArgs(args: string[]): ParsedArgs {
       return parseConfigArgs(args, globalArgs);
     case "worlds":
       return parseWorldsArgs(args, globalArgs);
+    case "rcon":
+      return parseRconArgs(args, globalArgs);
     case "tui":
       return { ...globalArgs, command: "tui" };
     case "help":
@@ -185,6 +200,7 @@ function isValidCommand(cmd: string): cmd is Command {
     "install",
     "config",
     "worlds",
+    "rcon",
     "tui",
     "help",
     "version",
@@ -386,6 +402,58 @@ function parseWorldsArgs(args: string[], global: GlobalArgs): WorldsArgs {
 }
 
 /**
+ * Parses rcon command arguments
+ */
+function parseRconArgs(args: string[], global: GlobalArgs): RconArgs {
+  // Find the command (everything after 'rcon' that's not a flag)
+  let rconCommand: string | undefined;
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "rcon") {
+      // Look for the command after 'rcon' (first non-flag arg)
+      for (let j = i + 1; j < args.length; j++) {
+        if (!args[j].startsWith("-")) {
+          rconCommand = args[j];
+          break;
+        }
+      }
+      break;
+    }
+  }
+
+  const portStr = getFlagValue(args, "--port", "-p");
+  let port: number | undefined;
+
+  if (portStr) {
+    const parsed = parseInt(portStr, 10);
+    if (!isNaN(parsed) && parsed >= 1024 && parsed <= 65535) {
+      port = parsed;
+    }
+  }
+
+  const timeoutStr = getFlagValue(args, "--timeout", "-t");
+  let timeout: number | undefined;
+
+  if (timeoutStr) {
+    const parsed = parseInt(timeoutStr, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      timeout = parsed;
+    }
+  }
+
+  return {
+    ...global,
+    command: "rcon",
+    rconCommand,
+    host: getFlagValue(args, "--host", "-H"),
+    port,
+    password: getFlagValue(args, "--password", "-P"),
+    timeout,
+    interactive: hasFlag(args, "--interactive", "-i"),
+  };
+}
+
+/**
  * Parses help command arguments
  */
 function parseHelpArgs(args: string[], global: GlobalArgs): HelpArgs {
@@ -438,6 +506,7 @@ COMMANDS:
     install          Install/update SteamCMD and Valheim
     config           Manage configuration
     worlds           Manage world saves
+    rcon             Send RCON commands to server
     tui              Launch the TUI interface (default)
     help [COMMAND]   Show help for a command
 
@@ -582,6 +651,40 @@ KEYBOARD SHORTCUTS:
     Q or Ctrl+C        Quit
     S                  Start server (from Dashboard)
     X                  Stop server (from Dashboard)
+`;
+
+    case "rcon":
+      return `
+Send RCON commands to a running Valheim server
+
+USAGE:
+    oz-valheim rcon <COMMAND> [OPTIONS]
+    oz-valheim rcon --interactive
+
+OPTIONS:
+    -H, --host <HOST>      Server hostname (default: localhost)
+    -p, --port <PORT>      RCON port (default: 25575)
+    -P, --password <PASS>  RCON password (or set via config)
+    -t, --timeout <MS>     Command timeout (default: 5000)
+    -i, --interactive      Start interactive RCON session
+
+COMMANDS:
+    save                   Force world save
+    info                   Show server information
+    kick <player>          Kick a player
+    ban <player>           Ban a player
+    unban <player>         Unban a player
+    banned                 List banned players
+    permitted              List permitted players
+
+NOTE:
+    RCON requires BepInEx + RCON mod installed on the server.
+    Set password via: oz-valheim config set rcon.password <pass>
+
+EXAMPLES:
+    oz-valheim rcon save
+    oz-valheim rcon "kick PlayerName" --password secret
+    oz-valheim rcon --interactive -H 192.168.1.100
 `;
 
     default:

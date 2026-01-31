@@ -30,16 +30,22 @@ export {
   type ServerLogSubscriber,
 } from "./logs.ts";
 
-// Admin commands
+// Admin commands and RCON integration
 export {
   addToAdminList,
   addToBanList,
   addToPermittedList,
   type AdminCommand,
+  connectRcon,
+  disconnectRcon,
   getListContents,
   isInList,
+  isRconConnected,
   type ListType,
+  type RconCommandConfig,
   removeFromBanList,
   removeFromList,
+  sendRconCommand,
+  sendServerCommand,
   VALHEIM_COMMANDS,
 } from "./commands.ts";
