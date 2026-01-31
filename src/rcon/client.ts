@@ -252,8 +252,9 @@ export class RconClient {
       // Connection error
       if (this.state === "connected") {
         this.state = "error";
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        const errorMessage = error instanceof Error
+          ? error.message
+          : String(error);
         // Reject all pending requests
         for (const [id, request] of this.pendingRequests) {
           request.reject(
@@ -283,8 +284,9 @@ export class RconClient {
         this.handlePacket(packet);
       } catch (error) {
         // Protocol error, reject all pending requests
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        const errorMessage = error instanceof Error
+          ? error.message
+          : String(error);
         for (const [id, request] of this.pendingRequests) {
           request.reject(new RconError("PROTOCOL_ERROR", errorMessage));
           this.pendingRequests.delete(id);

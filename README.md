@@ -291,6 +291,9 @@ The DSM exposes all Valheim dedicated server settings through the TUI:
 # Install dependencies
 deno install
 
+# Install git hooks (recommended for contributors)
+deno task hooks:install
+
 # Run in development mode (with watch)
 deno task dev
 
@@ -309,6 +312,9 @@ deno lint
 # Build executable (optional)
 deno compile --allow-all --output oz-valheim main.ts
 ```
+
+> **Note:** The pre-commit hook runs `deno fmt --check` and `deno lint` before
+> each commit to ensure code quality.
 
 ### Deno Permissions Required
 

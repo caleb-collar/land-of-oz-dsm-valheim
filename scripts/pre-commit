@@ -1,0 +1,28 @@
+#!/bin/sh
+# Pre-commit hook for Land of OZ - Valheim DSM
+# Runs formatting and linting checks before each commit
+
+echo "Running pre-commit checks..."
+
+# Check formatting
+echo "Checking formatting..."
+deno fmt --check
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "❌ Formatting check failed!"
+    echo "Run 'deno fmt' to fix formatting issues."
+    exit 1
+fi
+
+# Run linter
+echo "Running linter..."
+deno lint
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "❌ Lint check failed!"
+    echo "Fix the lint errors above before committing."
+    exit 1
+fi
+
+echo "✅ All pre-commit checks passed!"
+exit 0
