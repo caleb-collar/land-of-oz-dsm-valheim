@@ -80,9 +80,7 @@ function getConfigValue(key: string | undefined, config: AppConfig): void {
   if (!key) {
     console.error("Error: No key specified.");
     console.log("Usage: oz-valheim config get <key>");
-    console.log(
-      "Example: oz-valheim config get server.name",
-    );
+    console.log("Example: oz-valheim config get server.name");
     Deno.exit(1);
   }
 

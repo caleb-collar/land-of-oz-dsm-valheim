@@ -85,9 +85,7 @@ async function showDryRunStatus(
     console.log("  Run 'oz-valheim install' to perform these actions.");
   } else {
     console.log("  ✓ Everything is already installed.");
-    console.log(
-      "  Run 'oz-valheim install' to check for updates.",
-    );
+    console.log("  Run 'oz-valheim install' to check for updates.");
   }
 }
 
@@ -229,9 +227,7 @@ function createProgressBar(percent: number): string {
   const width = 20;
   const filled = Math.round((percent / 100) * width);
   const empty = width - filled;
-  return `[${"█".repeat(filled)}${"░".repeat(empty)}] ${
-    percent
-      .toString()
-      .padStart(3)
-  }%`;
+  return `[${"█".repeat(filled)}${"░".repeat(empty)}] ${percent
+    .toString()
+    .padStart(3)}%`;
 }
