@@ -2,7 +2,7 @@
 
 ## Overview
 
-The TUI is built with Ink 6.x (React for terminals) using a three-zone layout.
+The TUI is built with Ink 5.x (React for terminals) using a three-zone layout.
 This document covers component structure, state management, and rendering
 patterns.
 
@@ -65,14 +65,12 @@ import { render } from "ink";
 import React from "react";
 import { App } from "./src/tui/App.tsx";
 
-if (import.meta.main) {
-  const args = Deno.args;
+const args = process.argv.slice(2);
 
-  if (args.includes("--tui") || args[0] === "tui") {
-    render(<App />);
-  } else {
-    // CLI mode
-  }
+if (args.includes("--tui") || args[0] === "tui") {
+  render(<App />);
+} else {
+  // CLI mode
 }
 ```
 
@@ -326,9 +324,11 @@ import React, { FC, useEffect, useState } from "react";
 import { Box, Text } from "ink";
 import { useStore } from "../store.ts";
 import { theme } from "../theme.ts";
+import { createRequire } from "node:module";
 
-// ASCII art frames loaded from assets/ascii/header.json
-import headerFrames from "../../assets/ascii/header.json";
+// Load ASCII art frames
+const require = createRequire(import.meta.url);
+const headerFrames = require("../../assets/ascii/header.json");
 
 export const Header: FC = () => {
   const status = useStore((s) => s.server.status);
@@ -438,9 +438,9 @@ export const Menu: FC = () => {
       {menuItems.map((item) => (
         <Box key={item.key}>
           <Text
-            color={activeScreen === item.screen
-              ? theme.primary
-              : theme.secondary}
+            color={
+              activeScreen === item.screen ? theme.primary : theme.secondary
+            }
             bold={activeScreen === item.screen}
           >
             [{item.key}] {item.label}

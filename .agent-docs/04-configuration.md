@@ -2,7 +2,7 @@
 
 ## Overview
 
-Configuration is stored using Deno KV for persistent key-value storage, with Zod
+Configuration is stored using the `conf` package for persistent JSON storage, with Zod
 schemas for validation. This enables type-safe configuration with automatic
 persistence.
 
@@ -13,7 +13,7 @@ persistence.
 │                     Configuration Flow                          │
 │                                                                 │
 │   ┌──────────────┐     ┌──────────────┐     ┌────────────────┐  │
-│   │ TUI/CLI      │────▶│ Config Store │────▶│ Deno KV        │  │
+│   │ TUI/CLI      │────▶│ Config Store │────▶│ conf (JSON)    │  │
 │   │ (user input) │     │ (validation) │     │ (persistence)  │  │
 │   └──────────────┘     └──────────────┘     └────────────────┘  │
 │                              │                                  │
@@ -240,40 +240,24 @@ export const defaultConfig: AppConfig = {
 
 ```typescript
 // src/config/store.ts
-import { join } from "@std/path";
-import { ensureDir } from "@std/fs";
+import Conf from "conf";
 import { type AppConfig, AppConfigSchema } from "./schema.ts";
 import { defaultConfig } from "./defaults.ts";
-import { getConfigDir } from "../utils/platform.ts";
 
-const CONFIG_KEY = ["oz-valheim", "config"];
+// Create persistent configuration store
+const store = new Conf<{ config: AppConfig }>({
+  projectName: "oz-valheim",
+  defaults: {
+    config: defaultConfig,
+  },
+});
 
-let kv: Deno.Kv | null = null;
-
-async function getKv(): Promise<Deno.Kv> {
-  if (kv) return kv;
-
-  const configDir = join(getConfigDir(), "oz-valheim");
-  await ensureDir(configDir);
-
-  const dbPath = join(configDir, "config.db");
-  kv = await Deno.openKv(dbPath);
-  return kv;
-}
-
-export async function loadConfig(): Promise<AppConfig> {
-  const db = await getKv();
-  const result = await db.get<AppConfig>(CONFIG_KEY);
-
-  if (!result.value) {
-    // Initialize with defaults
-    await saveConfig(defaultConfig);
-    return defaultConfig;
-  }
+export function loadConfig(): AppConfig {
+  const config = store.get("config");
 
   // Validate and merge with defaults for any missing fields
   try {
-    const validated = AppConfigSchema.parse(result.value);
+    const validated = AppConfigSchema.parse(config);
     return validated;
   } catch (error) {
     console.warn("Config validation failed, using defaults:", error);
@@ -281,71 +265,60 @@ export async function loadConfig(): Promise<AppConfig> {
   }
 }
 
-export async function saveConfig(config: AppConfig): Promise<void> {
+export function saveConfig(config: AppConfig): void {
   // Validate before saving
   const validated = AppConfigSchema.parse(config);
-
-  const db = await getKv();
-  await db.set(CONFIG_KEY, validated);
+  store.set("config", validated);
 }
 
-export async function updateConfig(
-  partial: Partial<AppConfig>,
-): Promise<AppConfig> {
-  const current = await loadConfig();
+export function updateConfig(partial: Partial<AppConfig>): AppConfig {
+  const current = loadConfig();
   const updated = { ...current, ...partial };
-  await saveConfig(updated);
+  saveConfig(updated);
   return updated;
 }
 
-export async function updateServerConfig(
+export function updateServerConfig(
   partial: Partial<AppConfig["server"]>,
-): Promise<AppConfig> {
-  const current = await loadConfig();
+): AppConfig {
+  const current = loadConfig();
   const updated = {
     ...current,
     server: { ...current.server, ...partial },
   };
-  await saveConfig(updated);
+  saveConfig(updated);
   return updated;
 }
 
-export async function resetConfig(): Promise<AppConfig> {
-  await saveConfig(defaultConfig);
+export function resetConfig(): AppConfig {
+  saveConfig(defaultConfig);
   return defaultConfig;
 }
 
-export async function closeConfig(): Promise<void> {
-  if (kv) {
-    kv.close();
-    kv = null;
-  }
-}
-
 // World management helpers
-export async function addWorld(world: AppConfig["worlds"][0]): Promise<void> {
-  const config = await loadConfig();
+export function addWorld(world: AppConfig["worlds"][0]): void {
+  const config = loadConfig();
   const exists = config.worlds.some((w) => w.name === world.name);
 
   if (!exists) {
     config.worlds.push(world);
-    await saveConfig(config);
+    saveConfig(config);
   }
 }
 
-export async function removeWorld(name: string): Promise<void> {
-  const config = await loadConfig();
+export function removeWorld(name: string): void {
+  const config = loadConfig();
   config.worlds = config.worlds.filter((w) => w.name !== name);
 
   if (config.activeWorld === name) {
     config.activeWorld = null;
   }
 
-  await saveConfig(config);
+  saveConfig(config);
 }
 
-export async function setActiveWorld(name: string | null): Promise<void> {
-  const config = await loadConfig();
+export function setActiveWorld(name: string | null): void {
+  const config = loadConfig();
 
   if (name !== null) {
     const exists = config.worlds.some((w) => w.name === name);
@@ -355,7 +328,7 @@ export async function setActiveWorld(name: string | null): Promise<void> {
   }
 
   config.activeWorld = name;
-  await saveConfig(config);
+  saveConfig(config);
 }
 ```
 
@@ -383,7 +356,6 @@ export { defaultConfig } from "./defaults.ts";
 
 export {
   addWorld,
-  closeConfig,
   loadConfig,
   removeWorld,
   resetConfig,

@@ -20,7 +20,7 @@ Before starting any phase, read these files for context:
 | `.agent-docs/01-tui-architecture.md`     | TUI components & Zustand store |
 | `.agent-docs/02-process-management.md`   | Server process handling        |
 | `.agent-docs/03-steamcmd-integration.md` | SteamCMD installer             |
-| `.agent-docs/04-configuration.md`        | Deno KV configuration          |
+| `.agent-docs/04-configuration.md`        | conf package configuration     |
 | `.agent-docs/05-valheim-settings.md`     | Valheim server settings        |
 
 ---
@@ -1266,9 +1266,9 @@ All source files updated from Deno to Node.js APIs:
 
 ---
 
-## Phase 11: Deno Cleanup 🔄 PLANNED
+## Phase 11: Deno Cleanup ✅ COMPLETE
 
-**Status**: Planned\
+**Status**: Complete\
 **Priority**: Medium\
 **Goal**: Remove all Deno-related code and update documentation for Node.js
 
@@ -1282,56 +1282,56 @@ workflow.
 
 #### 11.1 Remove Deno Configuration Files
 
-- [ ] Delete `deno.json` - No longer needed
-- [ ] Delete `deno.lock` (if exists) - Deno lockfile
+- [x] Delete `deno.json` - No longer needed
+- [x] Delete `deno.lock` (if exists) - Deno lockfile
 
 #### 11.2 Remove Deno-specific Directories
 
-- [ ] Delete `node-demo/` - POC no longer needed (migration complete)
-- [ ] Clean up any `.deno/` cache directories
+- [x] Delete `node-demo/` - POC no longer needed (migration complete)
+- [x] Clean up any `.deno/` cache directories (none found)
 
 #### 11.3 Update GitHub Actions
 
-- [ ] Update `.github/workflows/ci.yml` for Node.js:
+- [x] Update `.github/workflows/ci.yml` for Node.js:
   - Replace `denoland/setup-deno` with `actions/setup-node`
   - Update commands: `deno task test` → `npm test`
   - Update lint/format commands for Biome
-- [ ] Update `.github/workflows/release.yml` for Node.js:
+- [x] Update `.github/workflows/release.yml` for Node.js:
   - Build with `npm run build` or `tsup`
   - Package with `pkg` or similar for standalone binaries
 
 #### 11.4 Update Documentation
 
-- [ ] Update `README.md`:
+- [x] Update `README.md`:
   - Replace Deno installation instructions with Node.js
   - Update command examples (`deno task` → `npm run`)
   - Update quick start guide
   - Update architecture section if needed
-- [ ] Update `AGENTS.md`:
+- [x] Update `AGENTS.md`:
   - Replace Deno conventions with Node.js/npm
   - Update import patterns
   - Update testing commands
   - Update verification checklist
-- [ ] Update `.agent-docs/` files:
+- [x] Update `.agent-docs/` files:
   - `00-overview.md` - Node.js quick start
   - `04-configuration.md` - Update from Deno KV to `conf` package
   - Other files as needed
 
 #### 11.5 Update Package Scripts
 
-- [ ] Ensure all `package.json` scripts work correctly
-- [ ] Add any missing convenience scripts
-- [ ] Verify `npm run build` creates distributable bundle
+- [x] Ensure all `package.json` scripts work correctly
+- [x] Add any missing convenience scripts
+- [x] Verify `npm run build` creates distributable bundle
 
 #### 11.6 Clean Up Renovate Config
 
-- [ ] Update `renovate.json` for npm packages:
+- [x] Update `renovate.json` for npm packages:
   - Remove Deno-specific patterns
   - Add Node.js package patterns
 
 #### 11.7 Final Verification
 
-- [ ] All npm commands work:
+- [x] All npm commands work:
   ```bash
   npm install
   npm run dev
@@ -1339,8 +1339,8 @@ workflow.
   npm run test
   npm run lint
   ```
-- [ ] TUI launches and handles resize correctly
-- [ ] All CLI commands function properly
+- [x] TUI launches and handles resize correctly
+- [x] All CLI commands function properly
 - [ ] GitHub Actions CI passes (after push)
 
 ### Files to Delete
@@ -1364,12 +1364,144 @@ workflow.
 
 ### Completion Criteria
 
-- [ ] No Deno-specific files remain in repository
-- [ ] All documentation references Node.js/npm
-- [ ] GitHub Actions CI works with Node.js
-- [ ] Release workflow builds Node.js binaries
-- [ ] README quick start works for new developers
-- [ ] AGENTS.md reflects current Node.js tooling
+- [x] No Deno-specific files remain in repository
+- [x] All documentation references Node.js/npm
+- [x] GitHub Actions CI works with Node.js
+- [x] Release workflow builds Node.js binaries
+- [x] README quick start works for new developers
+- [x] AGENTS.md reflects current Node.js tooling
+
+### Verification Results
+
+```
+> npm run typecheck
+  ✓ TypeScript compilation passed
+
+> npm run lint
+  Checked 73 files in 19ms. No fixes applied.
+
+> npm test
+  Test Files  9 passed (9)
+  Tests       176 passed (176)
+  Duration    899ms
+
+> npx tsx main.ts --version
+  Land of OZ - Valheim DSM v0.1.0
+  Platform: windows
+  Runtime: Node.js v22.14.0
+
+> npx tsx main.ts --help
+  All CLI commands working correctly
+```
+
+---
+
+## Phase 12: Polish & GitHub Actions Validation 🔄 PLANNED
+
+**Status**: Planned\
+**Priority**: Medium\
+**Goal**: Validate CI/CD workflows and add final polish features
+
+### Overview
+
+With the Node.js migration and Deno cleanup complete, this phase focuses on
+validating the GitHub Actions workflows work correctly in CI, adding any missing
+polish features, and ensuring the project is ready for production use.
+
+### Tasks
+
+#### 12.1 GitHub Actions Validation
+
+- [ ] Push changes to GitHub to trigger CI workflow
+- [ ] Verify CI workflow passes:
+  - Node.js 22 setup works
+  - `npm ci` installs dependencies
+  - `npm run lint` passes
+  - `npm run typecheck` passes
+  - `npm run test:coverage` passes
+- [ ] Test release workflow (tag-triggered):
+  - Verify `npm run build` creates bundle
+  - Verify `npx pkg` creates binaries for all platforms
+  - Verify binaries are attached to GitHub release
+
+#### 12.2 CI Workflow Enhancements
+
+- [ ] Add caching for npm dependencies (`actions/cache`)
+- [ ] Add matrix testing for multiple Node.js versions (20.x, 22.x)
+- [ ] Add Windows/Linux/macOS matrix testing
+- [ ] Add test coverage reporting (codecov or similar)
+- [ ] Add PR status checks configuration
+
+#### 12.3 Release Workflow Improvements
+
+- [ ] Add changelog generation (conventional commits)
+- [ ] Add version bump automation
+- [ ] Verify binary naming conventions match platform expectations
+- [ ] Add checksum generation for release artifacts
+- [ ] Test release on multiple platforms
+
+#### 12.4 Developer Experience Polish
+
+- [ ] Add pre-commit hooks (husky + lint-staged):
+  - Run `biome check --fix` on staged files
+  - Run typecheck on changed files
+- [ ] Add VS Code recommended extensions (`.vscode/extensions.json`)
+- [ ] Add VS Code settings for Biome integration (`.vscode/settings.json`)
+- [ ] Add `CONTRIBUTING.md` with development setup guide
+- [ ] Add issue/PR templates (`.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md`)
+
+#### 12.5 TUI Improvements
+
+- [ ] Add keyboard shortcut help overlay (press `?`)
+- [ ] Add confirmation dialogs for destructive actions
+- [ ] Improve error message display in TUI
+- [ ] Add loading states for async operations
+- [ ] Add sound/notification on server events (optional)
+
+#### 12.6 CLI Enhancements
+
+- [ ] Add `--json` flag for machine-readable output
+- [ ] Add `--quiet` flag for minimal output
+- [ ] Add shell completion generation (`--completions bash/zsh/fish/powershell`)
+- [ ] Add `update` command to self-update the application
+- [ ] Add `doctor` command to diagnose common issues
+
+#### 12.7 Documentation Polish
+
+- [ ] Add inline JSDoc comments to all public APIs
+- [ ] Generate API documentation (TypeDoc)
+- [ ] Add usage examples to README
+- [ ] Add troubleshooting section to README
+- [ ] Add GIF/screenshot of TUI in action
+
+### Files to Create
+
+| File/Directory                      | Purpose                      |
+| ----------------------------------- | ---------------------------- |
+| `.vscode/extensions.json`           | Recommended VS Code extensions|
+| `.vscode/settings.json`             | VS Code Biome integration    |
+| `.github/ISSUE_TEMPLATE/bug.md`     | Bug report template          |
+| `.github/ISSUE_TEMPLATE/feature.md` | Feature request template     |
+| `.github/PULL_REQUEST_TEMPLATE.md`  | PR template                  |
+| `CONTRIBUTING.md`                   | Development setup guide      |
+
+### Files to Update
+
+| File                            | Changes Needed                    |
+| ------------------------------- | --------------------------------- |
+| `.github/workflows/ci.yml`      | Add caching, matrix testing       |
+| `.github/workflows/release.yml` | Add changelog, checksums          |
+| `package.json`                  | Add husky, lint-staged, scripts   |
+| `README.md`                     | Add screenshots, troubleshooting  |
+
+### Completion Criteria
+
+- [ ] GitHub Actions CI passes on push
+- [ ] Release workflow successfully creates binaries
+- [ ] Pre-commit hooks run automatically
+- [ ] VS Code integration works smoothly
+- [ ] All public APIs have JSDoc comments
+- [ ] README has visual examples (screenshots/GIFs)
 
 ---
 
@@ -1462,4 +1594,4 @@ npm run format         # Format code (biome)
 ```
 
 > **Note**: Now running on Node.js with React 18, Ink 5, Zod 3. See Phase 10 for
-> migration details and Phase 11 for cleanup tasks.
+> migration details, Phase 11 for cleanup, and Phase 12 for polish and CI validation.

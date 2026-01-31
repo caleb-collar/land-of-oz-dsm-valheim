@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is **Land of OZ - Dedicated Server Manager for Valheim**, a Deno-based TUI
+This is **Land of OZ - Dedicated Server Manager for Valheim**, a Node.js-based TUI
 application for managing Valheim dedicated servers. The project uses Ink (React
 for terminals) with ASCII Motion animations.
 
@@ -10,18 +10,18 @@ for terminals) with ASCII Motion animations.
 
 | Aspect         | Details                          |
 | -------------- | -------------------------------- |
-| Runtime        | Deno 2.x (TypeScript)            |
-| TUI            | Ink 6.x (React) with Yoga layout |
+| Runtime        | Node.js 22.x (TypeScript)        |
+| TUI            | Ink 5.x (React) with Yoga layout |
 | State          | Zustand                          |
-| Config Storage | Deno KV                          |
+| Config Storage | conf (JSON)                      |
 | Animation      | ASCII Motion MCP tooling         |
 | Entry Point    | `main.ts`                        |
 
-## Implementation Priorities
+### Implementation Priorities
 
 ### Phase 1: Foundation
 
-1. Set up Deno configuration with npm specifiers for Ink/React
+1. Set up package.json with dependencies for Ink/React
 2. Create `src/` directory structure
 3. Implement platform detection (`src/utils/platform.ts`)
 4. Build configuration schema and storage (`src/config/`)
@@ -85,17 +85,19 @@ export const MenuItem: FC<Props> = ({ title, active = false }) => {
 - Types: Colocate with implementation or in `types.ts`
 - Tests: `*.test.ts` alongside source files
 
-### Deno Imports
+### Node.js Imports
 
 ```typescript
-// Standard library
-import { join } from "@std/path";
-import { assertEquals } from "@std/assert";
+// Node.js built-ins
+import path from "node:path";
+import fs from "node:fs/promises";
+import { spawn } from "node:child_process";
 
-// npm packages via npm: specifier
-import React from "npm:react";
-import { Box, render, Text } from "npm:ink";
-import { create } from "npm:zustand";
+// npm packages
+import React from "react";
+import { Box, render, Text } from "ink";
+import { create } from "zustand";
+import { describe, expect, it } from "vitest";
 ```
 
 ## ASCII Motion MCP Tools
@@ -116,28 +118,37 @@ Key tools to search for:
 
 ## Key Implementation Details
 
-### deno.json Setup
+### package.json Setup
 
 ```json
 {
-  "tasks": {
-    "dev": "deno run --watch --allow-all main.ts",
-    "start": "deno run --allow-all main.ts",
-    "test": "deno test --allow-all",
-    "check": "deno check src/**/*.ts src/**/*.tsx"
+  "name": "oz-valheim",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch main.ts",
+    "start": "tsx main.ts",
+    "build": "tsup",
+    "test": "vitest run",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit"
   },
-  "imports": {
-    "@std/assert": "jsr:@std/assert@1",
-    "@std/path": "jsr:@std/path@1",
-    "@std/fs": "jsr:@std/fs@1",
-    "react": "npm:react@19",
-    "ink": "npm:ink@6",
-    "zustand": "npm:zustand@5",
-    "zod": "npm:zod@4"
+  "dependencies": {
+    "conf": "^13.0.1",
+    "fullscreen-ink": "^0.0.2",
+    "ink": "^5.1.0",
+    "react": "^18.3.1",
+    "zod": "^3.24.2",
+    "zustand": "^5.0.3"
   },
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "react"
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.13.1",
+    "@types/react": "^18.3.18",
+    "tsx": "^4.19.2",
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.4"
   }
 }
 ```
@@ -146,26 +157,28 @@ Key tools to search for:
 
 ```typescript
 // src/utils/platform.ts
+import path from "node:path";
+
 export type Platform = "windows" | "darwin" | "linux";
 
 export function getPlatform(): Platform {
-  const os = Deno.build.os;
-  if (os === "windows") return "windows";
+  const os = process.platform;
+  if (os === "win32") return "windows";
   if (os === "darwin") return "darwin";
   return "linux";
 }
 
 export function getConfigDir(): string {
   const platform = getPlatform();
-  const home = Deno.env.get("HOME") ?? Deno.env.get("USERPROFILE") ?? "";
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
 
   switch (platform) {
     case "windows":
-      return Deno.env.get("APPDATA") ?? join(home, "AppData", "Roaming");
+      return process.env.APPDATA ?? path.join(home, "AppData", "Roaming");
     case "darwin":
-      return join(home, "Library", "Application Support");
+      return path.join(home, "Library", "Application Support");
     default:
-      return Deno.env.get("XDG_CONFIG_HOME") ?? join(home, ".config");
+      return process.env.XDG_CONFIG_HOME ?? path.join(home, ".config");
   }
 }
 ```
@@ -232,21 +245,21 @@ For detailed implementation guidance, see `.agent-docs/`:
 - Unit tests for utility functions
 - Integration tests for SteamCMD/process management
 - Component tests for TUI (where possible)
-- Run tests with: `deno test --allow-all`
+- Run tests with: `npm test`
 
 ## Common Pitfalls
 
-1. **Ink requires React 19**: Use `npm:react@19` not `npm:react`
-2. **JSX config**: Ensure `jsx: "react-jsx"` in deno.json
-3. **Permissions**: Always use `--allow-all` during dev
-4. **Windows paths**: Use `@std/path` join, not string concatenation
-5. **Process cleanup**: Always handle SIGINT/SIGTERM for graceful shutdown
+1. **Ink requires React 18**: Use `react@18` for compatibility with Ink 5
+2. **JSX config**: Ensure `jsx: "react-jsx"` in tsconfig.json
+3. **Windows paths**: Use `node:path` join, not string concatenation
+4. **Process cleanup**: Always handle SIGINT/SIGTERM for graceful shutdown
+5. **ES Modules**: Use `type: "module"` in package.json
 
 ## Getting Help
 
 - Check `README.md` for architecture diagrams
 - Review `.agent-docs/` for detailed specs
-- Run `deno doc src/mod.ts` for API documentation
+- Run `npm run typecheck` to validate TypeScript
 
 ## Agentic Workflow Checklists
 
@@ -254,7 +267,7 @@ For detailed implementation guidance, see `.agent-docs/`:
 
 - [ ] Read relevant documentation (AGENTS.md, README.md, .agent-docs/)
 - [ ] Understand the current project state
-- [ ] Check for any existing errors: `deno check main.ts src/**/*.ts`
+- [ ] Check for any existing errors: `npm run typecheck`
 - [ ] Identify files that will be modified
 
 ### During Implementation
@@ -263,11 +276,11 @@ For detailed implementation guidance, see `.agent-docs/`:
 - [ ] Use Zod for runtime validation where needed
 - [ ] Export from `mod.ts` barrel files
 - [ ] Add JSDoc comments to public functions
-- [ ] Use `@std/path` for cross-platform paths
+- [ ] Use `node:path` for cross-platform paths
 
 ### After Every File Edit
 
-- [ ] Run `deno check` on modified files
+- [ ] Run `npm run typecheck` on modified files
 - [ ] Fix any type errors immediately
 - [ ] Verify imports are correct
 
@@ -277,41 +290,38 @@ Run this verification sequence and fix any issues:
 
 ```bash
 # 1. Type check all source files
-deno check main.ts src/**/*.ts src/**/*.tsx
+npm run typecheck
 
-# 2. Run linter
-deno lint
+# 2. Run linter and formatter
+npm run lint
 
-# 3. Format code
-deno fmt
+# 3. Run tests
+npm test
 
-# 4. Run tests
-deno test --allow-all --unstable-kv
-
-# 5. Verify the app runs
-deno task start --version
-deno task start --help
+# 4. Verify the app runs
+npx tsx main.ts --version
+npx tsx main.ts --help
 ```
 
 ### Mandatory Completion Checklist
 
 **DO NOT mark a task as complete until ALL of these pass:**
 
-1. **Type Check**: `deno check main.ts src/**/*.ts` exits with code 0
-2. **Lint**: `deno lint` reports no errors
-3. **Build/Run**: `deno task start --version` runs successfully
+1. **Type Check**: `npm run typecheck` exits with code 0
+2. **Lint**: `npm run lint` reports no errors
+3. **Build/Run**: `npx tsx main.ts --version` runs successfully
 4. **No Regressions**: Previously working functionality still works
 5. **Documentation**: Any new public APIs have JSDoc comments
 
 ### Troubleshooting Common Issues
 
-| Problem                         | Solution                                                      |
-| ------------------------------- | ------------------------------------------------------------- |
-| `Module not found`              | Check import paths, ensure `mod.ts` exports                   |
-| `JSR package not installed`     | Run `deno install` or check deno.json imports                 |
-| `Deno.openKv is not a function` | Add `--unstable-kv` flag or `"unstable": ["kv"]` to deno.json |
-| `Password validation failed`    | Check Zod schema allows empty strings where needed            |
-| `Cannot find module 'react'`    | Ensure `"react": "npm:react@19"` in deno.json imports         |
+| Problem                      | Solution                                           |
+| ---------------------------- | -------------------------------------------------- |
+| `Module not found`           | Check import paths, ensure `mod.ts` exports        |
+| `Cannot find module 'react'` | Run `npm install` to install dependencies          |
+| `Permission denied`          | Use `chmod +x` on Linux/macOS for executables      |
+| `Password validation failed` | Check Zod schema allows empty strings where needed |
+| `Type errors in tests`       | Ensure vitest types are installed                  |
 
 ### Handoff Protocol
 

@@ -17,7 +17,8 @@ installation/updates.
 
 ```typescript
 // src/steamcmd/paths.ts
-import { join } from "@std/path";
+import path from "node:path";
+import fs from "node:fs/promises";
 import { getPlatform } from "../utils/platform.ts";
 
 export type SteamPaths = {
@@ -29,17 +30,17 @@ export type SteamPaths = {
 
 export function getSteamPaths(): SteamPaths {
   const platform = getPlatform();
-  const home = Deno.env.get("HOME") ?? Deno.env.get("USERPROFILE") ?? "";
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
 
   switch (platform) {
     case "windows": {
-      const localAppData = Deno.env.get("LOCALAPPDATA") ??
-        join(home, "AppData", "Local");
-      const steamcmdDir = join(localAppData, "steamcmd");
+      const localAppData =
+        process.env.LOCALAPPDATA ?? path.join(home, "AppData", "Local");
+      const steamcmdDir = path.join(localAppData, "steamcmd");
       return {
         steamcmdDir,
-        steamcmd: join(steamcmdDir, "steamcmd.exe"),
-        valheimDir: join(
+        steamcmd: path.join(steamcmdDir, "steamcmd.exe"),
+        valheimDir: path.join(
           steamcmdDir,
           "steamapps",
           "common",
@@ -50,7 +51,7 @@ export function getSteamPaths(): SteamPaths {
     }
 
     case "darwin": {
-      const steamcmdDir = join(
+      const steamcmdDir = path.join(
         home,
         "Library",
         "Application Support",
@@ -58,8 +59,8 @@ export function getSteamPaths(): SteamPaths {
       );
       return {
         steamcmdDir,
-        steamcmd: join(steamcmdDir, "steamcmd.sh"),
-        valheimDir: join(
+        steamcmd: path.join(steamcmdDir, "steamcmd.sh"),
+        valheimDir: path.join(
           steamcmdDir,
           "steamapps",
           "common",
@@ -71,11 +72,11 @@ export function getSteamPaths(): SteamPaths {
 
     case "linux":
     default: {
-      const steamcmdDir = join(home, ".local", "share", "steamcmd");
+      const steamcmdDir = path.join(home, ".local", "share", "steamcmd");
       return {
         steamcmdDir,
-        steamcmd: join(steamcmdDir, "steamcmd.sh"),
-        valheimDir: join(
+        steamcmd: path.join(steamcmdDir, "steamcmd.sh"),
+        valheimDir: path.join(
           steamcmdDir,
           "steamapps",
           "common",
@@ -89,14 +90,14 @@ export function getSteamPaths(): SteamPaths {
 
 export function getValheimExecutable(): string {
   const paths = getSteamPaths();
-  return join(paths.valheimDir, paths.executable);
+  return path.join(paths.valheimDir, paths.executable);
 }
 
 export async function isSteamCmdInstalled(): Promise<boolean> {
   const { steamcmd } = getSteamPaths();
   try {
-    const stat = await Deno.stat(steamcmd);
-    return stat.isFile;
+    const stat = await fs.stat(steamcmd);
+    return stat.isFile();
   } catch {
     return false;
   }
@@ -105,8 +106,8 @@ export async function isSteamCmdInstalled(): Promise<boolean> {
 export async function isValheimInstalled(): Promise<boolean> {
   const executable = getValheimExecutable();
   try {
-    const stat = await Deno.stat(executable);
-    return stat.isFile;
+    const stat = await fs.stat(executable);
+    return stat.isFile();
   } catch {
     return false;
   }

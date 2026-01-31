@@ -38,7 +38,8 @@ spawning, monitoring, watchdog functionality, and graceful shutdown.
 
 ```typescript
 // src/server/process.ts
-import { join } from "@std/path";
+import path from "node:path";
+import { spawn, ChildProcess } from "node:child_process";
 import { getPlatform, getValheimPath } from "../utils/platform.ts";
 
 export type ProcessState =
@@ -70,7 +71,7 @@ export type ServerConfig = {
 };
 
 export class ValheimProcess {
-  private process: Deno.ChildProcess | null = null;
+  private process: ChildProcess | null = null;
   private state: ProcessState = "offline";
   private events: ProcessEvents;
   private config: ServerConfig;
@@ -104,14 +105,11 @@ export class ValheimProcess {
     const args = this.buildArgs();
 
     try {
-      const command = new Deno.Command(execPath, {
-        args,
-        stdout: "piped",
-        stderr: "piped",
-        env: this.getEnvironment(),
+      this.process = spawn(execPath, args, {
+        env: { ...process.env, ...this.getEnvironment() },
+        stdio: ["ignore", "pipe", "pipe"],
       });
 
-      this.process = command.spawn();
       this.streamOutput();
 
       // Wait for "Game server connected" log line
@@ -138,17 +136,18 @@ export class ValheimProcess {
       this.process.kill("SIGTERM");
 
       // Wait for exit or timeout
-      const exitPromise = this.process.status;
-      const timeoutPromise = new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), timeout)
-      );
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(() => {
+          // Timeout - force kill
+          this.process?.kill("SIGKILL");
+          resolve();
+        }, timeout);
 
-      const result = await Promise.race([exitPromise, timeoutPromise]);
-
-      if (result === null) {
-        // Timeout - force kill
-        this.process.kill("SIGKILL");
-      }
+        this.process!.on("exit", () => {
+          clearTimeout(timer);
+          resolve();
+        });
+      });
 
       this.process = null;
     }
@@ -170,10 +169,10 @@ export class ValheimProcess {
 
     switch (platform) {
       case "windows":
-        return join(basePath, "valheim_server.exe");
+        return path.join(basePath, "valheim_server.exe");
       case "darwin":
       case "linux":
-        return join(basePath, "valheim_server.x86_64");
+        return path.join(basePath, "valheim_server.x86_64");
     }
   }
 
@@ -220,7 +219,7 @@ export class ValheimProcess {
 
     if (platform === "linux") {
       // Linux may need LD_LIBRARY_PATH for Steam runtime
-      const steamRuntime = Deno.env.get("STEAM_RUNTIME");
+      const steamRuntime = process.env.STEAM_RUNTIME;
       if (steamRuntime) {
         env["LD_LIBRARY_PATH"] = steamRuntime;
       }
@@ -229,56 +228,34 @@ export class ValheimProcess {
     return env;
   }
 
-  private async streamOutput(): Promise<void> {
+  private streamOutput(): void {
     if (!this.process) return;
 
-    const decoder = new TextDecoder();
-
     // Stream stdout
-    (async () => {
-      const reader = this.process!.stdout.getReader();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
+    this.process.stdout?.on("data", (data: Buffer) => {
+      const lines = data.toString().split("\n");
+      for (const line of lines) {
+        if (line.trim()) {
           this.processLogLine(line);
         }
       }
-    })();
+    });
 
     // Stream stderr
-    (async () => {
-      const reader = this.process!.stderr.getReader();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
+    this.process.stderr?.on("data", (data: Buffer) => {
+      const lines = data.toString().split("\n");
+      for (const line of lines) {
+        if (line.trim()) {
           this.processLogLine(line, true);
         }
       }
-    })();
+    });
 
     // Monitor exit
-    this.process.status.then((status) => {
-      if (!status.success && this.state === "online") {
+    this.process.on("exit", (code) => {
+      if (code !== 0 && this.state === "online") {
         this.setState("crashed");
-        this.events.onError(
-          new Error(`Server exited with code ${status.code}`),
-        );
+        this.events.onError(new Error(`Server exited with code ${code}`));
       }
     });
   }
@@ -404,7 +381,8 @@ export class Watchdog {
     }
 
     // Calculate delay with exponential backoff
-    const delay = this.config.restartDelay *
+    const delay =
+      this.config.restartDelay *
       Math.pow(this.config.backoffMultiplier, this.restartCount - 1);
 
     this.onLog(
@@ -707,22 +685,19 @@ export const Errors = {
 
 ```typescript
 // main.ts - Signal handling
+import { Watchdog } from "./src/server/watchdog.ts";
 
 function setupShutdownHandlers(watchdog: Watchdog): void {
   const shutdown = async () => {
     console.log("\nShutting down...");
     await watchdog.stop();
-    Deno.exit(0);
+    process.exit(0);
   };
 
   // Handle SIGINT (Ctrl+C)
-  Deno.addSignalListener("SIGINT", shutdown);
+  process.on("SIGINT", shutdown);
 
   // Handle SIGTERM (kill command)
-  if (Deno.build.os !== "windows") {
-    Deno.addSignalListener("SIGTERM", shutdown);
-  }
-
-  // Windows doesn't support SIGTERM well, but Deno handles Ctrl+C
+  process.on("SIGTERM", shutdown);
 }
 ```

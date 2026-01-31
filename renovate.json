@@ -28,27 +28,14 @@
       "labels": ["dependencies", "breaking-change"]
     },
     {
-      "description": "JSR standard library updates",
-      "matchPackagePatterns": ["^@std/"],
-      "groupName": "Deno standard library"
-    },
-    {
       "description": "Type definitions",
       "matchPackagePatterns": ["^@types/"],
       "groupName": "Type definitions"
-    }
-  ],
-  "deno": {
-    "enabled": true,
-    "fileMatch": ["(^|/)deno\\.json$"]
-  },
-  "customManagers": [
+    },
     {
-      "customType": "regex",
-      "fileMatch": ["deno\\.json$"],
-      "matchStrings": ["\"(?<depName>npm:[^@]+)@(?<currentValue>[^\"]+)\""],
-      "datasourceTemplate": "npm",
-      "extractVersionTemplate": "^npm:(?<depName>[^@]+)@(?<currentValue>.*)$"
+      "description": "Dev dependencies",
+      "matchDepTypes": ["devDependencies"],
+      "groupName": "Dev dependencies"
     }
   ]
 }

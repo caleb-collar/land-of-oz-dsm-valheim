@@ -204,8 +204,8 @@ Valheim worlds consist of two files:
 
 ```typescript
 // src/valheim/worlds.ts
-import { basename, join } from "@std/path";
-import { copy, ensureDir, exists } from "@std/fs";
+import path from "node:path";
+import fs from "node:fs/promises";
 import { getPlatform } from "../utils/platform.ts";
 
 export type WorldInfo = {
@@ -218,11 +218,11 @@ export type WorldInfo = {
 
 export function getDefaultWorldsDir(): string {
   const platform = getPlatform();
-  const home = Deno.env.get("HOME") ?? Deno.env.get("USERPROFILE") ?? "";
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
 
   switch (platform) {
     case "windows":
-      return join(
+      return path.join(
         home,
         "AppData",
         "LocalLow",
@@ -231,7 +231,7 @@ export function getDefaultWorldsDir(): string {
         "worlds_local",
       );
     case "darwin":
-      return join(
+      return path.join(
         home,
         "Library",
         "Application Support",
@@ -239,7 +239,7 @@ export function getDefaultWorldsDir(): string {
         "worlds_local",
       );
     default:
-      return join(
+      return path.join(
         home,
         ".config",
         "unity3d",
@@ -255,28 +255,33 @@ export async function listWorlds(worldsDir?: string): Promise<WorldInfo[]> {
   const worlds: WorldInfo[] = [];
 
   try {
-    for await (const entry of Deno.readDir(dir)) {
-      if (entry.isFile && entry.name.endsWith(".db")) {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isFile() && entry.name.endsWith(".db")) {
         const name = entry.name.replace(".db", "");
-        const dbPath = join(dir, entry.name);
-        const fwlPath = join(dir, `${name}.fwl`);
+        const dbPath = path.join(dir, entry.name);
+        const fwlPath = path.join(dir, `${name}.fwl`);
 
         // Check if .fwl exists
-        if (!(await exists(fwlPath))) continue;
+        try {
+          await fs.access(fwlPath);
+        } catch {
+          continue;
+        }
 
-        const dbStat = await Deno.stat(dbPath);
+        const dbStat = await fs.stat(dbPath);
 
         worlds.push({
           name,
           dbPath,
           fwlPath,
           size: dbStat.size,
-          modified: dbStat.mtime ?? new Date(),
+          modified: dbStat.mtime,
         });
       }
     }
   } catch (error) {
-    if (!(error instanceof Deno.errors.NotFound)) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
       throw error;
     }
   }
@@ -290,23 +295,23 @@ export async function importWorld(
   targetDir?: string,
 ): Promise<WorldInfo> {
   const dir = targetDir ?? getDefaultWorldsDir();
-  await ensureDir(dir);
+  await fs.mkdir(dir, { recursive: true });
 
-  const name = basename(dbPath).replace(".db", "");
-  const targetDb = join(dir, `${name}.db`);
-  const targetFwl = join(dir, `${name}.fwl`);
+  const name = path.basename(dbPath).replace(".db", "");
+  const targetDb = path.join(dir, `${name}.db`);
+  const targetFwl = path.join(dir, `${name}.fwl`);
 
-  await copy(dbPath, targetDb, { overwrite: true });
-  await copy(fwlPath, targetFwl, { overwrite: true });
+  await fs.copyFile(dbPath, targetDb);
+  await fs.copyFile(fwlPath, targetFwl);
 
-  const stat = await Deno.stat(targetDb);
+  const stat = await fs.stat(targetDb);
 
   return {
     name,
     dbPath: targetDb,
     fwlPath: targetFwl,
     size: stat.size,
-    modified: stat.mtime ?? new Date(),
+    modified: stat.mtime,
   };
 }
 
@@ -316,13 +321,13 @@ export async function exportWorld(
   sourceDir?: string,
 ): Promise<void> {
   const dir = sourceDir ?? getDefaultWorldsDir();
-  await ensureDir(targetDir);
+  await fs.mkdir(targetDir, { recursive: true });
 
-  const dbPath = join(dir, `${worldName}.db`);
-  const fwlPath = join(dir, `${worldName}.fwl`);
+  const dbPath = path.join(dir, `${worldName}.db`);
+  const fwlPath = path.join(dir, `${worldName}.fwl`);
 
-  await copy(dbPath, join(targetDir, `${worldName}.db`));
-  await copy(fwlPath, join(targetDir, `${worldName}.fwl`));
+  await fs.copyFile(dbPath, path.join(targetDir, `${worldName}.db`));
+  await fs.copyFile(fwlPath, path.join(targetDir, `${worldName}.fwl`));
 }
 
 export async function deleteWorld(
@@ -331,20 +336,21 @@ export async function deleteWorld(
 ): Promise<void> {
   const dir = worldsDir ?? getDefaultWorldsDir();
 
-  const dbPath = join(dir, `${worldName}.db`);
-  const fwlPath = join(dir, `${worldName}.fwl`);
+  const dbPath = path.join(dir, `${worldName}.db`);
+  const fwlPath = path.join(dir, `${worldName}.fwl`);
 
-  await Deno.remove(dbPath);
-  await Deno.remove(fwlPath);
+  await fs.unlink(dbPath);
+  await fs.unlink(fwlPath);
 
   // Also remove any backup files
   try {
-    for await (const entry of Deno.readDir(dir)) {
+    const entries = await fs.readdir(dir);
+    for (const entry of entries) {
       if (
-        entry.name.startsWith(`${worldName}.db.`) ||
-        entry.name.startsWith(`${worldName}.fwl.`)
+        entry.startsWith(`${worldName}.db.`) ||
+        entry.startsWith(`${worldName}.fwl.`)
       ) {
-        await Deno.remove(join(dir, entry.name));
+        await fs.unlink(path.join(dir, entry));
       }
     }
   } catch {
@@ -634,8 +640,8 @@ Valheim uses text files for admin/ban/permitted lists:
 
 ```typescript
 // src/valheim/lists.ts
-import { join } from "@std/path";
-import { ensureFile } from "@std/fs";
+import path from "node:path";
+import fs from "node:fs/promises";
 
 export type ListType = "admin" | "banned" | "permitted";
 
@@ -646,17 +652,23 @@ const LIST_FILES: Record<ListType, string> = {
 };
 
 async function getListPath(type: ListType, savedir: string): Promise<string> {
-  const path = join(savedir, LIST_FILES[type]);
-  await ensureFile(path);
-  return path;
+  const filePath = path.join(savedir, LIST_FILES[type]);
+  // Ensure file exists
+  try {
+    await fs.access(filePath);
+  } catch {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, "// Auto-generated by OZ-Valheim DSM\n");
+  }
+  return filePath;
 }
 
 export async function readList(
   type: ListType,
   savedir: string,
 ): Promise<string[]> {
-  const path = await getListPath(type, savedir);
-  const content = await Deno.readTextFile(path);
+  const filePath = await getListPath(type, savedir);
+  const content = await fs.readFile(filePath, "utf-8");
 
   return content
     .split("\n")
@@ -672,8 +684,8 @@ export async function addToList(
   const entries = await readList(type, savedir);
 
   if (!entries.includes(steamId)) {
-    const path = await getListPath(type, savedir);
-    await Deno.writeTextFile(path, [...entries, steamId].join("\n") + "\n");
+    const filePath = await getListPath(type, savedir);
+    await fs.writeFile(filePath, [...entries, steamId].join("\n") + "\n");
   }
 }
 
@@ -685,16 +697,16 @@ export async function removeFromList(
   const entries = await readList(type, savedir);
   const filtered = entries.filter((e) => e !== steamId);
 
-  const path = await getListPath(type, savedir);
-  await Deno.writeTextFile(path, filtered.join("\n") + "\n");
+  const filePath = await getListPath(type, savedir);
+  await fs.writeFile(filePath, filtered.join("\n") + "\n");
 }
 
 export async function clearList(
   type: ListType,
   savedir: string,
 ): Promise<void> {
-  const path = await getListPath(type, savedir);
-  await Deno.writeTextFile(path, "// Auto-generated by OZ-Valheim DSM\n");
+  const filePath = await getListPath(type, savedir);
+  await fs.writeFile(filePath, "// Auto-generated by OZ-Valheim DSM\n");
 }
 ```
 

@@ -15,16 +15,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
+          - target: linux-x64
             os: ubuntu-latest
             ext: ""
-          - target: x86_64-pc-windows-msvc
+          - target: win-x64
             os: windows-latest
             ext: ".exe"
-          - target: x86_64-apple-darwin
+          - target: macos-x64
             os: macos-latest
             ext: ""
-          - target: aarch64-apple-darwin
+          - target: macos-arm64
             os: macos-latest
             ext: ""
 
@@ -32,30 +32,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          deno-version: v2.x
+          node-version: "22"
+          cache: "npm"
 
-      - name: Cache Deno dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/deno
-          key: ${{ runner.os }}-deno-${{ hashFiles('deno.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-deno-
+      - name: Install dependencies
+        run: npm ci
 
       - name: Run tests
-        run: deno task test
+        run: npm test
 
-      - name: Compile binary
-        run: >
-          deno compile
-          --allow-all
-          --unstable-kv
-          --target ${{ matrix.target }}
-          --output oz-valheim-${{ matrix.target }}${{ matrix.ext }}
-          main.ts
+      - name: Build bundle
+        run: npm run build
+
+      - name: Package with pkg
+        run: |
+          npx pkg dist/main.js --target node22-${{ matrix.target }} --output oz-valheim-${{ matrix.target }}${{ matrix.ext }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -111,10 +105,10 @@ jobs:
 
           | Platform | Binary |
           | --- | --- |
-          | Windows (x64) | \`oz-valheim-x86_64-pc-windows-msvc.exe\` |
-          | Linux (x64) | \`oz-valheim-x86_64-unknown-linux-gnu\` |
-          | macOS (x64) | \`oz-valheim-x86_64-apple-darwin\` |
-          | macOS (ARM64) | \`oz-valheim-aarch64-apple-darwin\` |
+          | Windows (x64) | \`oz-valheim-win-x64.exe\` |
+          | Linux (x64) | \`oz-valheim-linux-x64\` |
+          | macOS (x64) | \`oz-valheim-macos-x64\` |
+          | macOS (ARM64) | \`oz-valheim-macos-arm64\` |
 
           ### Quick Start
 
@@ -124,6 +118,16 @@ jobs:
 
           # Run
           ./oz-valheim --help
+          \`\`\`
+
+          ### Alternative: Run with Node.js
+
+          \`\`\`bash
+          # Install globally
+          npm install -g oz-valheim
+
+          # Run
+          oz-valheim --help
           \`\`\`
           EOF
 

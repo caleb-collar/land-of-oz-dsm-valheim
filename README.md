@@ -12,7 +12,7 @@
 
 ## Details
 
-- The software is written in Typescript using Deno as the runtime
+- The software is written in TypeScript using Node.js as the runtime
 - The DSM program is a rich featured management tool with a Yoga powered TUI.
   - The TUI uses Ink which is a React flavored TUI framework
   - The motion in the TUI is accelerated by the ASCII Motion app.
@@ -60,20 +60,23 @@ via Ink. Motion is created using ASCII Motion.
 
 ### Technology Stack
 
-| Layer            | Technology       | Purpose                                                |
-| ---------------- | ---------------- | ------------------------------------------------------ |
-| Runtime          | Deno 2.x         | TypeScript-first, secure by default, npm compatibility |
-| TUI Framework    | Ink 6.x          | React-based terminal UI with Yoga flexbox layout       |
-| State Management | Zustand          | Lightweight, React-compatible global state             |
-| Animation        | ASCII Motion MCP | Animated ASCII art for headers and transitions         |
-| Process Control  | Deno.Command     | Cross-platform subprocess management                   |
-| Configuration    | JSON + Deno KV   | Persistent settings with local key-value store         |
+| Layer            | Technology       | Purpose                                          |
+| ---------------- | ---------------- | ------------------------------------------------ |
+| Runtime          | Node.js 22.x     | TypeScript-first with tsx execution              |
+| TUI Framework    | Ink 5.x          | React-based terminal UI with Yoga flexbox layout |
+| State Management | Zustand          | Lightweight, React-compatible global state       |
+| Animation        | ASCII Motion MCP | Animated ASCII art for headers and transitions   |
+| Process Control  | child_process    | Cross-platform subprocess management             |
+| Configuration    | conf             | Persistent settings with JSON storage            |
 
 ### Directory Structure
 
 ```
 land-of-oz-dsm-valheim/
-├── deno.json                 # Deno configuration, tasks, and import map
+├── package.json              # Node.js dependencies and scripts
+├── tsconfig.json             # TypeScript configuration
+├── vitest.config.ts          # Test configuration
+├── biome.json                # Linting and formatting
 ├── main.ts                   # CLI entry point and argument parser
 ├── README.md                 # Project documentation (this file)
 ├── AGENTS.md                 # AI agent implementation guidance
@@ -289,47 +292,34 @@ The DSM exposes all Valheim dedicated server settings through the TUI:
 
 ```bash
 # Install dependencies
-deno install
-
-# Install git hooks (recommended for contributors)
-deno task hooks:install
+npm install
 
 # Run in development mode (with watch)
-deno task dev
+npm run dev
 
 # Run tests
-deno test
+npm test
 
 # Type check
-deno check src/**/*.ts src/**/*.tsx
+npm run typecheck
 
-# Format code
-deno fmt
+# Lint and format
+npm run lint
+npm run format
 
-# Lint
-deno lint
+# Build bundle
+npm run build
 
-# Build executable (optional)
-deno compile --allow-all --output oz-valheim main.ts
+# Run built version
+node dist/main.js --help
 ```
 
-> **Note:** The pre-commit hook runs `deno fmt --check` and `deno lint` before
-> each commit to ensure code quality.
+> **Note:** The project uses Biome for linting and formatting.
 
-### Deno Permissions Required
+### Node.js Requirements
 
-```json
-{
-  "permissions": {
-    "read": true, // Read config files, Valheim files
-    "write": true, // Write config, logs
-    "net": true, // Download SteamCMD, check updates
-    "run": true, // Execute SteamCMD, Valheim server
-    "env": true, // Read environment variables
-    "ffi": false // Not needed
-  }
-}
-```
+- Node.js 22.x or later
+- npm 10.x or later
 
 ---
 

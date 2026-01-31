@@ -3,7 +3,7 @@
 ## Land of OZ - Valheim DSM
 
 A container-free, virtualization-free dedicated server manager for Valheim,
-built with Deno and featuring a beautiful animated TUI.
+built with Node.js and featuring a beautiful animated TUI.
 
 ## Vision
 
@@ -23,13 +23,13 @@ the executable and manage your server through an intuitive terminal interface.
 
 ## Technology Choices
 
-### Why Deno?
+### Why Node.js?
 
-- TypeScript-first with built-in type checking
-- Secure by default (explicit permissions)
-- npm compatibility for Ink/React ecosystem
-- Built-in KV storage for configuration
-- Single executable compilation for distribution
+- TypeScript-first with tsx for development
+- Mature ecosystem with full npm support
+- Excellent terminal resize event handling
+- Cross-platform process management
+- Single bundle compilation with tsup
 
 ### Why Ink?
 
@@ -42,7 +42,7 @@ the executable and manage your server through an intuitive terminal interface.
 ### Why Zustand?
 
 - Minimal boilerplate
-- React 19 compatible
+- React 18 compatible
 - TypeScript-first
 - No providers needed
 - Works great with Ink
@@ -60,14 +60,17 @@ the executable and manage your server through an intuitive terminal interface.
 # Clone and enter
 cd land-of-oz-dsm-valheim
 
+# Install dependencies
+npm install
+
 # Run in dev mode (with hot reload)
-deno task dev
+npm run dev
 
 # Run tests
-deno test
+npm test
 
-# Format/lint
-deno fmt && deno lint
+# Lint/format
+npm run lint
 ```
 
 ## Implementation Roadmap
@@ -101,7 +104,7 @@ Before writing any code:
 
 - [ ] Read AGENTS.md for coding standards
 - [ ] Review relevant .agent-docs/ files for the feature
-- [ ] Check current project compiles: `deno check main.ts src/**/*.ts`
+- [ ] Check current project compiles: `npm run typecheck`
 - [ ] Understand existing patterns in codebase
 
 ### Implementation Checklist
@@ -112,7 +115,7 @@ While implementing:
 - [ ] Export all public APIs from `mod.ts` barrel files
 - [ ] Add JSDoc comments to functions and types
 - [ ] Handle errors appropriately (don't swallow exceptions)
-- [ ] Use cross-platform path handling (`@std/path`)
+- [ ] Use cross-platform path handling (`node:path`)
 
 ### Post-Implementation Verification
 
@@ -120,20 +123,17 @@ While implementing:
 
 ```bash
 # Step 1: Type check (REQUIRED - must pass)
-deno check main.ts src/**/*.ts src/**/*.tsx
+npm run typecheck
 
 # Step 2: Lint (REQUIRED - must pass)
-deno lint
+npm run lint
 
-# Step 3: Format (recommended)
-deno fmt
+# Step 3: Test (REQUIRED if tests exist)
+npm test
 
-# Step 4: Test (REQUIRED if tests exist)
-deno test --allow-all --unstable-kv
-
-# Step 5: Runtime verification (REQUIRED)
-deno task start --version
-deno task start --config
+# Step 4: Runtime verification (REQUIRED)
+npx tsx main.ts --version
+npx tsx main.ts --config
 ```
 
 ### Error Resolution Protocol
@@ -152,15 +152,15 @@ Each phase has specific verification requirements:
 
 | Phase   | Verification Command                | Expected Result      |
 | ------- | ----------------------------------- | -------------------- |
-| Phase 1 | `deno task start --config`          | Shows configuration  |
-| Phase 2 | `deno task start install --dry-run` | Shows SteamCMD steps |
-| Phase 3 | `deno task start --tui`             | TUI renders          |
-| Phase 4 | `deno task start --help`            | Shows all commands   |
+| Phase 1 | `npx tsx main.ts --config`          | Shows configuration  |
+| Phase 2 | `npx tsx main.ts install --dry-run` | Shows SteamCMD steps |
+| Phase 3 | `npx tsx main.ts --tui`             | TUI renders          |
+| Phase 4 | `npx tsx main.ts --help`            | Shows all commands   |
 
 ### Never Complete Without
 
-1. ✅ `deno check` passes with exit code 0
-2. ✅ `deno lint` passes with no errors
-3. ✅ `deno task start --version` runs successfully
+1. ✅ `npm run typecheck` passes with exit code 0
+2. ✅ `npm run lint` passes with no errors
+3. ✅ `npx tsx main.ts --version` runs successfully
 4. ✅ Summary of changes provided
 5. ✅ Next steps documented for following agent
