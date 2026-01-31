@@ -790,6 +790,193 @@ and fixing breaking changes.
 
 ---
 
+## Phase 9: Fullscreen Terminal Mode 🔲 PLANNED
+
+**Status**: Not Started\
+**Priority**: High\
+**Goal**: Fix terminal buffer truncation issues by implementing fullscreen-ink
+
+### Problem Statement
+
+The current Ink/Windows Terminal implementation has issues with character
+buffers that cause:
+
+- UI truncation at the bottom of the terminal
+- Missing content in rendered output
+- Inconsistent layout across different terminal sizes
+
+### Solution
+
+Implement [fullscreen-ink](https://www.npmjs.com/package/fullscreen-ink) which
+provides:
+
+1. **Alternate Screen Buffer**: Switches terminal to alternate buffer like `vim`
+   or `less`, preventing buffer overflow issues
+2. **FullScreenBox Component**: Automatically fills terminal window and handles
+   resize events
+3. **Clean Exit**: Restores previous terminal content when app closes
+
+### Tasks
+
+#### 9.1 Package Installation
+
+- [ ] Add `fullscreen-ink` to deno.json imports:
+  ```json
+  "fullscreen-ink": "npm:fullscreen-ink@0.1.0"
+  ```
+- [ ] Verify compatibility with Ink 6 and React 19
+
+#### 9.2 Update TUI Launch (`src/tui/mod.ts`)
+
+Replace current `render()` call with `withFullScreen()`:
+
+```typescript
+// Before
+import { render } from "ink";
+export function launchTui(): void {
+  render(<App />);
+}
+
+// After
+import { withFullScreen } from "fullscreen-ink";
+export async function launchTui(): Promise<void> {
+  const ink = withFullScreen(<App />, { exitOnCtrlC: true });
+  await ink.start();
+  await ink.waitUntilExit();
+}
+```
+
+#### 9.3 Update App Component (`src/tui/App.tsx`)
+
+- [ ] Utilize `useScreenSize` hook for dynamic sizing
+- [ ] Ensure root Box uses flex-grow to fill terminal
+- [ ] Update layout calculations to use actual terminal dimensions
+
+```tsx
+import { useScreenSize } from "fullscreen-ink";
+
+export const App: FC = () => {
+  const { height, width } = useScreenSize();
+
+  return (
+    <Box flexDirection="column" height={height} width={width}>
+      {/* ... */}
+    </Box>
+  );
+};
+```
+
+#### 9.4 Update Exit Handling
+
+Replace `process.exit()` calls with Ink's `useApp().exit()`:
+
+- [ ] `src/tui/App.tsx` - Update quit handler
+- [ ] `src/tui/screens/Dashboard.tsx` - Update any exit logic
+- [ ] `src/tui/hooks/useServer.ts` - Ensure graceful shutdown
+
+```tsx
+import { useApp } from "ink";
+
+// Instead of process.exit()
+const app = useApp();
+app.exit();
+```
+
+#### 9.5 Update Main Entry Point (`main.ts`)
+
+- [ ] Make `launchTui()` async-aware
+- [ ] Ensure proper cleanup after TUI exits
+- [ ] Handle Ctrl+C gracefully with alternate buffer restore
+
+```typescript
+// In main.ts
+if (args.tui || (!subcommand && !Object.values(args).some(Boolean))) {
+  await launchTui();
+  // Terminal restored to normal after exit
+}
+```
+
+#### 9.6 Component Layout Updates
+
+Review and update components for fullscreen compatibility:
+
+- [ ] `Header.tsx` - Fixed height for logo area
+- [ ] `Menu.tsx` - Ensure proper flex sizing
+- [ ] `LogFeed.tsx` - Use remaining vertical space with flexGrow
+- [ ] `StatusBar.tsx` - Fixed height at bottom
+- [ ] All screens - Use percentage/flex for responsive layouts
+
+#### 9.7 Testing
+
+- [ ] Test on Windows Terminal
+- [ ] Test on PowerShell
+- [ ] Test on cmd.exe
+- [ ] Test terminal resize handling
+- [ ] Test clean exit (Ctrl+C, Q key)
+- [ ] Verify alternate buffer restore works
+
+### API Reference
+
+| Export           | Description                                    |
+| ---------------- | ---------------------------------------------- |
+| `withFullScreen` | Wrapper function that enables fullscreen mode  |
+| `useScreenSize`  | Hook returning `{ height, width }` of terminal |
+| `FullScreenBox`  | Component that fills terminal window           |
+
+### Configuration Options
+
+```typescript
+withFullScreen(<App />, {
+  exitOnCtrlC: true, // Handle Ctrl+C automatically
+  // ... other Ink render options
+});
+```
+
+### Files to Create
+
+- None (using existing structure)
+
+### Files to Modify
+
+- `deno.json` - Add fullscreen-ink import
+- `src/tui/mod.ts` - Update launchTui() to use withFullScreen
+- `src/tui/App.tsx` - Use useScreenSize, update layout
+- `src/tui/components/Header.tsx` - Fixed height layout
+- `src/tui/components/LogFeed.tsx` - FlexGrow for remaining space
+- `src/tui/screens/*.tsx` - Responsive layout updates
+- `main.ts` - Async launchTui() handling
+
+### Verification
+
+```bash
+# After implementation, verify:
+deno check main.ts src/**/*.ts src/**/*.tsx  # Type check passes
+deno lint                                      # No lint errors
+deno task start                                # TUI launches fullscreen
+# Resize terminal window - UI should adapt
+# Press Q or Ctrl+C - Terminal should restore properly
+```
+
+### Completion Criteria
+
+- [ ] TUI renders in alternate screen buffer
+- [ ] No content truncation at any terminal size
+- [ ] Terminal resize handled smoothly
+- [ ] Clean exit restores original terminal content
+- [ ] All existing functionality preserved
+- [ ] Works on Windows Terminal, PowerShell, and cmd.exe
+- [ ] All tests pass
+
+### Notes
+
+- fullscreen-ink v0.1.0 is compatible with Ink 6
+- The alternate screen buffer approach is the same used by vim, less, htop
+- Process exit must use `useApp().exit()`, not `process.exit()`
+- The `waitUntilExit()` method is on the fullscreen-ink object, not the Ink
+  instance
+
+---
+
 ## Agent Handoff Protocol
 
 When completing a phase, provide:
