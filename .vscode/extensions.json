@@ -1,8 +1,11 @@
 {
   "recommendations": [
-    "denoland.vscode-deno",
+    "biomejs.biome",
     "EditorConfig.EditorConfig",
     "streetsidesoftware.code-spell-checker"
   ],
-  "unwantedRecommendations": ["ms-vscode.vscode-typescript-next"]
+  "unwantedRecommendations": [
+    "ms-vscode.vscode-typescript-next",
+    "denoland.vscode-deno"
+  ]
 }

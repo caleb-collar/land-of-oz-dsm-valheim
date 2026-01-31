@@ -1,3 +1,18 @@
 {
-  "cSpell.words": ["steamcmd", "Valheim"]
+  "cSpell.words": ["steamcmd", "Valheim", "rcon", "fullscreen", "zustand"],
+  
+  // Biome as default formatter
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": true,
+  
+  // TypeScript settings
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.tsdk": "node_modules/typescript/lib",
+  
+  // Search exclusions
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/coverage": true
+  }
 }

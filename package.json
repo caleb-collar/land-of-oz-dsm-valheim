@@ -16,7 +16,8 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepare": "tsx scripts/install-hooks.ts"
   },
   "dependencies": {
     "conf": "^13.0.1",
