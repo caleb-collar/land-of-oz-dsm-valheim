@@ -297,6 +297,17 @@ export class RconClient {
   }
 
   private handlePacket(packet: RconPacket): void {
+    // Handle auth failure specially - id is -1, not the original request id
+    if (isAuthFailure(packet) && this.state === "authenticating") {
+      // Reject the first (auth) pending request
+      for (const [id, request] of this.pendingRequests) {
+        this.pendingRequests.delete(id);
+        request.reject(new RconError("AUTH_FAILED", "Invalid RCON password"));
+        break;
+      }
+      return;
+    }
+
     const request = this.pendingRequests.get(packet.id);
     if (request) {
       this.pendingRequests.delete(packet.id);

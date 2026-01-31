@@ -1,6 +1,7 @@
 # Land of OZ - Dedicated Server Manager - Valheim
 
 [![CI](https://github.com/caleb-collar/land-of-oz-dsm-valheim/actions/workflows/ci.yml/badge.svg)](https://github.com/caleb-collar/land-of-oz-dsm-valheim/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/caleb-collar/land-of-oz-dsm-valheim/graph/badge.svg)](https://codecov.io/gh/caleb-collar/land-of-oz-dsm-valheim)
 
 ## About
 
