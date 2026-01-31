@@ -50,7 +50,7 @@ export const Console: FC = () => {
     }
     if (key.pageDown) {
       setScrollOffset((prev: number) =>
-        Math.min(maxScroll, prev + visibleCount),
+        Math.min(maxScroll, prev + visibleCount)
       );
     }
 
@@ -85,7 +85,7 @@ export const Console: FC = () => {
           ─ Console ─
         </Text>
         <Box>
-          <Text dimColor>[F] Filter </Text>
+          <Text dimColor>[F] Filter</Text>
           <Text color={filter ? logColors[filter] : theme.muted}>
             {filter?.toUpperCase() ?? "ALL"}
           </Text>
@@ -101,15 +101,17 @@ export const Console: FC = () => {
         height={visibleCount + 2}
         paddingX={1}
       >
-        {visibleEntries.length === 0 ? (
-          <Text dimColor>
-            No log entries{filter ? ` matching "${filter}"` : ""}
-          </Text>
-        ) : (
-          visibleEntries.map((entry) => (
-            <LogEntry key={entry.id} entry={entry} />
-          ))
-        )}
+        {visibleEntries.length === 0
+          ? (
+            <Text dimColor>
+              No log entries{filter ? ` matching "${filter}"` : ""}
+            </Text>
+          )
+          : (
+            visibleEntries.map((entry) => (
+              <LogEntry key={entry.id} entry={entry} />
+            ))
+          )}
       </Box>
 
       {/* Scroll indicator */}

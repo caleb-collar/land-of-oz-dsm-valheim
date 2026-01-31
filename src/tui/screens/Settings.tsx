@@ -110,12 +110,9 @@ export const Settings: FC = () => {
       <Box flexDirection="column">
         {items.map((item, index) => {
           const isSelected = index === selectedIndex;
-          const displayValue =
-            typeof item.value === "boolean"
-              ? item.value
-                ? "Yes"
-                : "No"
-              : String(item.value);
+          const displayValue = typeof item.value === "boolean"
+            ? item.value ? "Yes" : "No"
+            : String(item.value);
 
           return (
             <Box key={item.key}>
@@ -130,13 +127,9 @@ export const Settings: FC = () => {
               </Text>
               <Text></Text>
               <Text
-                color={
-                  typeof item.value === "boolean"
-                    ? item.value
-                      ? theme.success
-                      : theme.error
-                    : theme.secondary
-                }
+                color={typeof item.value === "boolean"
+                  ? item.value ? theme.success : theme.error
+                  : theme.secondary}
               >
                 {displayValue}
               </Text>

@@ -15,7 +15,51 @@ export * from "./steamcmd/mod.ts";
 // Server management
 export * from "./server/mod.ts";
 
-// TUI (placeholder)
+// Valheim utilities (explicitly re-export to avoid naming conflicts with server module)
+export {
+  backupWorld,
+  buildServerArgs,
+  CombatOptions,
+  DeathPenaltyOptions,
+  deleteWorld,
+  exportWorld,
+  formatInterval,
+  getCombatLabel,
+  getDeathPenaltyLabel,
+  getDefaultWorldsDir,
+  getPortalLabel,
+  getPresetLabel,
+  getResourceLabel,
+  getWorldInfo,
+  importWorld,
+  listWorlds,
+  parseServerArgs,
+  PortalOptions,
+  PresetOptions,
+  RaidOptions,
+  ResourceOptions,
+  type SelectOption,
+  type SettingDefinition,
+  ValheimSettings,
+  worldExists,
+  type WorldInfo,
+} from "./valheim/mod.ts";
+
+// Re-export valheim lists with different names to avoid conflict
+export {
+  addToList as addToValheimList,
+  clearList as clearValheimList,
+  getListCount as getValheimListCount,
+  isInList as isInValheimList,
+  type ListType as ValheimListType,
+  readList as readValheimList,
+  removeFromList as removeFromValheimList,
+} from "./valheim/mod.ts";
+
+// CLI
+export * from "./cli/mod.ts";
+
+// TUI
 export { launchTui, TUI_VERSION } from "./tui/mod.ts";
 
 // Version info

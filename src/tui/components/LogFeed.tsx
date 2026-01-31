@@ -40,9 +40,7 @@ export const LogFeed: FC = () => {
         )}
       </Box>
       <Box flexDirection="column" marginTop={0}>
-        {visible.length === 0 ? (
-          <Text dimColor>No log entries yet...</Text>
-        ) : (
+        {visible.length === 0 ? <Text dimColor>No log entries yet...</Text> : (
           visible.map((entry) => <LogEntry key={entry.id} entry={entry} />)
         )}
       </Box>

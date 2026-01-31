@@ -104,9 +104,7 @@ export const Dashboard: FC = () => {
       <Box flexDirection="column" marginBottom={1}>
         <Text bold>Players ({players.length})</Text>
         <Box marginLeft={2} flexDirection="column">
-          {players.length === 0 ? (
-            <Text dimColor>No players connected</Text>
-          ) : (
+          {players.length === 0 ? <Text dimColor>No players connected</Text> : (
             players.map((player, idx) => (
               <Box key={idx}>
                 <Text color={theme.primary}>• {player}</Text>
@@ -120,19 +118,21 @@ export const Dashboard: FC = () => {
       <Box flexDirection="column">
         <Text bold>Quick Actions</Text>
         <Box marginLeft={2} marginTop={1}>
-          {status === "offline" ? (
-            <Box>
-              <Text color={theme.success}>[S]</Text>
-              <Text>Start Server</Text>
-            </Box>
-          ) : status === "online" ? (
-            <Box>
-              <Text color={theme.error}>[X]</Text>
-              <Text>Stop Server</Text>
-            </Box>
-          ) : (
-            <Text dimColor>Server is {status}...</Text>
-          )}
+          {status === "offline"
+            ? (
+              <Box>
+                <Text color={theme.success}>[S]</Text>
+                <Text>Start Server</Text>
+              </Box>
+            )
+            : status === "online"
+            ? (
+              <Box>
+                <Text color={theme.error}>[X]</Text>
+                <Text>Stop Server</Text>
+              </Box>
+            )
+            : <Text dimColor>Server is {status}...</Text>}
         </Box>
       </Box>
     </Box>

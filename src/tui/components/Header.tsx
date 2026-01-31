@@ -76,7 +76,7 @@ export const Header: FC = () => {
             <Text dimColor>| Uptime: {formatUptime(uptime)}</Text>
           )}
           {players.length > 0 && (
-            <Text dimColor> | Players: {players.length}</Text>
+            <Text dimColor>| Players: {players.length}</Text>
           )}
         </Box>
         <Text dimColor>Valheim DSM v0.1.0</Text>

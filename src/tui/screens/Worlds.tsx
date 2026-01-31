@@ -58,9 +58,7 @@ export const Worlds: FC = () => {
 
       {/* Worlds List */}
       <Box flexDirection="column">
-        {worlds.length === 0 ? (
-          <Text dimColor>No worlds found</Text>
-        ) : (
+        {worlds.length === 0 ? <Text dimColor>No worlds found</Text> : (
           worlds.map((world, index) => {
             const isSelected = index === selectedIndex;
 
