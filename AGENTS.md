@@ -302,13 +302,13 @@ deno task start --help
 
 ### Troubleshooting Common Issues
 
-| Problem | Solution |
-|---------|----------|
-| `Module not found` | Check import paths, ensure `mod.ts` exports |
-| `JSR package not installed` | Run `deno install` or check deno.json imports |
+| Problem                         | Solution                                                      |
+| ------------------------------- | ------------------------------------------------------------- |
+| `Module not found`              | Check import paths, ensure `mod.ts` exports                   |
+| `JSR package not installed`     | Run `deno install` or check deno.json imports                 |
 | `Deno.openKv is not a function` | Add `--unstable-kv` flag or `"unstable": ["kv"]` to deno.json |
-| `Password validation failed` | Check Zod schema allows empty strings where needed |
-| `Cannot find module 'react'` | Ensure `"react": "npm:react@18"` in deno.json imports |
+| `Password validation failed`    | Check Zod schema allows empty strings where needed            |
+| `Cannot find module 'react'`    | Ensure `"react": "npm:react@18"` in deno.json imports         |
 
 ### Handoff Protocol
 

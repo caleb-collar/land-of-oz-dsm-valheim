@@ -145,12 +145,12 @@ If any check fails:
 
 Each phase has specific verification requirements:
 
-| Phase | Verification Command | Expected Result |
-|-------|---------------------|-----------------|
-| Phase 1 | `deno task start --config` | Shows configuration |
+| Phase   | Verification Command                | Expected Result      |
+| ------- | ----------------------------------- | -------------------- |
+| Phase 1 | `deno task start --config`          | Shows configuration  |
 | Phase 2 | `deno task start install --dry-run` | Shows SteamCMD steps |
-| Phase 3 | `deno task start --tui` | TUI renders |
-| Phase 4 | `deno task start --help` | Shows all commands |
+| Phase 3 | `deno task start --tui`             | TUI renders          |
+| Phase 4 | `deno task start --help`            | Shows all commands   |
 
 ### Never Complete Without
 
