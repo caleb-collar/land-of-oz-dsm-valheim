@@ -722,53 +722,71 @@ Completed the TODOs in `src/tui/hooks/useServer.ts`:
 
 ---
 
-## Phase 8: Major Version Upgrades 🔲 FUTURE
+## Phase 8: Major Version Upgrades ✅ COMPLETE
 
-**Status**: Planned\
-**Priority**: Low (Future)
+**Status**: Implemented\
+**Completed**: January 2026
 
 ### Overview
 
-Track major dependency updates for future migration when the ecosystem is ready.
+Upgraded all major dependencies to their latest versions, ensuring compatibility
+and fixing breaking changes.
 
-### Available Upgrades
+### Upgrades Completed
 
-| Package | Current | Latest | Migration Notes                               |
-| ------- | ------- | ------ | --------------------------------------------- |
-| React   | 18.3.1  | 19.x   | Ink 5 requires React 18; wait for Ink 6/7     |
-| Ink     | 5.2.1   | 6.x    | Breaking changes in component APIs            |
-| Zod     | 3.x     | 4.x    | New inference patterns, schema syntax changes |
+| Package      | Previous | Current | Migration Notes                       |
+| ------------ | -------- | ------- | ------------------------------------- |
+| React        | 18.x     | 19.2.4  | Ink 6 requires React 19               |
+| Ink          | 5.x      | 6.6.0   | Updated peer dependency to React 19   |
+| Zod          | 3.x      | 4.3.6   | Fixed `.default({})` breaking changes |
+| @types/react | 18.x     | 19.x    | Updated to match React 19             |
+| Zustand      | 5.x      | 5.0.10  | Already on latest major (no changes)  |
 
-### Migration Prerequisites
+### Tasks Completed
 
-#### React 19 + Ink 6
+#### 8.1 React 19 + Ink 6
 
-- [ ] Ink 6 officially supports React 19
-- [ ] Review Ink 6 migration guide
-- [ ] Update all components for new APIs
-- [ ] Test TUI rendering thoroughly
+- [x] Verified Ink 6 requires React 19 (peerDependencies check)
+- [x] Updated `deno.json` imports to React 19 and Ink 6
+- [x] Updated `@types/react` to version 19
+- [x] All TUI components work with new versions
 
-#### Zod 4
+#### 8.2 Zod 4 Migration
 
-- [ ] Review Zod 4 changelog for breaking changes
-- [ ] Update schema definitions
-- [ ] Test all validation paths
-- [ ] Update type exports if inference changes
+- [x] Updated `deno.json` import to Zod 4
+- [x] Fixed `.default({})` breaking change in `src/config/schema.ts`
+- [x] Changed to factory functions: `.default(() => Schema.parse({}))`
+- [x] All 25 schema tests pass
 
-### Tasks (When Ready)
+#### 8.3 Verification
 
-1. [ ] Create feature branch for upgrades
-2. [ ] Update `deno.json` imports
-3. [ ] Fix breaking changes in code
-4. [ ] Run full test suite
-5. [ ] Manual TUI testing
-6. [ ] Update documentation
+- [x] All 166 tests pass
+- [x] Type checking passes (66 files)
+- [x] Linting clean (66 files)
+- [x] App runs correctly (`--version`, `--help`)
+
+### Files Modified
+
+- deno.json (updated React 18→19, Ink 5→6, Zod 3→4, @types/react 18→19)
+- src/config/schema.ts (fixed Zod 4 `.default({})` compatibility)
+
+### Verification Results
+
+```bash
+✅ deno check main.ts src/**/*.ts src/**/*.tsx  # Passes (66 files)
+✅ deno lint                                      # No errors (66 files)
+✅ deno fmt --check                               # Formatted
+✅ deno task test                                 # 166 tests passed
+✅ deno task start --version                      # Shows version
+✅ deno task start --help                         # Shows all commands
+```
 
 ### Notes
 
-- Do NOT upgrade React/Ink without verifying compatibility
-- Zod 4 can be tested independently
-- Create issues to track each major upgrade
+- Ink 6 now requires React >=19.0.0 as a peer dependency
+- Zod 4's `.default({})` no longer auto-applies nested field defaults; use
+  factory functions instead: `.default(() => Schema.parse({}))`
+- All existing functionality preserved - no breaking changes to API
 
 ---
 

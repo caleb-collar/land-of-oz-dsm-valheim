@@ -14,16 +14,18 @@
       "groupSlug": "all-minor-patch"
     },
     {
-      "description": "Disable major updates for React/Ink (wait for Ink 6)",
+      "description": "React/Ink major updates require careful testing",
       "matchPackageNames": ["react", "ink"],
       "matchUpdateTypes": ["major"],
-      "enabled": false
+      "automerge": false,
+      "labels": ["dependencies", "breaking-change"]
     },
     {
-      "description": "Disable major Zod updates (breaking changes)",
+      "description": "Zod major updates require schema migration",
       "matchPackageNames": ["zod"],
       "matchUpdateTypes": ["major"],
-      "enabled": false
+      "automerge": false,
+      "labels": ["dependencies", "breaking-change"]
     },
     {
       "description": "JSR standard library updates",

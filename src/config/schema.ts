@@ -120,7 +120,7 @@ export const ServerConfigSchema = z.object({
 
   // Difficulty
   preset: PresetSchema.optional(),
-  modifiers: ModifiersSchema.default({}),
+  modifiers: ModifiersSchema.default(() => ModifiersSchema.parse({})),
 });
 
 // Watchdog configuration
@@ -157,10 +157,10 @@ export const RconConfigSchema = z.object({
 // Complete app configuration
 export const AppConfigSchema = z.object({
   version: z.number().int().default(1),
-  server: ServerConfigSchema.default({}),
-  watchdog: WatchdogConfigSchema.default({}),
-  tui: TuiConfigSchema.default({}),
-  rcon: RconConfigSchema.default({}),
+  server: ServerConfigSchema.default(() => ServerConfigSchema.parse({})),
+  watchdog: WatchdogConfigSchema.default(() => WatchdogConfigSchema.parse({})),
+  tui: TuiConfigSchema.default(() => TuiConfigSchema.parse({})),
+  rcon: RconConfigSchema.default(() => RconConfigSchema.parse({})),
   worlds: z.array(WorldSchema).default([]),
   activeWorld: z.string().nullable().default(null),
   steamcmdAutoInstall: z.boolean().default(true),
