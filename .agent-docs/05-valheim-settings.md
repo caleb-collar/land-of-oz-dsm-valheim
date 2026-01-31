@@ -2,7 +2,8 @@
 
 ## Overview
 
-This document covers all Valheim dedicated server settings, their CLI arguments, and how they're exposed in the DSM.
+This document covers all Valheim dedicated server settings, their CLI arguments,
+and how they're exposed in the DSM.
 
 ## Command Line Arguments
 
@@ -96,7 +97,7 @@ The `-modifier` argument accepts key-value pairs:
 
 ```typescript
 // src/valheim/args.ts
-import type { ServerConfig, Modifiers } from "../config/schema.ts";
+import type { Modifiers, ServerConfig } from "../config/schema.ts";
 
 export function buildServerArgs(config: ServerConfig): string[] {
   const args: string[] = [];
@@ -203,8 +204,8 @@ Valheim worlds consist of two files:
 
 ```typescript
 // src/valheim/worlds.ts
-import { join, basename } from "@std/path";
-import { ensureDir, copy, exists } from "@std/fs";
+import { basename, join } from "@std/path";
+import { copy, ensureDir, exists } from "@std/fs";
 import { getPlatform } from "../utils/platform.ts";
 
 export type WorldInfo = {
@@ -535,12 +536,12 @@ import { Box, Text, useInput } from "ink";
 import SelectInput from "ink-select-input";
 import { useConfig } from "../hooks/useConfig.ts";
 import {
-  ValheimSettings,
-  PresetOptions,
   CombatOptions,
   DeathPenaltyOptions,
-  ResourceOptions,
   PortalOptions,
+  PresetOptions,
+  ResourceOptions,
+  ValheimSettings,
 } from "../../valheim/settings.ts";
 
 type SettingsCategory = "server" | "difficulty" | "saves";
@@ -703,27 +704,27 @@ export async function clearList(
 // src/valheim/mod.ts
 export { buildServerArgs } from "./args.ts";
 export {
-  listWorlds,
-  importWorld,
-  exportWorld,
   deleteWorld,
-  getWorldInfo,
+  exportWorld,
   getDefaultWorldsDir,
+  getWorldInfo,
+  importWorld,
+  listWorlds,
   type WorldInfo,
 } from "./worlds.ts";
 export {
-  ValheimSettings,
-  PresetOptions,
   CombatOptions,
   DeathPenaltyOptions,
-  ResourceOptions,
   PortalOptions,
+  PresetOptions,
+  ResourceOptions,
+  ValheimSettings,
 } from "./settings.ts";
 export {
-  readList,
   addToList,
-  removeFromList,
   clearList,
   type ListType,
+  readList,
+  removeFromList,
 } from "./lists.ts";
 ```

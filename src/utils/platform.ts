@@ -28,8 +28,8 @@ export function getHomeDir(): string {
   if (platform === "windows") {
     return (
       Deno.env.get("USERPROFILE") ??
-      Deno.env.get("HOME") ??
-      "C:\\Users\\Default"
+        Deno.env.get("HOME") ??
+        "C:\\Users\\Default"
     );
   }
   return Deno.env.get("HOME") ?? "/home";

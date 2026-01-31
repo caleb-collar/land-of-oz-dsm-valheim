@@ -2,7 +2,9 @@
 
 ## Overview
 
-The TUI is built with Ink 5.x (React for terminals) using a three-zone layout. This document covers component structure, state management, and rendering patterns.
+The TUI is built with Ink 5.x (React for terminals) using a three-zone layout.
+This document covers component structure, state management, and rendering
+patterns.
 
 ## Layout Structure
 
@@ -395,7 +397,7 @@ export const LogFeed: FC = () => {
             {" "}
             [{entry.level.toUpperCase()}]
           </Text>
-          <Text> {entry.message}</Text>
+          <Text>{entry.message}</Text>
         </Box>
       ))}
     </Box>
@@ -436,9 +438,9 @@ export const Menu: FC = () => {
       {menuItems.map((item) => (
         <Box key={item.key}>
           <Text
-            color={
-              activeScreen === item.screen ? theme.primary : theme.secondary
-            }
+            color={activeScreen === item.screen
+              ? theme.primary
+              : theme.secondary}
             bold={activeScreen === item.screen}
           >
             [{item.key}] {item.label}
@@ -532,15 +534,17 @@ export function useLogs(logStream: AsyncIterable<string>) {
 function parseLogLine(line: string) {
   // Parse Valheim log format
   if (line.includes("Error")) return { level: "error" as const, message: line };
-  if (line.includes("Warning"))
+  if (line.includes("Warning")) {
     return { level: "warn" as const, message: line };
+  }
   return { level: "info" as const, message: line };
 }
 ```
 
 ## Animation with ASCII Motion
 
-The header animation is created using ASCII Motion MCP tools and exported as JSON:
+The header animation is created using ASCII Motion MCP tools and exported as
+JSON:
 
 ```json
 // assets/ascii/header.json

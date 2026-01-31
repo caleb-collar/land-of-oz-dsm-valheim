@@ -2,7 +2,9 @@
 
 ## Project Overview
 
-This is **Land of OZ - Dedicated Server Manager for Valheim**, a Deno-based TUI application for managing Valheim dedicated servers. The project uses Ink (React for terminals) with ASCII Motion animations.
+This is **Land of OZ - Dedicated Server Manager for Valheim**, a Deno-based TUI
+application for managing Valheim dedicated servers. The project uses Ink (React
+for terminals) with ASCII Motion animations.
 
 ## Quick Reference
 
@@ -92,13 +94,14 @@ import { assertEquals } from "@std/assert";
 
 // npm packages via npm: specifier
 import React from "npm:react";
-import { render, Box, Text } from "npm:ink";
+import { Box, render, Text } from "npm:ink";
 import { create } from "npm:zustand";
 ```
 
 ## ASCII Motion MCP Tools
 
-You have access to ASCII Motion MCP tools for creating animated ASCII art. Use these for:
+You have access to ASCII Motion MCP tools for creating animated ASCII art. Use
+these for:
 
 - The animated header/logo
 - Loading spinners

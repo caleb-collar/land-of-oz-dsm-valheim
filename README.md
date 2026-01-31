@@ -4,7 +4,8 @@
 
 - This software is a dedicated server manager (DSM) for Valheim.
 - The Valheim DSM is part of the Land of Oz series of software.
-- This software is to provide an easy to use container and virtualization free dedicate server hosting experience.
+- This software is to provide an easy to use container and virtualization free
+  dedicate server hosting experience.
 
 ## Details
 
@@ -12,30 +13,43 @@
 - The DSM program is a rich featured management tool with a Yoga powered TUI.
   - The TUI uses Ink which is a React flavored TUI framework
   - The motion in the TUI is accelerated by the ASCII Motion app.
-    - Any AI agent working in this repo has access to the ASCII Motion MCP server tooling for generating beautiful and efficient animated ascii based art.
+    - Any AI agent working in this repo has access to the ASCII Motion MCP
+      server tooling for generating beautiful and efficient animated ascii based
+      art.
 
 ## Features
 
 ### Key features are as follows, all features have configuration available in the TUI:
 
 - Windows, Mac, and Linux, task generation.
-  - You may use the CLI with flags or CLI TUI to generate a task that auto runs with various options to keep the dedicated server running.
+  - You may use the CLI with flags or CLI TUI to generate a task that auto runs
+    with various options to keep the dedicated server running.
 - Rich TUI based server setting configuration.
-  - All of Valheim's dedicated server settings are accessible in properly ordered and organized in modern menus and sub menus.
-- Automatic dependency installation if you opt in (will auto check and install steamcmd etc when run if you opt for this)
+  - All of Valheim's dedicated server settings are accessible in properly
+    ordered and organized in modern menus and sub menus.
+- Automatic dependency installation if you opt in (will auto check and install
+  steamcmd etc when run if you opt for this)
 - Uses steamcmd to install and auto update Valheim when there are updates.
 - Allows runtime server/admin commands to be run from the TUI.
 - Watchdog to ensure that if the server crashes, it is auto restarted.
 - Import existing save files (.db, .fwl pairs) and run them.
-- Persistent configuration (settings, active world, etc persist between server and system restarts)
+- Persistent configuration (settings, active world, etc persist between server
+  and system restarts)
 
 ## TUI
 
-This TUI (Text User Interface) for Valheim DSM: Land of Oz is designed for high-efficiency server administration with a modern, animated "cyber-viking" aesthetic. It prioritizes real-time observability while keeping management tools front and center.
-Below is a generalized mockup of the DSM TUI built using React via Ink. Motion is created using ASCII Motion.
+This TUI (Text User Interface) for Valheim DSM: Land of Oz is designed for
+high-efficiency server administration with a modern, animated "cyber-viking"
+aesthetic. It prioritizes real-time observability while keeping management tools
+front and center. Below is a generalized mockup of the DSM TUI built using React
+via Ink. Motion is created using ASCII Motion.
 
-> The Valheim DSM: Land of Oz interface utilizes a structured three-zone TUI architecture designed for maximum administrative visibility. A bold animated ASCII header anchors the top of the screen, followed by a responsive layout that separates active management from passive monitoring. Where possible, the system uses Ink to display data (realtime active react components). There is a real-time log feed with color-coded event markers.
-> ![TUI Mockup](image.png)
+> The Valheim DSM: Land of Oz interface utilizes a structured three-zone TUI
+> architecture designed for maximum administrative visibility. A bold animated
+> ASCII header anchors the top of the screen, followed by a responsive layout
+> that separates active management from passive monitoring. Where possible, the
+> system uses Ink to display data (realtime active react components). There is a
+> real-time log feed with color-coded event markers. ![TUI Mockup](image.png)
 
 ---
 
@@ -156,7 +170,8 @@ The terminal user interface is built with Ink (React for terminals):
 
 - **Three-Zone Layout**: Header, Main Content, Log Feed
 - **Zustand Store**: Centralized state for server status, settings, logs
-- **Component Library**: Reusable, themed components with cyan/orange/green palette
+- **Component Library**: Reusable, themed components with cyan/orange/green
+  palette
 - **Keyboard Navigation**: Full keyboard control with vim-style bindings
 
 #### 3. Server Process Management (`src/server/`)

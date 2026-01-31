@@ -9,8 +9,14 @@ export * from "./utils/mod.ts";
 // Configuration
 export * from "./config/mod.ts";
 
+// SteamCMD
+export * from "./steamcmd/mod.ts";
+
+// Server management
+export * from "./server/mod.ts";
+
 // TUI (placeholder)
-export { TUI_VERSION, launchTui } from "./tui/mod.ts";
+export { launchTui, TUI_VERSION } from "./tui/mod.ts";
 
 // Version info
 export const VERSION = "0.1.0";

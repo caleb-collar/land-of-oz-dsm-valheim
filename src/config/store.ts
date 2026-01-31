@@ -5,7 +5,7 @@
 
 import { join } from "@std/path";
 import { ensureDir } from "@std/fs";
-import { AppConfigSchema, type AppConfig, type World } from "./schema.ts";
+import { type AppConfig, AppConfigSchema, type World } from "./schema.ts";
 import { defaultConfig } from "./defaults.ts";
 import { getAppConfigDir } from "../utils/platform.ts";
 

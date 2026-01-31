@@ -2,7 +2,9 @@
 
 ## Overview
 
-Configuration is stored using Deno KV for persistent key-value storage, with Zod schemas for validation. This enables type-safe configuration with automatic persistence.
+Configuration is stored using Deno KV for persistent key-value storage, with Zod
+schemas for validation. This enables type-safe configuration with automatic
+persistence.
 
 ## Storage Architecture
 
@@ -240,7 +242,7 @@ export const defaultConfig: AppConfig = {
 // src/config/store.ts
 import { join } from "@std/path";
 import { ensureDir } from "@std/fs";
-import { AppConfigSchema, type AppConfig } from "./schema.ts";
+import { type AppConfig, AppConfigSchema } from "./schema.ts";
 import { defaultConfig } from "./defaults.ts";
 import { getConfigDir } from "../utils/platform.ts";
 
@@ -362,33 +364,33 @@ export async function setActiveWorld(name: string | null): Promise<void> {
 ```typescript
 // src/config/mod.ts
 export {
-  AppConfigSchema,
-  ServerConfigSchema,
-  WatchdogConfigSchema,
-  TuiConfigSchema,
-  WorldSchema,
-  PresetSchema,
   type AppConfig,
-  type ServerConfig,
-  type WatchdogConfig,
-  type TuiConfig,
-  type World,
-  type Preset,
+  AppConfigSchema,
   type Modifiers,
+  type Preset,
+  PresetSchema,
+  type ServerConfig,
+  ServerConfigSchema,
+  type TuiConfig,
+  TuiConfigSchema,
+  type WatchdogConfig,
+  WatchdogConfigSchema,
+  type World,
+  WorldSchema,
 } from "./schema.ts";
 
 export { defaultConfig } from "./defaults.ts";
 
 export {
+  addWorld,
+  closeConfig,
   loadConfig,
+  removeWorld,
+  resetConfig,
   saveConfig,
+  setActiveWorld,
   updateConfig,
   updateServerConfig,
-  resetConfig,
-  closeConfig,
-  addWorld,
-  removeWorld,
-  setActiveWorld,
 } from "./store.ts";
 ```
 
@@ -396,8 +398,8 @@ export {
 
 ```typescript
 // src/tui/hooks/useConfig.ts
-import { useEffect, useState, useCallback } from "react";
-import { loadConfig, updateConfig, type AppConfig } from "../../config/mod.ts";
+import { useCallback, useEffect, useState } from "react";
+import { type AppConfig, loadConfig, updateConfig } from "../../config/mod.ts";
 import { useStore } from "../store.ts";
 
 export function useConfig() {
@@ -525,19 +527,21 @@ export const SettingsPanel: FC = () => {
               {field.label}:
             </Text>
             <Box marginLeft={1}>
-              {editing && selectedIndex === index ? (
-                <TextInput
-                  value={editValue}
-                  onChange={setEditValue}
-                  onSubmit={handleEditSubmit}
-                />
-              ) : (
-                <Text dimColor>
-                  {field.type === "boolean"
-                    ? config[field.key as keyof typeof config] ? "Yes" : "No"
-                    : String(config[field.key as keyof typeof config] ?? "")}
-                </Text>
-              )}
+              {editing && selectedIndex === index
+                ? (
+                  <TextInput
+                    value={editValue}
+                    onChange={setEditValue}
+                    onSubmit={handleEditSubmit}
+                  />
+                )
+                : (
+                  <Text dimColor>
+                    {field.type === "boolean"
+                      ? config[field.key as keyof typeof config] ? "Yes" : "No"
+                      : String(config[field.key as keyof typeof config] ?? "")}
+                  </Text>
+                )}
             </Box>
           </Box>
         ))}
@@ -590,7 +594,7 @@ export function migrateConfig(config: Record<string, unknown>): AppConfig {
 
 ```typescript
 // src/cli/commands/config.ts
-import { loadConfig, saveConfig, resetConfig } from "../../config/mod.ts";
+import { loadConfig, resetConfig, saveConfig } from "../../config/mod.ts";
 
 export async function configCommand(args: {
   get?: string;

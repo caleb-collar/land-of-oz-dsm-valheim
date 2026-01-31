@@ -2,11 +2,14 @@
 
 ## Overview
 
-SteamCMD is used to download and update the Valheim dedicated server. This module handles automatic installation of SteamCMD itself, and manages Valheim installation/updates.
+SteamCMD is used to download and update the Valheim dedicated server. This
+module handles automatic installation of SteamCMD itself, and manages Valheim
+installation/updates.
 
 ## SteamCMD Basics
 
-- **Anonymous Login**: Valheim dedicated server is free and doesn't require Steam authentication
+- **Anonymous Login**: Valheim dedicated server is free and doesn't require
+  Steam authentication
 - **App ID**: Valheim Dedicated Server = `896660`
 - **Platforms**: Windows, macOS (limited), Linux
 
@@ -30,8 +33,8 @@ export function getSteamPaths(): SteamPaths {
 
   switch (platform) {
     case "windows": {
-      const localAppData =
-        Deno.env.get("LOCALAPPDATA") ?? join(home, "AppData", "Local");
+      const localAppData = Deno.env.get("LOCALAPPDATA") ??
+        join(home, "AppData", "Local");
       const steamcmdDir = join(localAppData, "steamcmd");
       return {
         steamcmdDir,
@@ -462,17 +465,17 @@ export async function getInstalledVersion(): Promise<string | null> {
 // src/steamcmd/mod.ts
 export {
   getSteamPaths,
+  getValheimExecutable,
   isSteamCmdInstalled,
   isValheimInstalled,
-  getValheimExecutable,
 } from "./paths.ts";
-export { installSteamCmd, type InstallProgress } from "./installer.ts";
+export { type InstallProgress, installSteamCmd } from "./installer.ts";
 export {
-  installValheim,
-  updateValheim,
   checkForUpdates,
   getInstalledVersion,
+  installValheim,
   type UpdateStatus,
+  updateValheim,
 } from "./updater.ts";
 ```
 
@@ -481,10 +484,10 @@ export {
 ```typescript
 // src/cli/commands/install.ts
 import {
-  isSteamCmdInstalled,
   installSteamCmd,
-  isValheimInstalled,
   installValheim,
+  isSteamCmdInstalled,
+  isValheimInstalled,
 } from "../../steamcmd/mod.ts";
 
 export async function installCommand(options: {
@@ -538,7 +541,12 @@ export async function installCommand(options: {
 // In Settings screen or dedicated Install screen
 import { FC, useState } from "react";
 import { Box, Text } from "ink";
-import { isSteamCmdInstalled, installSteamCmd, isValheimInstalled, installValheim } from "../../steamcmd/mod.ts";
+import {
+  installSteamCmd,
+  installValheim,
+  isSteamCmdInstalled,
+  isValheimInstalled,
+} from "../../steamcmd/mod.ts";
 
 export const InstallPanel: FC = () => {
   const [status, setStatus] = useState<string>("Checking...");
@@ -571,7 +579,10 @@ export const InstallPanel: FC = () => {
       <Text>{status}</Text>
       {installing && (
         <Box>
-          <Text>[{"█".repeat(Math.floor(progress / 5))}{"░".repeat(20 - Math.floor(progress / 5))}] {progress}%</Text>
+          <Text>
+            [{"█".repeat(Math.floor(progress / 5))}
+            {"░".repeat(20 - Math.floor(progress / 5))}] {progress}%
+          </Text>
         </Box>
       )}
     </Box>

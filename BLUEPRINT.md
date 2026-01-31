@@ -2,7 +2,9 @@
 
 ## Land of OZ - Valheim Dedicated Server Manager
 
-This document provides a phased implementation plan for AI agents working on this project. Each phase builds on the previous one, with clear tasks, verification steps, and completion criteria.
+This document provides a phased implementation plan for AI agents working on
+this project. Each phase builds on the previous one, with clear tasks,
+verification steps, and completion criteria.
 
 ---
 
@@ -25,7 +27,7 @@ Before starting any phase, read these files for context:
 
 ## Phase 1: Foundation ✅ COMPLETE
 
-**Status**: Implemented  
+**Status**: Implemented\
 **Completed**: January 2026
 
 ### Tasks Completed
@@ -102,18 +104,20 @@ Before starting any phase, read these files for context:
 
 ## Phase 2: Core Server Management ⬜ NOT STARTED
 
-**Status**: Ready to implement  
+**Status**: Ready to implement\
 **Dependencies**: Phase 1 ✅
 
 ### Overview
 
-Implement SteamCMD integration and Valheim process management. This phase enables installing/updating Valheim and running the dedicated server.
+Implement SteamCMD integration and Valheim process management. This phase
+enables installing/updating Valheim and running the dedicated server.
 
 ### Tasks
 
 #### 2.1 Create SteamCMD Module (`src/steamcmd/`)
 
-Create the following files (see `.agent-docs/03-steamcmd-integration.md` for implementation details):
+Create the following files (see `.agent-docs/03-steamcmd-integration.md` for
+implementation details):
 
 ```
 src/steamcmd/
@@ -144,7 +148,8 @@ src/steamcmd/
 
 #### 2.2 Create Server Module (`src/server/`)
 
-Create the following files (see `.agent-docs/02-process-management.md` for implementation details):
+Create the following files (see `.agent-docs/02-process-management.md` for
+implementation details):
 
 ```
 src/server/
@@ -234,12 +239,14 @@ deno task start --help
 
 ## Phase 3: TUI Development ⬜ NOT STARTED
 
-**Status**: Blocked by Phase 2  
+**Status**: Blocked by Phase 2\
 **Dependencies**: Phase 1 ✅, Phase 2 ⬜
 
 ### Overview
 
-Build the terminal user interface using Ink (React for terminals) with Zustand state management. The TUI has a three-zone layout: Header, Main Content, and Log Feed.
+Build the terminal user interface using Ink (React for terminals) with Zustand
+state management. The TUI has a three-zone layout: Header, Main Content, and Log
+Feed.
 
 ### Tasks
 
@@ -354,12 +361,13 @@ deno task start --tui
 
 ## Phase 4: CLI & Polish ⬜ NOT STARTED
 
-**Status**: Blocked by Phase 3  
+**Status**: Blocked by Phase 3\
 **Dependencies**: Phase 1 ✅, Phase 2 ⬜, Phase 3 ⬜
 
 ### Overview
 
-Complete CLI functionality, add Valheim-specific features, and polish the application.
+Complete CLI functionality, add Valheim-specific features, and polish the
+application.
 
 ### Tasks
 
@@ -451,7 +459,7 @@ deno task start --tui
 
 ## Phase 5: Testing & Compilation ⬜ NOT STARTED
 
-**Status**: Blocked by Phase 4  
+**Status**: Blocked by Phase 4\
 **Dependencies**: All previous phases
 
 ### Overview
@@ -536,17 +544,11 @@ Implemented SteamCMD integration and Valheim process management.
 ### Verification
 ```
 
-$ deno check main.ts src/\*_/_.ts
-Check main.ts
-Check src/steamcmd/mod.ts
-...
-$ deno lint
-Checked 15 files
-$ deno task start --version
-Land of OZ - Valheim DSM v0.1.0
+$ deno check main.ts src/\*_/_.ts Check main.ts Check src/steamcmd/mod.ts ... $
+deno lint Checked 15 files $ deno task start --version Land of OZ - Valheim DSM
+v0.1.0
 
 ```
-
 ### Next Steps
 Phase 3: TUI Development - Start with Zustand store setup
 

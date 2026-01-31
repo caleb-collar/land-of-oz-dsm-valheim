@@ -2,7 +2,8 @@
 
 ## Overview
 
-This document covers managing the Valheim dedicated server process, including spawning, monitoring, watchdog functionality, and graceful shutdown.
+This document covers managing the Valheim dedicated server process, including
+spawning, monitoring, watchdog functionality, and graceful shutdown.
 
 ## Process Lifecycle
 
@@ -139,7 +140,7 @@ export class ValheimProcess {
       // Wait for exit or timeout
       const exitPromise = this.process.status;
       const timeoutPromise = new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), timeout),
+        setTimeout(() => resolve(null), timeout)
       );
 
       const result = await Promise.race([exitPromise, timeoutPromise]);
@@ -309,10 +310,10 @@ export class ValheimProcess {
 ```typescript
 // src/server/watchdog.ts
 import {
-  ValheimProcess,
+  ProcessEvents,
   ProcessState,
   ServerConfig,
-  ProcessEvents,
+  ValheimProcess,
 } from "./process.ts";
 
 export type WatchdogConfig = {
@@ -403,8 +404,7 @@ export class Watchdog {
     }
 
     // Calculate delay with exponential backoff
-    const delay =
-      this.config.restartDelay *
+    const delay = this.config.restartDelay *
       Math.pow(this.config.backoffMultiplier, this.restartCount - 1);
 
     this.onLog(
