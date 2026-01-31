@@ -3,7 +3,6 @@
  * Main entry point
  */
 
-import { type AppConfig, closeConfig, loadConfig } from "./src/config/mod.ts";
 import {
   configCommand,
   getHelpText,
@@ -14,9 +13,10 @@ import {
   startCommand,
   stopCommand,
   worldsCommand,
-} from "./src/cli/mod.ts";
-import { createLogger, getPlatform, info } from "./src/utils/mod.ts";
-import { APP_NAME, launchTui, VERSION } from "./src/mod.ts";
+} from "./src/cli/mod.js";
+import { type AppConfig, closeConfig, loadConfig } from "./src/config/mod.js";
+import { APP_NAME, VERSION, launchTui } from "./src/mod.js";
+import { createLogger, getPlatform, info } from "./src/utils/mod.js";
 
 const log = createLogger("main");
 
@@ -26,14 +26,14 @@ const log = createLogger("main");
 function showVersion(): void {
   console.log(`${APP_NAME} v${VERSION}`);
   console.log(`Platform: ${getPlatform()}`);
-  console.log(`Runtime: Deno ${Deno.version.deno}`);
+  console.log(`Runtime: Node.js ${process.version}`);
 }
 
 /**
  * Main application entry point
  */
 async function main(): Promise<void> {
-  const args = parseArgs(Deno.args);
+  const args = parseArgs(process.argv.slice(2));
 
   // Handle version command/flag
   if (args.command === "version") {
@@ -69,9 +69,9 @@ async function main(): Promise<void> {
   } catch (error) {
     log.error("Failed to load configuration", { error: String(error) });
     console.error(
-      "Error: Failed to load configuration. Please check file permissions.",
+      "Error: Failed to load configuration. Please check file permissions."
     );
-    Deno.exit(1);
+    process.exit(1);
   }
 
   try {
@@ -112,7 +112,7 @@ async function main(): Promise<void> {
 
       case null:
         // No command - default to TUI if no args, or show help
-        if (Deno.args.length === 0) {
+        if (process.argv.slice(2).length === 0) {
           launchTui();
           return;
         }
@@ -124,10 +124,8 @@ async function main(): Promise<void> {
   }
 }
 
-// Run main if this is the entry point
-if (import.meta.main) {
-  main().catch((error) => {
-    console.error("Fatal error:", error);
-    Deno.exit(1);
-  });
-}
+// Run main
+main().catch((error) => {
+  console.error("Fatal error:", error);
+  process.exit(1);
+});

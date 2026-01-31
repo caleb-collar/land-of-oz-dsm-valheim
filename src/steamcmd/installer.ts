@@ -3,9 +3,12 @@
  * Downloads and extracts SteamCMD for the current platform
  */
 
-import { ensureDir } from "@std/fs";
-import { getPlatform } from "../utils/platform.ts";
-import { getSteamPaths } from "./paths.ts";
+import { spawn } from "node:child_process";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { getPlatform } from "../utils/platform.js";
+import { getSteamPaths } from "./paths.js";
 
 /** Download URLs for SteamCMD by platform */
 const DOWNLOAD_URLS = {
@@ -40,7 +43,7 @@ export type ProgressCallback = (progress: InstallProgress) => void;
  * @throws Error if download or extraction fails
  */
 export async function installSteamCmd(
-  onProgress?: ProgressCallback,
+  onProgress?: ProgressCallback
 ): Promise<void> {
   const platform = getPlatform();
   const { steamcmdDir } = getSteamPaths();
@@ -50,7 +53,7 @@ export async function installSteamCmd(
   };
 
   // Ensure directory exists
-  await ensureDir(steamcmdDir);
+  await fs.mkdir(steamcmdDir, { recursive: true });
 
   report({
     stage: "downloading",
@@ -93,13 +96,8 @@ export async function installSteamCmd(
     }
   }
 
-  // Combine chunks into single array
-  const data = new Uint8Array(downloaded);
-  let offset = 0;
-  for (const chunk of chunks) {
-    data.set(chunk, offset);
-    offset += chunk.length;
-  }
+  // Combine chunks into single buffer
+  const data = Buffer.concat(chunks);
 
   report({
     stage: "extracting",
@@ -123,7 +121,7 @@ export async function installSteamCmd(
   // On Linux/macOS, make the script executable
   if (platform !== "windows") {
     const { steamcmd } = getSteamPaths();
-    await Deno.chmod(steamcmd, 0o755);
+    await fs.chmod(steamcmd, 0o755);
   }
 
   // Run initial update to ensure SteamCMD is ready
@@ -146,29 +144,35 @@ export async function installSteamCmd(
  * @param data ZIP file contents
  * @param targetDir Target extraction directory
  */
-async function extractZip(data: Uint8Array, targetDir: string): Promise<void> {
+async function extractZip(data: Buffer, targetDir: string): Promise<void> {
   // Write temp file
-  const tempPath = await Deno.makeTempFile({ suffix: ".zip" });
-  await Deno.writeFile(tempPath, data);
+  const tempPath = path.join(os.tmpdir(), `steamcmd-${Date.now()}.zip`);
+  await fs.writeFile(tempPath, data);
 
   try {
     // Use PowerShell to extract on Windows
-    const command = new Deno.Command("powershell", {
-      args: [
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn("powershell", [
         "-NoProfile",
         "-Command",
         `Expand-Archive -Path "${tempPath}" -DestinationPath "${targetDir}" -Force`,
-      ],
+      ]);
+
+      let stderr = "";
+      proc.stderr.on("data", (chunk) => {
+        stderr += chunk;
+      });
+      proc.on("close", (code) => {
+        if (code !== 0) {
+          reject(new Error(`Failed to extract ZIP archive: ${stderr}`));
+        } else {
+          resolve();
+        }
+      });
+      proc.on("error", reject);
     });
-
-    const { code, stderr } = await command.output();
-
-    if (code !== 0) {
-      const errorMessage = new TextDecoder().decode(stderr);
-      throw new Error(`Failed to extract ZIP archive: ${errorMessage}`);
-    }
   } finally {
-    await Deno.remove(tempPath);
+    await fs.unlink(tempPath);
   }
 }
 
@@ -177,28 +181,31 @@ async function extractZip(data: Uint8Array, targetDir: string): Promise<void> {
  * @param data TAR.GZ file contents
  * @param targetDir Target extraction directory
  */
-async function extractTarGz(
-  data: Uint8Array,
-  targetDir: string,
-): Promise<void> {
+async function extractTarGz(data: Buffer, targetDir: string): Promise<void> {
   // Write temp file
-  const tempPath = await Deno.makeTempFile({ suffix: ".tar.gz" });
-  await Deno.writeFile(tempPath, data);
+  const tempPath = path.join(os.tmpdir(), `steamcmd-${Date.now()}.tar.gz`);
+  await fs.writeFile(tempPath, data);
 
   try {
     // Use tar to extract
-    const command = new Deno.Command("tar", {
-      args: ["-xzf", tempPath, "-C", targetDir],
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn("tar", ["-xzf", tempPath, "-C", targetDir]);
+
+      let stderr = "";
+      proc.stderr.on("data", (chunk) => {
+        stderr += chunk;
+      });
+      proc.on("close", (code) => {
+        if (code !== 0) {
+          reject(new Error(`Failed to extract TAR.GZ archive: ${stderr}`));
+        } else {
+          resolve();
+        }
+      });
+      proc.on("error", reject);
     });
-
-    const { code, stderr } = await command.output();
-
-    if (code !== 0) {
-      const errorMessage = new TextDecoder().decode(stderr);
-      throw new Error(`Failed to extract TAR.GZ archive: ${errorMessage}`);
-    }
   } finally {
-    await Deno.remove(tempPath);
+    await fs.unlink(tempPath);
   }
 }
 
@@ -208,18 +215,20 @@ async function extractTarGz(
 async function runSteamCmdUpdate(): Promise<void> {
   const { steamcmd } = getSteamPaths();
 
-  const command = new Deno.Command(steamcmd, {
-    args: ["+quit"],
-    stdout: "null",
-    stderr: "null",
+  await new Promise<void>((resolve, reject) => {
+    const proc = spawn(steamcmd, ["+quit"], {
+      stdio: ["ignore", "ignore", "ignore"],
+    });
+
+    proc.on("close", (code) => {
+      // SteamCMD may return non-zero on first run, that's expected
+      // as long as it creates the required files
+      if (code !== 0 && code !== 7) {
+        // Code 7 is "no updates available" which is fine
+        console.warn(`SteamCMD initial update returned code ${code}`);
+      }
+      resolve();
+    });
+    proc.on("error", reject);
   });
-
-  const { code } = await command.output();
-
-  // SteamCMD may return non-zero on first run, that's expected
-  // as long as it creates the required files
-  if (code !== 0 && code !== 7) {
-    // Code 7 is "no updates available" which is fine
-    console.warn(`SteamCMD initial update returned code ${code}`);
-  }
 }

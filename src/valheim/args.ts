@@ -3,7 +3,7 @@
  * Converts configuration into CLI arguments for the Valheim dedicated server
  */
 
-import type { Modifiers, ServerConfig } from "../config/schema.ts";
+import type { Modifiers, ServerConfig } from "../config/schema.js";
 
 /**
  * Builds command line arguments from server configuration

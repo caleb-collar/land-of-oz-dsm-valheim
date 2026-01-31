@@ -100,7 +100,7 @@ function log(
   level: LogLevel,
   message: string,
   data?: Record<string, unknown>,
-  source?: string,
+  source?: string
 ): LogEntry {
   const entry: LogEntry = {
     timestamp: new Date(),
@@ -131,7 +131,7 @@ function log(
  */
 export function debug(
   message: string,
-  data?: Record<string, unknown>,
+  data?: Record<string, unknown>
 ): LogEntry {
   return log("debug", message, data);
 }
@@ -141,7 +141,7 @@ export function debug(
  */
 export function info(
   message: string,
-  data?: Record<string, unknown>,
+  data?: Record<string, unknown>
 ): LogEntry {
   return log("info", message, data);
 }
@@ -151,7 +151,7 @@ export function info(
  */
 export function warn(
   message: string,
-  data?: Record<string, unknown>,
+  data?: Record<string, unknown>
 ): LogEntry {
   return log("warn", message, data);
 }
@@ -161,7 +161,7 @@ export function warn(
  */
 export function error(
   message: string,
-  data?: Record<string, unknown>,
+  data?: Record<string, unknown>
 ): LogEntry {
   return log("error", message, data);
 }
@@ -207,7 +207,7 @@ export function parseValheimLog(line: string): LogEntry {
   const data: Record<string, unknown> = {};
 
   const playerConnectMatch = message.match(
-    /Got character ZDOID from (.+) : (\d+:\d+)/,
+    /Got character ZDOID from (.+) : (\d+:\d+)/
   );
   if (playerConnectMatch) {
     data.event = "player_connect";

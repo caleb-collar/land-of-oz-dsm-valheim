@@ -91,7 +91,7 @@ export const ServerConfigSchema = z.object({
     .max(64, "Password too long")
     .refine(
       (val) => val === "" || val.length >= 5,
-      "Password must be empty or at least 5 characters",
+      "Password must be empty or at least 5 characters"
     )
     .default(""),
 

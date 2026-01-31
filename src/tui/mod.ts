@@ -3,26 +3,26 @@
  * Ink-based terminal user interface
  */
 
+import { withFullScreen } from "fullscreen-ink";
 import React from "react";
-import { render } from "ink";
-import { App } from "./App.tsx";
+import { App } from "./App.js";
 
 // Version
 export const TUI_VERSION = "0.1.0";
 
 // Core exports
-export { App } from "./App.tsx";
-export { useStore } from "./store.ts";
+export { App } from "./App.js";
+export { useStore } from "./store.js";
 export type {
   LogEntry,
   LogLevel,
   Screen,
   ServerStatus,
   Store,
-} from "./store.ts";
+} from "./store.js";
 
 // Theme
-export { getStatusColor, logColors, theme } from "./theme.ts";
+export { getStatusColor, logColors, theme } from "./theme.js";
 
 // Components
 export {
@@ -34,10 +34,10 @@ export {
   MenuItem,
   Modal,
   StatusBar,
-} from "./components/mod.ts";
+} from "./components/mod.js";
 
 // Screens
-export { Console, Dashboard, Settings, Worlds } from "./screens/mod.ts";
+export { Console, Dashboard, Settings, Worlds } from "./screens/mod.js";
 
 // Hooks
 export {
@@ -46,20 +46,18 @@ export {
   useLogs,
   useLogStream,
   useServer,
-} from "./hooks/mod.ts";
+  useTerminalSize,
+} from "./hooks/mod.js";
+export type { TerminalSize } from "./hooks/mod.js";
 
 /**
- * Launches the TUI application
- * Renders the Ink-based terminal interface
+ * Launches the TUI application in fullscreen mode
+ * Uses fullscreen-ink for alternate screen buffer support
+ * This fixes terminal buffer truncation issues on Windows
+ *
+ * Pattern from working ink-app-template:
+ * Simple .start() call without await/waitUntilExit
  */
 export function launchTui(): void {
-  const { waitUntilExit } = render(React.createElement(App));
-
-  waitUntilExit()
-    .then(() => {
-      // Cleanup after exit
-    })
-    .catch(() => {
-      // Handle errors silently
-    });
+  withFullScreen(React.createElement(App)).start();
 }

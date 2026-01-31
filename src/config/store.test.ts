@@ -2,10 +2,9 @@
  * Integration tests for configuration persistence
  */
 
-import { assertEquals, assertExists } from "@std/assert";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   addWorld,
-  closeConfig,
   getActiveWorld,
   getWorlds,
   loadConfig,
@@ -17,39 +16,32 @@ import {
   updateServerConfig,
   updateTuiConfig,
   updateWatchdogConfig,
-} from "./store.ts";
+} from "./store.js";
 
-// Use a test database path by temporarily modifying the module's behavior
-// These tests verify the full persistence cycle
-
-Deno.test({
-  name: "loadConfig returns valid defaults on first load",
-  async fn() {
-    // Reset to ensure fresh state
+describe("config store", () => {
+  beforeEach(async () => {
     await resetConfig();
+  });
 
+  afterEach(async () => {
+    await resetConfig();
+  });
+
+  it("loadConfig returns valid defaults on first load", async () => {
     const config = await loadConfig();
 
-    assertExists(config);
-    assertEquals(config.version, 1);
-    assertEquals(config.server.name, "Land of OZ Valheim");
-    assertEquals(config.server.port, 2456);
-    assertEquals(config.server.world, "Dedicated");
-    assertEquals(config.watchdog.enabled, true);
-    assertEquals(config.tui.colorScheme, "dark");
-    assertEquals(config.worlds.length, 0);
-    assertEquals(config.activeWorld, null);
+    expect(config).toBeDefined();
+    expect(config.version).toBe(1);
+    expect(config.server.name).toBe("Land of OZ Valheim");
+    expect(config.server.port).toBe(2456);
+    expect(config.server.world).toBe("Dedicated");
+    expect(config.watchdog.enabled).toBe(true);
+    expect(config.tui.colorScheme).toBe("dark");
+    expect(config.worlds.length).toBe(0);
+    expect(config.activeWorld).toBeNull();
+  });
 
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "saveConfig and loadConfig roundtrip works",
-  async fn() {
-    await resetConfig();
+  it("saveConfig and loadConfig roundtrip works", async () => {
     const original = await loadConfig();
 
     // Modify some values
@@ -61,44 +53,22 @@ Deno.test({
     await saveConfig(original);
     const loaded = await loadConfig();
 
-    assertEquals(loaded.server.name, "Test Server");
-    assertEquals(loaded.server.port, 2460);
-    assertEquals(loaded.autoUpdate, false);
+    expect(loaded.server.name).toBe("Test Server");
+    expect(loaded.server.port).toBe(2460);
+    expect(loaded.autoUpdate).toBe(false);
+  });
 
-    // Cleanup
-    await resetConfig();
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "updateConfig merges partial config correctly",
-  async fn() {
-    await resetConfig();
-
+  it("updateConfig merges partial config correctly", async () => {
     // Update just one field
     await updateConfig({ autoUpdate: false });
 
     const config = await loadConfig();
-    assertEquals(config.autoUpdate, false);
+    expect(config.autoUpdate).toBe(false);
     // Other defaults should remain
-    assertEquals(config.server.name, "Land of OZ Valheim");
+    expect(config.server.name).toBe("Land of OZ Valheim");
+  });
 
-    // Cleanup
-    await resetConfig();
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "updateServerConfig updates server section only",
-  async fn() {
-    await resetConfig();
-
+  it("updateServerConfig updates server section only", async () => {
     await updateServerConfig({
       name: "Updated Server",
       port: 2458,
@@ -106,72 +76,41 @@ Deno.test({
     });
 
     const config = await loadConfig();
-    assertEquals(config.server.name, "Updated Server");
-    assertEquals(config.server.port, 2458);
-    assertEquals(config.server.crossplay, true);
+    expect(config.server.name).toBe("Updated Server");
+    expect(config.server.port).toBe(2458);
+    expect(config.server.crossplay).toBe(true);
     // Other server defaults remain
-    assertEquals(config.server.world, "Dedicated");
-    assertEquals(config.server.public, false);
+    expect(config.server.world).toBe("Dedicated");
+    expect(config.server.public).toBe(false);
+  });
 
-    // Cleanup
-    await resetConfig();
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "updateWatchdogConfig updates watchdog section only",
-  async fn() {
-    await resetConfig();
-
+  it("updateWatchdogConfig updates watchdog section only", async () => {
     await updateWatchdogConfig({
       enabled: false,
       maxRestarts: 10,
     });
 
     const config = await loadConfig();
-    assertEquals(config.watchdog.enabled, false);
-    assertEquals(config.watchdog.maxRestarts, 10);
+    expect(config.watchdog.enabled).toBe(false);
+    expect(config.watchdog.maxRestarts).toBe(10);
     // Other watchdog defaults remain
-    assertEquals(config.watchdog.restartDelay, 5000);
+    expect(config.watchdog.restartDelay).toBe(5000);
+  });
 
-    // Cleanup
-    await resetConfig();
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "updateTuiConfig updates TUI section only",
-  async fn() {
-    await resetConfig();
-
+  it("updateTuiConfig updates TUI section only", async () => {
     await updateTuiConfig({
       colorScheme: "light",
       animationsEnabled: false,
     });
 
     const config = await loadConfig();
-    assertEquals(config.tui.colorScheme, "light");
-    assertEquals(config.tui.animationsEnabled, false);
+    expect(config.tui.colorScheme).toBe("light");
+    expect(config.tui.animationsEnabled).toBe(false);
     // Other TUI defaults remain
-    assertEquals(config.tui.logMaxLines, 100);
+    expect(config.tui.logMaxLines).toBe(100);
+  });
 
-    // Cleanup
-    await resetConfig();
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "resetConfig restores all defaults",
-  async fn() {
+  it("resetConfig restores all defaults", async () => {
     // First modify config
     await updateConfig({ autoUpdate: false });
     await updateServerConfig({ name: "Modified", port: 9999 });
@@ -181,59 +120,38 @@ Deno.test({
     const config = await loadConfig();
 
     // Verify defaults restored
-    assertEquals(config.server.name, "Land of OZ Valheim");
-    assertEquals(config.server.port, 2456);
-    assertEquals(config.autoUpdate, true);
-
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
+    expect(config.server.name).toBe("Land of OZ Valheim");
+    expect(config.server.port).toBe(2456);
+    expect(config.autoUpdate).toBe(true);
+  });
 });
 
-// World management tests
-
-Deno.test({
-  name: "addWorld adds a new world",
-  async fn() {
+describe("world management", () => {
+  beforeEach(async () => {
     await resetConfig();
+  });
 
+  afterEach(async () => {
+    await resetConfig();
+  });
+
+  it("addWorld adds a new world", async () => {
     await addWorld({ name: "TestWorld1" });
 
     const worlds = await getWorlds();
-    assertEquals(worlds.length, 1);
-    assertEquals(worlds[0].name, "TestWorld1");
+    expect(worlds.length).toBe(1);
+    expect(worlds[0].name).toBe("TestWorld1");
+  });
 
-    await resetConfig();
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "addWorld does not duplicate worlds",
-  async fn() {
-    await resetConfig();
-
+  it("addWorld does not duplicate worlds", async () => {
     await addWorld({ name: "DuplicateWorld" });
     await addWorld({ name: "DuplicateWorld" });
 
     const worlds = await getWorlds();
-    assertEquals(worlds.length, 1);
+    expect(worlds.length).toBe(1);
+  });
 
-    await resetConfig();
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "addWorld preserves optional fields",
-  async fn() {
-    await resetConfig();
-
+  it("addWorld preserves optional fields", async () => {
     await addWorld({
       name: "WorldWithSeed",
       seed: "abc123",
@@ -241,159 +159,79 @@ Deno.test({
     });
 
     const worlds = await getWorlds();
-    assertEquals(worlds.length, 1);
-    assertEquals(worlds[0].name, "WorldWithSeed");
-    assertEquals(worlds[0].seed, "abc123");
-    assertEquals(worlds[0].saveDir, "/custom/path");
+    expect(worlds.length).toBe(1);
+    expect(worlds[0].name).toBe("WorldWithSeed");
+    expect(worlds[0].seed).toBe("abc123");
+    expect(worlds[0].saveDir).toBe("/custom/path");
+  });
 
-    await resetConfig();
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "removeWorld removes existing world",
-  async fn() {
-    await resetConfig();
-
+  it("removeWorld removes existing world", async () => {
     await addWorld({ name: "ToRemove" });
     await addWorld({ name: "ToKeep" });
 
     let worlds = await getWorlds();
-    assertEquals(worlds.length, 2);
+    expect(worlds.length).toBe(2);
 
     await removeWorld("ToRemove");
 
     worlds = await getWorlds();
-    assertEquals(worlds.length, 1);
-    assertEquals(worlds[0].name, "ToKeep");
+    expect(worlds.length).toBe(1);
+    expect(worlds[0].name).toBe("ToKeep");
+  });
 
-    await resetConfig();
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "removeWorld clears activeWorld if it was the active one",
-  async fn() {
-    await resetConfig();
-
+  it("removeWorld clears activeWorld if it was the active one", async () => {
     await addWorld({ name: "ActiveWorld" });
     await setActiveWorld("ActiveWorld");
 
     let active = await getActiveWorld();
-    assertEquals(active?.name, "ActiveWorld");
+    expect(active?.name).toBe("ActiveWorld");
 
     await removeWorld("ActiveWorld");
 
     active = await getActiveWorld();
-    assertEquals(active, null);
+    expect(active).toBeNull();
+  });
 
-    await resetConfig();
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "setActiveWorld sets the active world",
-  async fn() {
-    await resetConfig();
-
+  it("setActiveWorld sets the active world", async () => {
     await addWorld({ name: "World1" });
     await addWorld({ name: "World2" });
 
     await setActiveWorld("World1");
 
     let active = await getActiveWorld();
-    assertEquals(active?.name, "World1");
+    expect(active?.name).toBe("World1");
 
     await setActiveWorld("World2");
 
     active = await getActiveWorld();
-    assertEquals(active?.name, "World2");
+    expect(active?.name).toBe("World2");
+  });
 
-    await resetConfig();
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "setActiveWorld(null) clears active world",
-  async fn() {
-    await resetConfig();
-
+  it("setActiveWorld(null) clears active world", async () => {
     await addWorld({ name: "SomeWorld" });
     await setActiveWorld("SomeWorld");
 
     let active = await getActiveWorld();
-    assertEquals(active?.name, "SomeWorld");
+    expect(active?.name).toBe("SomeWorld");
 
     await setActiveWorld(null);
 
     active = await getActiveWorld();
-    assertEquals(active, null);
+    expect(active).toBeNull();
+  });
 
-    await resetConfig();
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
+  it("setActiveWorld throws for nonexistent world", async () => {
+    await expect(setActiveWorld("NonExistent")).rejects.toThrow("not found");
+  });
 
-Deno.test({
-  name: "setActiveWorld throws for nonexistent world",
-  async fn() {
-    await resetConfig();
-
-    let threw = false;
-    try {
-      await setActiveWorld("NonExistent");
-    } catch (e) {
-      threw = true;
-      assertEquals((e as Error).message.includes("not found"), true);
-    }
-
-    assertEquals(threw, true);
-
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "getWorlds returns empty array initially",
-  async fn() {
-    await resetConfig();
-
+  it("getWorlds returns empty array initially", async () => {
     const worlds = await getWorlds();
-    assertEquals(Array.isArray(worlds), true);
-    assertEquals(worlds.length, 0);
+    expect(Array.isArray(worlds)).toBe(true);
+    expect(worlds.length).toBe(0);
+  });
 
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
-});
-
-Deno.test({
-  name: "getActiveWorld returns null initially",
-  async fn() {
-    await resetConfig();
-
+  it("getActiveWorld returns null initially", async () => {
     const active = await getActiveWorld();
-    assertEquals(active, null);
-
-    await closeConfig();
-  },
-  sanitizeResources: false,
-  sanitizeOps: false,
+    expect(active).toBeNull();
+  });
 });

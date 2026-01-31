@@ -4,7 +4,7 @@
  */
 
 // Argument builder
-export { buildServerArgs, parseServerArgs } from "./args.ts";
+export { buildServerArgs, parseServerArgs } from "./args.js";
 
 // World management
 export {
@@ -17,7 +17,7 @@ export {
   listWorlds,
   worldExists,
   type WorldInfo,
-} from "./worlds.ts";
+} from "./worlds.js";
 
 // Settings definitions
 export {
@@ -36,7 +36,7 @@ export {
   type SelectOption,
   type SettingDefinition,
   ValheimSettings,
-} from "./settings.ts";
+} from "./settings.js";
 
 // Player lists
 export {
@@ -47,4 +47,4 @@ export {
   type ListType,
   readList,
   removeFromList,
-} from "./lists.ts";
+} from "./lists.js";

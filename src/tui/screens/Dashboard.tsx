@@ -2,11 +2,11 @@
  * Dashboard screen - Main server status and quick actions
  */
 
-import { type FC } from "react";
 import { Box, Text, useInput } from "ink";
-import { useStore } from "../store.ts";
-import { getStatusColor, theme } from "../theme.ts";
-import { useServer } from "../hooks/useServer.ts";
+import type { FC } from "react";
+import { useServer } from "../hooks/useServer.js";
+import { useStore } from "../store.js";
+import { getStatusColor, theme } from "../theme.js";
 
 /**
  * Formats uptime seconds to readable string
@@ -26,10 +26,13 @@ function formatUptime(seconds: number): string {
   return `${secs}s`;
 }
 
+/** Props for Dashboard screen */
+type DashboardProps = Record<string, never>;
+
 /**
  * Dashboard screen showing server status and quick actions
  */
-export const Dashboard: FC = () => {
+export const Dashboard: FC<DashboardProps> = () => {
   const status = useStore((s) => s.server.status);
   const uptime = useStore((s) => s.server.uptime);
   const players = useStore((s) => s.server.players);
@@ -58,7 +61,7 @@ export const Dashboard: FC = () => {
   });
 
   return (
-    <Box flexDirection="column" padding={1}>
+    <Box flexDirection="column" flexGrow={1} padding={1}>
       {/* Title */}
       <Box marginBottom={1}>
         <Text bold color={theme.primary}>
@@ -104,9 +107,11 @@ export const Dashboard: FC = () => {
       <Box flexDirection="column" marginBottom={1}>
         <Text bold>Players ({players.length})</Text>
         <Box marginLeft={2} flexDirection="column">
-          {players.length === 0 ? <Text dimColor>No players connected</Text> : (
-            players.map((player, idx) => (
-              <Box key={idx}>
+          {players.length === 0 ? (
+            <Text dimColor>No players connected</Text>
+          ) : (
+            players.map((player) => (
+              <Box key={player}>
                 <Text color={theme.primary}>• {player}</Text>
               </Box>
             ))
@@ -118,21 +123,19 @@ export const Dashboard: FC = () => {
       <Box flexDirection="column">
         <Text bold>Quick Actions</Text>
         <Box marginLeft={2} marginTop={1}>
-          {status === "offline"
-            ? (
-              <Box>
-                <Text color={theme.success}>[S]</Text>
-                <Text>Start Server</Text>
-              </Box>
-            )
-            : status === "online"
-            ? (
-              <Box>
-                <Text color={theme.error}>[X]</Text>
-                <Text>Stop Server</Text>
-              </Box>
-            )
-            : <Text dimColor>Server is {status}...</Text>}
+          {status === "offline" ? (
+            <Box>
+              <Text color={theme.success}>[S]</Text>
+              <Text>Start Server</Text>
+            </Box>
+          ) : status === "online" ? (
+            <Box>
+              <Text color={theme.error}>[X]</Text>
+              <Text>Stop Server</Text>
+            </Box>
+          ) : (
+            <Text dimColor>Server is {status}...</Text>
+          )}
         </Box>
       </Box>
     </Box>

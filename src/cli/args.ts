@@ -217,7 +217,7 @@ function isValidCommand(cmd: string): cmd is Command {
 function getFlagValue(
   args: string[],
   flag: string,
-  shortFlag?: string,
+  shortFlag?: string
 ): string | undefined {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === flag || (shortFlag && args[i] === shortFlag)) {
@@ -246,8 +246,8 @@ function parseStartArgs(args: string[], global: GlobalArgs): StartArgs {
   let port: number | undefined;
 
   if (portStr) {
-    const parsed = parseInt(portStr, 10);
-    if (!isNaN(parsed)) {
+    const parsed = Number.parseInt(portStr, 10);
+    if (!Number.isNaN(parsed)) {
       const result = PortSchema.safeParse(parsed);
       port = result.success ? result.data : undefined;
     }
@@ -275,8 +275,8 @@ function parseStopArgs(args: string[], global: GlobalArgs): StopArgs {
   let timeout: number | undefined;
 
   if (timeoutStr) {
-    const parsed = parseInt(timeoutStr, 10);
-    if (!isNaN(parsed) && parsed > 0) {
+    const parsed = Number.parseInt(timeoutStr, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) {
       timeout = parsed;
     }
   }
@@ -425,8 +425,8 @@ function parseRconArgs(args: string[], global: GlobalArgs): RconArgs {
   let port: number | undefined;
 
   if (portStr) {
-    const parsed = parseInt(portStr, 10);
-    if (!isNaN(parsed) && parsed >= 1024 && parsed <= 65535) {
+    const parsed = Number.parseInt(portStr, 10);
+    if (!Number.isNaN(parsed) && parsed >= 1024 && parsed <= 65535) {
       port = parsed;
     }
   }
@@ -435,8 +435,8 @@ function parseRconArgs(args: string[], global: GlobalArgs): RconArgs {
   let timeout: number | undefined;
 
   if (timeoutStr) {
-    const parsed = parseInt(timeoutStr, 10);
-    if (!isNaN(parsed) && parsed > 0) {
+    const parsed = Number.parseInt(timeoutStr, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) {
       timeout = parsed;
     }
   }

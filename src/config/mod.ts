@@ -25,9 +25,9 @@ export {
   WatchdogConfigSchema,
   type World,
   WorldSchema,
-} from "./schema.ts";
+} from "./schema.js";
 
-export { defaultConfig } from "./defaults.ts";
+export { defaultConfig } from "./defaults.js";
 
 export {
   addWorld,
@@ -43,4 +43,4 @@ export {
   updateServerConfig,
   updateTuiConfig,
   updateWatchdogConfig,
-} from "./store.ts";
+} from "./store.js";

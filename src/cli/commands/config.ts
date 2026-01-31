@@ -3,14 +3,14 @@
  * Manages application configuration
  */
 
-import type { AppConfig } from "../../config/mod.ts";
+import type { AppConfig } from "../../config/mod.js";
 import {
   resetConfig,
   updateServerConfig,
   updateWatchdogConfig,
-} from "../../config/mod.ts";
-import type { ConfigArgs } from "../args.ts";
-import { getAppConfigDir } from "../../utils/mod.ts";
+} from "../../config/mod.js";
+import { getAppConfigDir } from "../../utils/mod.js";
+import type { ConfigArgs } from "../args.js";
 
 /**
  * Handles the config command
@@ -19,7 +19,7 @@ import { getAppConfigDir } from "../../utils/mod.ts";
  */
 export async function configCommand(
   args: ConfigArgs,
-  config: AppConfig,
+  config: AppConfig
 ): Promise<void> {
   switch (args.subcommand) {
     case "list":
@@ -51,7 +51,7 @@ function showConfig(config: AppConfig): void {
   console.log(`  server.port: ${config.server.port}`);
   console.log(`  server.world: ${config.server.world}`);
   console.log(
-    `  server.password: ${config.server.password ? "****" : "(not set)"}`,
+    `  server.password: ${config.server.password ? "****" : "(not set)"}`
   );
   console.log(`  server.public: ${config.server.public}`);
   console.log(`  server.crossplay: ${config.server.crossplay}`);
@@ -81,13 +81,13 @@ function getConfigValue(key: string | undefined, config: AppConfig): void {
     console.error("Error: No key specified.");
     console.log("Usage: oz-valheim config get <key>");
     console.log("Example: oz-valheim config get server.name");
-    Deno.exit(1);
+    process.exit(1);
   }
 
   const value = getNestedValue(config, key);
   if (value === undefined) {
     console.error(`Error: Unknown configuration key: ${key}`);
-    Deno.exit(1);
+    process.exit(1);
   }
 
   // Format output based on type
@@ -104,25 +104,25 @@ function getConfigValue(key: string | undefined, config: AppConfig): void {
 async function setConfigValue(
   key: string | undefined,
   value: string | undefined,
-  _config: AppConfig,
+  _config: AppConfig
 ): Promise<void> {
   if (!key) {
     console.error("Error: No key specified.");
     console.log("Usage: oz-valheim config set <key> <value>");
-    Deno.exit(1);
+    process.exit(1);
   }
 
   if (value === undefined) {
     console.error("Error: No value specified.");
     console.log("Usage: oz-valheim config set <key> <value>");
-    Deno.exit(1);
+    process.exit(1);
   }
 
   const parts = key.split(".");
   if (parts.length !== 2) {
     console.error("Error: Key must be in format 'section.key'");
     console.log("Example: server.name, watchdog.enabled");
-    Deno.exit(1);
+    process.exit(1);
   }
 
   const [section, field] = parts;
@@ -140,18 +140,18 @@ async function setConfigValue(
       case "tui":
         // Would need updateTuiConfig
         console.error("Error: TUI settings cannot be changed via CLI yet.");
-        Deno.exit(1);
+        process.exit(1);
         break;
       default:
         console.error(`Error: Unknown section: ${section}`);
         console.log("Valid sections: server, watchdog, tui");
-        Deno.exit(1);
+        process.exit(1);
     }
 
     console.log(`✓ Set ${key} = ${value}`);
   } catch (error) {
     console.error(`Error: ${(error as Error).message}`);
-    Deno.exit(1);
+    process.exit(1);
   }
 }
 
@@ -167,7 +167,7 @@ async function resetConfiguration(): Promise<void> {
     console.log("\nRun 'oz-valheim config list' to see default values.");
   } catch (error) {
     console.error(`Error: ${(error as Error).message}`);
-    Deno.exit(1);
+    process.exit(1);
   }
 }
 
@@ -201,7 +201,7 @@ function parseValue(value: string): unknown {
 
   // Number
   const num = Number(value);
-  if (!isNaN(num)) return num;
+  if (!Number.isNaN(num)) return num;
 
   // String
   return value;

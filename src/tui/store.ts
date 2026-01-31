@@ -3,8 +3,8 @@
  * Manages server state, logs, UI state, and configuration
  */
 
-import { create } from "zustand";
 import type { ReactNode } from "react";
+import { create } from "zustand";
 
 /** Server status states */
 export type ServerStatus = "offline" | "starting" | "online" | "stopping";

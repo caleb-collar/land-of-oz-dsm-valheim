@@ -3,10 +3,11 @@
  * Starts the Valheim dedicated server with watchdog
  */
 
-import type { AppConfig } from "../../config/mod.ts";
-import type { StartArgs } from "../args.ts";
-import { isValheimInstalled } from "../../steamcmd/mod.ts";
-import { type ProcessState, Watchdog } from "../../server/mod.ts";
+import type { AppConfig } from "../../config/mod.js";
+import { type ProcessState, Watchdog } from "../../server/mod.js";
+import { isValheimInstalled } from "../../steamcmd/mod.js";
+import { getPlatform } from "../../utils/platform.js";
+import type { StartArgs } from "../args.js";
 
 /** Active watchdog instance */
 let activeWatchdog: Watchdog | null = null;
@@ -18,14 +19,14 @@ let activeWatchdog: Watchdog | null = null;
  */
 export async function startCommand(
   args: StartArgs,
-  config: AppConfig,
+  config: AppConfig
 ): Promise<void> {
   // Check if Valheim is installed
   const valheimInstalled = await isValheimInstalled();
   if (!valheimInstalled) {
     console.error("\nError: Valheim Dedicated Server is not installed.");
     console.log("Run 'oz-valheim install' first to install the server.");
-    Deno.exit(1);
+    process.exit(1);
   }
 
   // Merge CLI args with config (CLI takes precedence)
@@ -76,15 +77,15 @@ export async function startCommand(
       },
       onWatchdogRestart: (attempt: number, max: number) => {
         console.log(
-          `[Watchdog] Restarting server (attempt ${attempt}/${max})...`,
+          `[Watchdog] Restarting server (attempt ${attempt}/${max})...`
         );
       },
       onWatchdogMaxRestarts: () => {
         console.error(
-          "[Watchdog] Max restarts exceeded. Server will not be restarted.",
+          "[Watchdog] Max restarts exceeded. Server will not be restarted."
         );
       },
-    },
+    }
   );
 
   // Setup shutdown handlers
@@ -100,7 +101,7 @@ export async function startCommand(
     });
   } catch (error) {
     console.error(`\nFailed to start server: ${(error as Error).message}`);
-    Deno.exit(1);
+    process.exit(1);
   }
 }
 
@@ -128,14 +129,14 @@ function setupShutdownHandlers(): void {
       await activeWatchdog.stop();
       activeWatchdog = null;
     }
-    Deno.exit(0);
+    process.exit(0);
   };
 
   // Handle SIGINT (Ctrl+C)
-  Deno.addSignalListener("SIGINT", shutdown);
+  process.on("SIGINT", shutdown);
 
   // Handle SIGTERM (kill command) - not supported on Windows
-  if (Deno.build.os !== "windows") {
-    Deno.addSignalListener("SIGTERM", shutdown);
+  if (getPlatform() !== "windows") {
+    process.on("SIGTERM", shutdown);
   }
 }

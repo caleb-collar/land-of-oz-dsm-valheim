@@ -10,7 +10,7 @@ export {
   isSteamCmdInstalled,
   isValheimInstalled,
   type SteamPaths,
-} from "./paths.ts";
+} from "./paths.js";
 
 // SteamCMD installer
 export {
@@ -18,7 +18,7 @@ export {
   type InstallStage,
   installSteamCmd,
   type ProgressCallback,
-} from "./installer.ts";
+} from "./installer.js";
 
 // Valheim updater
 export {
@@ -30,4 +30,4 @@ export {
   type UpdateStatus,
   updateValheim,
   VALHEIM_APP_ID,
-} from "./updater.ts";
+} from "./updater.js";

@@ -3,9 +3,10 @@
  * Handles starting, stopping, and monitoring the server process
  */
 
-import { getPlatform } from "../utils/platform.ts";
-import { getSteamPaths, getValheimExecutablePath } from "../steamcmd/mod.ts";
-import { type ParsedEvent, parseEvent } from "./logs.ts";
+import { type ChildProcess, spawn } from "node:child_process";
+import { getSteamPaths, getValheimExecutablePath } from "../steamcmd/mod.js";
+import { getPlatform } from "../utils/platform.js";
+import { type ParsedEvent, parseEvent } from "./logs.js";
 
 /** Server process states */
 export type ProcessState =
@@ -53,7 +54,7 @@ const defaultEvents: ProcessEvents = {
  * Manages lifecycle, output streaming, and event detection
  */
 export class ValheimProcess {
-  private process: Deno.ChildProcess | null = null;
+  private process: ChildProcess | null = null;
   private state: ProcessState = "offline";
   private events: ProcessEvents;
   private config: ServerLaunchConfig;
@@ -110,15 +111,19 @@ export class ValheimProcess {
     const env = this.getEnvironment();
 
     try {
-      const command = new Deno.Command(execPath, {
-        args,
-        stdout: "piped",
-        stderr: "piped",
+      this.process = spawn(execPath, args, {
+        stdio: ["ignore", "pipe", "pipe"],
         env,
       });
 
-      this.process = command.spawn();
       this.streamOutput();
+
+      // Handle spawn errors
+      this.process.on("error", (error) => {
+        this.setState("crashed");
+        this.startTime = null;
+        this.events.onError(error);
+      });
 
       // Note: The server is considered "online" when we see "Game server connected"
       // This is handled in processLogLine(), so we don't set online here
@@ -145,7 +150,7 @@ export class ValheimProcess {
 
     if (this.process) {
       // Send SIGTERM for graceful shutdown
-      // On Windows, this sends CTRL_BREAK_EVENT
+      // On Windows, this terminates the process
       try {
         this.process.kill("SIGTERM");
       } catch {
@@ -153,14 +158,16 @@ export class ValheimProcess {
       }
 
       // Wait for exit or timeout
-      const exitPromise = this.process.status;
+      const exitPromise = new Promise<number | null>((resolve) => {
+        this.process!.once("exit", (code) => resolve(code));
+      });
       const timeoutPromise = new Promise<null>((resolve) =>
         setTimeout(() => resolve(null), timeout)
       );
 
       const result = await Promise.race([exitPromise, timeoutPromise]);
 
-      if (result === null) {
+      if (result === null && this.process.exitCode === null) {
         // Timeout - force kill
         try {
           this.process.kill("SIGKILL");
@@ -242,19 +249,22 @@ export class ValheimProcess {
    */
   private getEnvironment(): Record<string, string> {
     const platform = getPlatform();
-    const env: Record<string, string> = { ...Deno.env.toObject() };
+    const env: Record<string, string> = { ...process.env } as Record<
+      string,
+      string
+    >;
 
     if (platform === "linux") {
       // Linux needs LD_LIBRARY_PATH for Steam runtime libraries
       const { valheimDir } = getSteamPaths();
-      const ldPath = Deno.env.get("LD_LIBRARY_PATH");
-      env["LD_LIBRARY_PATH"] = ldPath
+      const ldPath = process.env.LD_LIBRARY_PATH;
+      env.LD_LIBRARY_PATH = ldPath
         ? `${valheimDir}/linux64:${ldPath}`
         : `${valheimDir}/linux64`;
     }
 
     // Set SteamAppId for Valheim
-    env["SteamAppId"] = "892970"; // Valheim game ID (not dedicated server ID)
+    env.SteamAppId = "892970"; // Valheim game ID (not dedicated server ID)
 
     return env;
   }
@@ -266,72 +276,51 @@ export class ValheimProcess {
   private streamOutput(): void {
     if (!this.process) return;
 
-    const decoder = new TextDecoder();
-
     // Stream stdout
-    (async () => {
-      try {
-        const reader = this.process!.stdout.getReader();
-        let buffer = "";
+    if (this.process.stdout) {
+      let buffer = "";
+      this.process.stdout.on("data", (chunk: Buffer) => {
+        buffer += chunk.toString();
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-
-          for (const line of lines) {
-            if (line.trim()) {
-              this.processLogLine(line);
-            }
+        for (const line of lines) {
+          if (line.trim()) {
+            this.processLogLine(line);
           }
         }
-      } catch {
-        // Reader was released, process ended
-      }
-    })();
+      });
+    }
 
     // Stream stderr
-    (async () => {
-      try {
-        const reader = this.process!.stderr.getReader();
-        let buffer = "";
+    if (this.process.stderr) {
+      let buffer = "";
+      this.process.stderr.on("data", (chunk: Buffer) => {
+        buffer += chunk.toString();
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-
-          for (const line of lines) {
-            if (line.trim()) {
-              this.processLogLine(line, true);
-            }
+        for (const line of lines) {
+          if (line.trim()) {
+            this.processLogLine(line, true);
           }
         }
-      } catch {
-        // Reader was released, process ended
-      }
-    })();
+      });
+    }
 
     // Monitor for process exit
-    this.process.status.then((status) => {
-      if (!status.success && this.state === "online") {
+    this.process.on("exit", (code, signal) => {
+      const exitCode = code ?? (signal ? 1 : 0);
+      if (exitCode !== 0 && this.state === "online") {
         this.startTime = null;
         this.setState("crashed");
-        this.events.onError(
-          new Error(`Server exited with code ${status.code}`),
-        );
+        this.events.onError(new Error(`Server exited with code ${exitCode}`));
       } else if (this.state === "starting") {
         // Server exited during startup
         this.startTime = null;
         this.setState("crashed");
         this.events.onError(
-          new Error(`Server failed to start (exit code ${status.code})`),
+          new Error(`Server failed to start (exit code ${exitCode})`)
         );
       }
     });

@@ -2,10 +2,10 @@
  * StatusBar component showing server status indicator
  */
 
-import { type FC } from "react";
 import { Box, Text } from "ink";
-import { useStore } from "../store.ts";
-import { getStatusColor, theme } from "../theme.ts";
+import type { FC } from "react";
+import { useStore } from "../store.js";
+import { getStatusColor, theme } from "../theme.js";
 
 /**
  * Compact status bar for server status

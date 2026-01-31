@@ -2,8 +2,9 @@
  * Unit tests for platform utilities
  */
 
-import { assertEquals, assertMatch } from "@std/assert";
+import { describe, expect, it } from "vitest";
 import {
+  type Platform,
   getAppConfigDir,
   getConfigDir,
   getHomeDir,
@@ -14,129 +15,107 @@ import {
   getValheimExecutable,
   getValheimSaveDir,
   getValheimServerDir,
-  type Platform,
-} from "./platform.ts";
+} from "./platform.js";
 
-Deno.test("getPlatform returns valid platform", () => {
-  const platform = getPlatform();
-  const validPlatforms: Platform[] = ["windows", "darwin", "linux"];
-  assertEquals(
-    validPlatforms.includes(platform),
-    true,
-    `Expected valid platform, got ${platform}`,
-  );
-});
+describe("platform utilities", () => {
+  it("getPlatform returns valid platform", () => {
+    const platform = getPlatform();
+    const validPlatforms: Platform[] = ["windows", "darwin", "linux"];
+    expect(validPlatforms.includes(platform)).toBe(true);
+  });
 
-Deno.test("getHomeDir returns non-empty string", () => {
-  const home = getHomeDir();
-  assertEquals(typeof home, "string");
-  assertEquals(home.length > 0, true, "Home directory should not be empty");
-});
+  it("getHomeDir returns non-empty string", () => {
+    const home = getHomeDir();
+    expect(typeof home).toBe("string");
+    expect(home.length).toBeGreaterThan(0);
+  });
 
-Deno.test("getConfigDir returns valid path", () => {
-  const configDir = getConfigDir();
-  assertEquals(typeof configDir, "string");
-  assertEquals(
-    configDir.length > 0,
-    true,
-    "Config directory should not be empty",
-  );
+  it("getConfigDir returns valid path", () => {
+    const configDir = getConfigDir();
+    expect(typeof configDir).toBe("string");
+    expect(configDir.length).toBeGreaterThan(0);
 
-  const platform = getPlatform();
-  if (platform === "windows") {
-    // Should contain AppData or Roaming
-    assertMatch(configDir, /AppData|Roaming/i);
-  } else if (platform === "darwin") {
-    assertMatch(configDir, /Library\/Application Support/);
-  } else {
-    // Linux: should be .config or XDG_CONFIG_HOME
-    assertMatch(configDir, /\.config|XDG_CONFIG/);
-  }
-});
+    const platform = getPlatform();
+    if (platform === "windows") {
+      expect(configDir).toMatch(/AppData|Roaming/i);
+    } else if (platform === "darwin") {
+      expect(configDir).toMatch(/Library\/Application Support/);
+    } else {
+      expect(configDir).toMatch(/\.config|XDG_CONFIG/);
+    }
+  });
 
-Deno.test("getLocalDataDir returns valid path", () => {
-  const localDataDir = getLocalDataDir();
-  assertEquals(typeof localDataDir, "string");
-  assertEquals(
-    localDataDir.length > 0,
-    true,
-    "Local data directory should not be empty",
-  );
-});
+  it("getLocalDataDir returns valid path", () => {
+    const localDataDir = getLocalDataDir();
+    expect(typeof localDataDir).toBe("string");
+    expect(localDataDir.length).toBeGreaterThan(0);
+  });
 
-Deno.test("getValheimSaveDir returns valid path with worlds_local", () => {
-  const saveDir = getValheimSaveDir();
-  assertEquals(typeof saveDir, "string");
-  assertMatch(saveDir, /worlds_local/);
+  it("getValheimSaveDir returns valid path with worlds_local", () => {
+    const saveDir = getValheimSaveDir();
+    expect(typeof saveDir).toBe("string");
+    expect(saveDir).toMatch(/worlds_local/);
 
-  const platform = getPlatform();
-  if (platform === "windows" || platform === "darwin") {
-    assertMatch(saveDir, /IronGate/);
-  } else {
-    assertMatch(saveDir, /unity3d.*IronGate/);
-  }
-});
+    const platform = getPlatform();
+    if (platform === "windows" || platform === "darwin") {
+      expect(saveDir).toMatch(/IronGate/);
+    } else {
+      expect(saveDir).toMatch(/unity3d.*IronGate/);
+    }
+  });
 
-Deno.test("getAppConfigDir returns oz-valheim path", () => {
-  const appDir = getAppConfigDir();
-  assertEquals(typeof appDir, "string");
-  assertMatch(appDir, /oz-valheim/);
-});
+  it("getAppConfigDir returns oz-valheim path", () => {
+    const appDir = getAppConfigDir();
+    expect(typeof appDir).toBe("string");
+    expect(appDir).toMatch(/oz-valheim/);
+  });
 
-Deno.test("getSteamCmdDir returns steamcmd path", () => {
-  const steamCmdDir = getSteamCmdDir();
-  assertEquals(typeof steamCmdDir, "string");
-  assertMatch(steamCmdDir, /steamcmd/);
-});
+  it("getSteamCmdDir returns steamcmd path", () => {
+    const steamCmdDir = getSteamCmdDir();
+    expect(typeof steamCmdDir).toBe("string");
+    expect(steamCmdDir).toMatch(/steamcmd/);
+  });
 
-Deno.test("getValheimServerDir returns Valheim server path", () => {
-  const serverDir = getValheimServerDir();
-  assertEquals(typeof serverDir, "string");
-  assertMatch(serverDir, /Valheim dedicated server/);
-  assertMatch(serverDir, /steamapps.*common/);
-});
+  it("getValheimServerDir returns Valheim server path", () => {
+    const serverDir = getValheimServerDir();
+    expect(typeof serverDir).toBe("string");
+    expect(serverDir).toMatch(/Valheim dedicated server/);
+    expect(serverDir).toMatch(/steamapps.*common/);
+  });
 
-Deno.test("getValheimExecutable returns platform-specific executable", () => {
-  const executable = getValheimExecutable();
-  assertEquals(typeof executable, "string");
+  it("getValheimExecutable returns platform-specific executable", () => {
+    const executable = getValheimExecutable();
+    expect(typeof executable).toBe("string");
 
-  const platform = getPlatform();
-  if (platform === "windows") {
-    assertMatch(executable, /valheim_server\.exe$/);
-  } else {
-    assertMatch(executable, /valheim_server\.x86_64$/);
-  }
-});
+    const platform = getPlatform();
+    if (platform === "windows") {
+      expect(executable).toMatch(/valheim_server\.exe$/);
+    } else {
+      expect(executable).toMatch(/valheim_server\.x86_64$/);
+    }
+  });
 
-Deno.test("getSteamCmdExecutable returns platform-specific executable", () => {
-  const executable = getSteamCmdExecutable();
-  assertEquals(typeof executable, "string");
+  it("getSteamCmdExecutable returns platform-specific executable", () => {
+    const executable = getSteamCmdExecutable();
+    expect(typeof executable).toBe("string");
 
-  const platform = getPlatform();
-  if (platform === "windows") {
-    assertMatch(executable, /steamcmd\.exe$/);
-  } else {
-    assertMatch(executable, /steamcmd\.sh$/);
-  }
-});
+    const platform = getPlatform();
+    if (platform === "windows") {
+      expect(executable).toMatch(/steamcmd\.exe$/);
+    } else {
+      expect(executable).toMatch(/steamcmd\.sh$/);
+    }
+  });
 
-Deno.test("path functions are consistent with each other", () => {
-  const configDir = getConfigDir();
-  const appConfigDir = getAppConfigDir();
+  it("path functions are consistent with each other", () => {
+    const configDir = getConfigDir();
+    const appConfigDir = getAppConfigDir();
 
-  // App config dir should be inside config dir
-  assertEquals(
-    appConfigDir.startsWith(configDir) || appConfigDir.includes("oz-valheim"),
-    true,
-    "App config should be oz-valheim inside config dir",
-  );
+    expect(
+      appConfigDir.startsWith(configDir) || appConfigDir.includes("oz-valheim")
+    ).toBe(true);
 
-  const steamCmdDir = getSteamCmdDir();
-
-  // SteamCMD dir should reference local data
-  assertEquals(
-    steamCmdDir.includes("steamcmd"),
-    true,
-    "SteamCMD dir should contain 'steamcmd'",
-  );
+    const steamCmdDir = getSteamCmdDir();
+    expect(steamCmdDir.includes("steamcmd")).toBe(true);
+  });
 });

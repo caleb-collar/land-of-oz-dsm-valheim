@@ -2,7 +2,7 @@
  * TUI Screens barrel export
  */
 
-export { Dashboard } from "./Dashboard.tsx";
-export { Settings } from "./Settings.tsx";
-export { Worlds } from "./Worlds.tsx";
-export { Console } from "./Console.tsx";
+export { Dashboard } from "./Dashboard.js";
+export { Settings } from "./Settings.js";
+export { Worlds } from "./Worlds.js";
+export { Console } from "./Console.js";

@@ -3,84 +3,78 @@
  * These tests verify the module logic without actually calling SteamCMD
  */
 
-import { assertEquals, assertExists, assertMatch } from "@std/assert";
+import { describe, expect, it } from "vitest";
+import { getPlatform } from "../utils/platform.js";
 import {
   getSteamPaths,
   getValheimExecutablePath,
   isSteamCmdInstalled,
   isValheimInstalled,
-} from "./paths.ts";
-import { getPlatform } from "../utils/platform.ts";
+} from "./paths.js";
 
-Deno.test("getSteamPaths returns valid paths object", () => {
-  const paths = getSteamPaths();
+describe("SteamCMD paths", () => {
+  it("getSteamPaths returns valid paths object", () => {
+    const paths = getSteamPaths();
 
-  assertExists(paths.steamcmdDir);
-  assertExists(paths.steamcmd);
-  assertExists(paths.valheimDir);
-  assertExists(paths.executable);
+    expect(paths.steamcmdDir).toBeDefined();
+    expect(paths.steamcmd).toBeDefined();
+    expect(paths.valheimDir).toBeDefined();
+    expect(paths.executable).toBeDefined();
 
-  assertEquals(typeof paths.steamcmdDir, "string");
-  assertEquals(typeof paths.steamcmd, "string");
-  assertEquals(typeof paths.valheimDir, "string");
-  assertEquals(typeof paths.executable, "string");
-});
+    expect(typeof paths.steamcmdDir).toBe("string");
+    expect(typeof paths.steamcmd).toBe("string");
+    expect(typeof paths.valheimDir).toBe("string");
+    expect(typeof paths.executable).toBe("string");
+  });
 
-Deno.test("getSteamPaths returns platform-appropriate executable names", () => {
-  const paths = getSteamPaths();
-  const platform = getPlatform();
+  it("getSteamPaths returns platform-appropriate executable names", () => {
+    const paths = getSteamPaths();
+    const platform = getPlatform();
 
-  if (platform === "windows") {
-    assertMatch(paths.steamcmd, /steamcmd\.exe$/);
-    assertEquals(paths.executable, "valheim_server.exe");
-  } else {
-    assertMatch(paths.steamcmd, /steamcmd\.sh$/);
-    assertEquals(paths.executable, "valheim_server.x86_64");
-  }
-});
+    if (platform === "windows") {
+      expect(paths.steamcmd).toMatch(/steamcmd\.exe$/);
+      expect(paths.executable).toBe("valheim_server.exe");
+    } else {
+      expect(paths.steamcmd).toMatch(/steamcmd\.sh$/);
+      expect(paths.executable).toBe("valheim_server.x86_64");
+    }
+  });
 
-Deno.test("getSteamPaths includes steamapps/common in valheim path", () => {
-  const paths = getSteamPaths();
+  it("getSteamPaths includes steamapps/common in valheim path", () => {
+    const paths = getSteamPaths();
 
-  assertMatch(paths.valheimDir, /steamapps/);
-  assertMatch(paths.valheimDir, /common/);
-  assertMatch(paths.valheimDir, /Valheim dedicated server/);
-});
+    expect(paths.valheimDir).toMatch(/steamapps/);
+    expect(paths.valheimDir).toMatch(/common/);
+    expect(paths.valheimDir).toMatch(/Valheim dedicated server/);
+  });
 
-Deno.test("isSteamCmdInstalled returns a boolean", async () => {
-  const installed = await isSteamCmdInstalled();
+  it("isSteamCmdInstalled returns a boolean", async () => {
+    const installed = await isSteamCmdInstalled();
 
-  assertEquals(typeof installed, "boolean");
-});
+    expect(typeof installed).toBe("boolean");
+  });
 
-Deno.test("isValheimInstalled returns a boolean", async () => {
-  const installed = await isValheimInstalled();
+  it("isValheimInstalled returns a boolean", async () => {
+    const installed = await isValheimInstalled();
 
-  assertEquals(typeof installed, "boolean");
-});
+    expect(typeof installed).toBe("boolean");
+  });
 
-Deno.test("getValheimExecutablePath returns full path", () => {
-  const execPath = getValheimExecutablePath();
-  const paths = getSteamPaths();
+  it("getValheimExecutablePath returns full path", () => {
+    const execPath = getValheimExecutablePath();
+    const paths = getSteamPaths();
 
-  assertEquals(typeof execPath, "string");
-  assertMatch(execPath, /Valheim dedicated server/);
-  assertEquals(execPath.includes(paths.executable), true);
-});
+    expect(typeof execPath).toBe("string");
+    expect(execPath).toMatch(/Valheim dedicated server/);
+    expect(execPath.includes(paths.executable)).toBe(true);
+  });
 
-Deno.test("getSteamPaths paths are consistent", () => {
-  const paths = getSteamPaths();
+  it("getSteamPaths paths are consistent", () => {
+    const paths = getSteamPaths();
 
-  // Executable should be inside its directory
-  assertEquals(
-    paths.steamcmd.includes("steamcmd"),
-    true,
-    "SteamCMD executable path should contain 'steamcmd'",
-  );
+    // Executable should be inside its directory
+    expect(paths.steamcmd.includes("steamcmd")).toBe(true);
 
-  assertEquals(
-    paths.valheimDir.includes("Valheim dedicated server"),
-    true,
-    "Valheim directory path should contain 'Valheim dedicated server'",
-  );
+    expect(paths.valheimDir.includes("Valheim dedicated server")).toBe(true);
+  });
 });

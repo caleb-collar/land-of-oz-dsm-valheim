@@ -3,7 +3,7 @@
  * Installs/updates SteamCMD and Valheim dedicated server
  */
 
-import type { InstallArgs } from "../args.ts";
+import * as fs from "node:fs/promises";
 import {
   getInstalledVersion,
   getSteamPaths,
@@ -11,7 +11,8 @@ import {
   installValheim,
   isSteamCmdInstalled,
   isValheimInstalled,
-} from "../../steamcmd/mod.ts";
+} from "../../steamcmd/mod.js";
+import type { InstallArgs } from "../args.js";
 
 /**
  * Handles the install command
@@ -39,7 +40,7 @@ export async function installCommand(args: InstallArgs): Promise<void> {
     steamInstalled,
     valheimInstalled,
     args.force,
-    paths,
+    paths
   );
 }
 
@@ -49,18 +50,18 @@ export async function installCommand(args: InstallArgs): Promise<void> {
 async function showDryRunStatus(
   steamInstalled: boolean,
   valheimInstalled: boolean,
-  paths: ReturnType<typeof getSteamPaths>,
+  paths: ReturnType<typeof getSteamPaths>
 ): Promise<void> {
   console.log("\nInstallation Status (dry run):\n");
   console.log("  SteamCMD:");
   console.log(
-    `    Status: ${steamInstalled ? "Installed ✓" : "Not installed"}`,
+    `    Status: ${steamInstalled ? "Installed ✓" : "Not installed"}`
   );
   console.log(`    Path: ${paths.steamcmd}`);
   console.log("");
   console.log("  Valheim Dedicated Server:");
   console.log(
-    `    Status: ${valheimInstalled ? "Installed ✓" : "Not installed"}`,
+    `    Status: ${valheimInstalled ? "Installed ✓" : "Not installed"}`
   );
   console.log(`    Path: ${paths.valheimDir}`);
 
@@ -95,7 +96,7 @@ async function showDryRunStatus(
 async function validateInstallation(
   steamInstalled: boolean,
   valheimInstalled: boolean,
-  paths: ReturnType<typeof getSteamPaths>,
+  paths: ReturnType<typeof getSteamPaths>
 ): Promise<void> {
   console.log("\nValidating installation...\n");
 
@@ -109,8 +110,8 @@ async function validateInstallation(
 
     // Check if executable exists
     try {
-      const stat = await Deno.stat(paths.steamcmd);
-      if (stat.isFile) {
+      const stat = await fs.stat(paths.steamcmd);
+      if (stat.isFile()) {
         console.log("    ✓ Executable found");
       }
     } catch {
@@ -133,8 +134,8 @@ async function validateInstallation(
     // Check if executable exists
     const exePath = `${paths.valheimDir}/${paths.executable}`;
     try {
-      const stat = await Deno.stat(exePath);
-      if (stat.isFile) {
+      const stat = await fs.stat(exePath);
+      if (stat.isFile()) {
         console.log("    ✓ Executable found");
       }
     } catch {
@@ -157,9 +158,9 @@ async function validateInstallation(
     console.log("  ✓ Installation is valid.");
   } else {
     console.log(
-      "  ✗ Installation has issues. Run 'oz-valheim install' to fix.",
+      "  ✗ Installation has issues. Run 'oz-valheim install' to fix."
     );
-    Deno.exit(1);
+    process.exit(1);
   }
 }
 
@@ -170,7 +171,7 @@ async function performInstallation(
   steamInstalled: boolean,
   valheimInstalled: boolean,
   force: boolean,
-  paths: ReturnType<typeof getSteamPaths>,
+  paths: ReturnType<typeof getSteamPaths>
 ): Promise<void> {
   // Install SteamCMD if needed or forced
   if (!steamInstalled || force) {
@@ -182,9 +183,7 @@ async function performInstallation(
 
     await installSteamCmd((progress) => {
       const bar = createProgressBar(progress.progress);
-      Deno.stdout.writeSync(
-        new TextEncoder().encode(`\r  ${bar} ${progress.message}`),
-      );
+      process.stdout.write(`\r  ${bar} ${progress.message}`);
     });
     console.log("\n");
   } else {
@@ -202,11 +201,7 @@ async function performInstallation(
 
   await installValheim((status) => {
     const bar = createProgressBar(status.progress);
-    Deno.stdout.writeSync(
-      new TextEncoder().encode(
-        `\r  ${bar} ${status.message}                    `,
-      ),
-    );
+    process.stdout.write(`\r  ${bar} ${status.message}                    `);
   });
   console.log("\n");
 
@@ -227,9 +222,7 @@ function createProgressBar(percent: number): string {
   const width = 20;
   const filled = Math.round((percent / 100) * width);
   const empty = width - filled;
-  return `[${"█".repeat(filled)}${"░".repeat(empty)}] ${
-    percent
-      .toString()
-      .padStart(3)
-  }%`;
+  return `[${"█".repeat(filled)}${"░".repeat(empty)}] ${percent
+    .toString()
+    .padStart(3)}%`;
 }

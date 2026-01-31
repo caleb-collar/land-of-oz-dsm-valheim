@@ -59,7 +59,7 @@ export const logColors = {
  * Get status color based on server status
  */
 export function getStatusColor(
-  status: "offline" | "starting" | "online" | "stopping",
+  status: "offline" | "starting" | "online" | "stopping"
 ): string {
   switch (status) {
     case "online":
@@ -68,7 +68,6 @@ export function getStatusColor(
       return theme.serverStarting;
     case "stopping":
       return theme.serverStopping;
-    case "offline":
     default:
       return theme.serverOffline;
   }

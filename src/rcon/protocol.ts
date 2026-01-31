@@ -11,7 +11,7 @@
  * The size field does not include itself.
  */
 
-import { type PacketType, RconError, type RconPacket } from "./types.ts";
+import { type PacketType, RconError, type RconPacket } from "./types.js";
 
 /** Minimum packet size (ID + Type + 2 null terminators) */
 const MIN_PACKET_SIZE = 10;
@@ -31,7 +31,7 @@ export function encodePacket(packet: RconPacket): Uint8Array {
   if (bodyBytes.length > MAX_BODY_SIZE) {
     throw new RconError(
       "PROTOCOL_ERROR",
-      `Body too large: ${bodyBytes.length} > ${MAX_BODY_SIZE}`,
+      `Body too large: ${bodyBytes.length} > ${MAX_BODY_SIZE}`
     );
   }
 
@@ -62,7 +62,7 @@ export function encodePacket(packet: RconPacket): Uint8Array {
  * Returns the packet and the number of bytes consumed.
  */
 export function decodePacket(
-  data: Uint8Array,
+  data: Uint8Array
 ): { packet: RconPacket; bytesRead: number } | null {
   // Need at least 4 bytes to read size
   if (data.length < 4) {

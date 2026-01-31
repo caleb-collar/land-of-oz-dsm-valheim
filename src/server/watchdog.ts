@@ -3,13 +3,13 @@
  * Provides automatic recovery with exponential backoff
  */
 
+import type { ParsedEvent } from "./logs.js";
 import {
   type ProcessEvents,
   type ProcessState,
   type ServerLaunchConfig,
   ValheimProcess,
-} from "./process.ts";
-import { type ParsedEvent } from "./logs.ts";
+} from "./process.js";
 
 /** Server watchdog configuration */
 export type ServerWatchdogConfig = {
@@ -69,7 +69,7 @@ export class Watchdog {
 
   private restartCount = 0;
   private lastCrashTime = 0;
-  private restartTimer: number | null = null;
+  private restartTimer: ReturnType<typeof setTimeout> | null = null;
   private isManualStop = false;
 
   /**
@@ -81,7 +81,7 @@ export class Watchdog {
   constructor(
     serverConfig: ServerLaunchConfig,
     watchdogConfig: Partial<ServerWatchdogConfig> = {},
-    events: Partial<WatchdogEvents> = {},
+    events: Partial<WatchdogEvents> = {}
   ) {
     this.serverConfig = serverConfig;
     this.config = { ...defaultWatchdogConfig, ...watchdogConfig };
@@ -218,8 +218,9 @@ export class Watchdog {
     }
 
     // Calculate delay with exponential backoff
-    const delay = this.config.restartDelay *
-      Math.pow(this.config.backoffMultiplier, this.restartCount - 1);
+    const delay =
+      this.config.restartDelay *
+      this.config.backoffMultiplier ** (this.restartCount - 1);
 
     this.events.onWatchdogRestart(this.restartCount, this.config.maxRestarts);
 
@@ -244,7 +245,7 @@ export class Watchdog {
         await this.process.start();
       } catch (error) {
         this.events.onError(
-          new Error(`Restart failed: ${(error as Error).message}`),
+          new Error(`Restart failed: ${(error as Error).message}`)
         );
       }
     }, delay);

@@ -5,19 +5,20 @@
  * Valheim servers (requires BepInEx + RCON mod).
  */
 
-import {
-  type RconConfig,
-  RconError,
-  type RconPacket,
-  type RconState,
-} from "./types.ts";
+import { Socket } from "node:net";
 import {
   createAuthPacket,
   createCommandPacket,
   decodePacket,
   isAuthFailure,
   isAuthSuccess,
-} from "./protocol.ts";
+} from "./protocol.js";
+import {
+  type RconConfig,
+  RconError,
+  type RconPacket,
+  type RconState,
+} from "./types.js";
 
 /** Default configuration values */
 const DEFAULT_TIMEOUT = 5000;
@@ -41,19 +42,18 @@ const DEFAULT_PORT = 25575;
  * ```
  */
 export class RconClient {
-  private connection: Deno.TcpConn | null = null;
+  private socket: Socket | null = null;
   private state: RconState = "disconnected";
   private requestId = 0;
-  private receiveBuffer = new Uint8Array(0);
+  private receiveBuffer = Buffer.alloc(0);
   private pendingRequests = new Map<
     number,
     {
       resolve: (value: string) => void;
       reject: (error: Error) => void;
-      timeout: number;
+      timeout: ReturnType<typeof setTimeout>;
     }
   >();
-  private readLoop: Promise<void> | null = null;
 
   constructor(private readonly config: RconConfig) {
     this.config.port = config.port ?? DEFAULT_PORT;
@@ -82,11 +82,8 @@ export class RconClient {
 
     try {
       // Connect with timeout
-      this.connection = await this.connectWithTimeout();
+      await this.connectWithTimeout();
       this.state = "authenticating";
-
-      // Start read loop
-      this.readLoop = this.startReadLoop();
 
       // Authenticate
       await this.authenticate();
@@ -127,7 +124,7 @@ export class RconClient {
 
     // Send packet
     try {
-      await this.connection!.write(packet);
+      await this.writeToSocket(packet);
     } catch (error) {
       this.pendingRequests.delete(id);
       this.state = "error";
@@ -135,30 +132,104 @@ export class RconClient {
         "DISCONNECTED",
         `Failed to send command: ${
           error instanceof Error ? error.message : String(error)
-        }`,
+        }`
       );
     }
 
     return response;
   }
 
-  private async connectWithTimeout(): Promise<Deno.TcpConn> {
+  private writeToSocket(data: Uint8Array): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.socket) {
+        reject(new RconError("DISCONNECTED", "Not connected"));
+        return;
+      }
+      this.socket.write(Buffer.from(data), (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  private connectWithTimeout(): Promise<void> {
     const timeout = this.config.timeout ?? DEFAULT_TIMEOUT;
 
-    const connectPromise = Deno.connect({
-      hostname: this.config.host,
-      port: this.config.port,
-    });
+    return new Promise((resolve, reject) => {
+      const socket = new Socket();
+      let connectTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
+      const cleanup = () => {
+        if (connectTimeout) {
+          clearTimeout(connectTimeout);
+          connectTimeout = null;
+        }
+      };
+
+      connectTimeout = setTimeout(() => {
+        cleanup();
+        socket.destroy();
         reject(
-          new RconError("TIMEOUT", `Connection timeout after ${timeout}ms`),
+          new RconError("TIMEOUT", `Connection timeout after ${timeout}ms`)
         );
       }, timeout);
+
+      socket.once("connect", () => {
+        cleanup();
+        this.socket = socket;
+        this.setupSocketListeners();
+        resolve();
+      });
+
+      socket.once("error", (err) => {
+        cleanup();
+        reject(
+          new RconError(
+            "CONNECTION_FAILED",
+            `Failed to connect: ${err.message}`
+          )
+        );
+      });
+
+      socket.connect(this.config.port, this.config.host);
+    });
+  }
+
+  private setupSocketListeners(): void {
+    if (!this.socket) return;
+
+    this.socket.on("data", (data: Buffer) => {
+      // Append to receive buffer
+      this.receiveBuffer = Buffer.concat([this.receiveBuffer, data]);
+
+      // Process complete packets
+      this.processPackets();
     });
 
-    return await Promise.race([connectPromise, timeoutPromise]);
+    this.socket.on("error", (error) => {
+      if (this.state === "connected") {
+        this.state = "error";
+        // Reject all pending requests
+        for (const [id, request] of this.pendingRequests) {
+          request.reject(
+            new RconError("DISCONNECTED", `Connection lost: ${error.message}`)
+          );
+          this.pendingRequests.delete(id);
+        }
+      }
+    });
+
+    this.socket.on("close", () => {
+      if (this.state === "connected") {
+        this.state = "disconnected";
+        // Reject all pending requests
+        for (const [id, request] of this.pendingRequests) {
+          request.reject(new RconError("DISCONNECTED", "Connection closed"));
+          this.pendingRequests.delete(id);
+        }
+        this.pendingRequests.clear();
+      }
+    });
   }
 
   private async authenticate(): Promise<void> {
@@ -171,7 +242,7 @@ export class RconClient {
       const timeoutId = setTimeout(() => {
         this.pendingRequests.delete(id);
         reject(
-          new RconError("TIMEOUT", `Authentication timeout after ${timeout}ms`),
+          new RconError("TIMEOUT", `Authentication timeout after ${timeout}ms`)
         );
       }, timeout);
 
@@ -190,7 +261,7 @@ export class RconClient {
     });
 
     // Send auth packet
-    await this.connection!.write(packet);
+    await this.writeToSocket(packet);
 
     // Wait for response and validate
     const response = await authPromise;
@@ -227,49 +298,10 @@ export class RconClient {
     });
   }
 
-  private async startReadLoop(): Promise<void> {
-    const buffer = new Uint8Array(4096);
-
-    try {
-      while (this.connection) {
-        const bytesRead = await this.connection.read(buffer);
-
-        if (bytesRead === null) {
-          // Connection closed
-          break;
-        }
-
-        // Append to receive buffer
-        const newBuffer = new Uint8Array(this.receiveBuffer.length + bytesRead);
-        newBuffer.set(this.receiveBuffer);
-        newBuffer.set(buffer.subarray(0, bytesRead), this.receiveBuffer.length);
-        this.receiveBuffer = newBuffer;
-
-        // Process complete packets
-        this.processPackets();
-      }
-    } catch (error) {
-      // Connection error
-      if (this.state === "connected") {
-        this.state = "error";
-        const errorMessage = error instanceof Error
-          ? error.message
-          : String(error);
-        // Reject all pending requests
-        for (const [id, request] of this.pendingRequests) {
-          request.reject(
-            new RconError("DISCONNECTED", `Connection lost: ${errorMessage}`),
-          );
-          this.pendingRequests.delete(id);
-        }
-      }
-    }
-  }
-
   private processPackets(): void {
     while (this.receiveBuffer.length > 0) {
       try {
-        const result = decodePacket(this.receiveBuffer);
+        const result = decodePacket(new Uint8Array(this.receiveBuffer));
         if (!result) {
           // Incomplete packet, wait for more data
           break;
@@ -278,15 +310,14 @@ export class RconClient {
         const { packet, bytesRead } = result;
 
         // Remove processed bytes
-        this.receiveBuffer = this.receiveBuffer.slice(bytesRead);
+        this.receiveBuffer = this.receiveBuffer.subarray(bytesRead);
 
         // Handle packet
         this.handlePacket(packet);
       } catch (error) {
         // Protocol error, reject all pending requests
-        const errorMessage = error instanceof Error
-          ? error.message
-          : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         for (const [id, request] of this.pendingRequests) {
           request.reject(new RconError("PROTOCOL_ERROR", errorMessage));
           this.pendingRequests.delete(id);
@@ -330,17 +361,17 @@ export class RconClient {
       this.pendingRequests.delete(id);
     }
 
-    // Close connection
-    if (this.connection) {
+    // Close socket
+    if (this.socket) {
       try {
-        this.connection.close();
+        this.socket.destroy();
       } catch {
         // Ignore close errors
       }
-      this.connection = null;
+      this.socket = null;
     }
 
     // Clear buffer
-    this.receiveBuffer = new Uint8Array(0);
+    this.receiveBuffer = Buffer.alloc(0);
   }
 }

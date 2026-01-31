@@ -45,7 +45,7 @@ export function parseLogLine(line: string): ServerLogEntry {
   // Try to extract timestamp from Valheim log format
   // "02/15/2024 12:34:56: Message"
   const timestampMatch = line.match(
-    /^(\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}): (.+)$/,
+    /^(\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}): (.+)$/
   );
   if (timestampMatch) {
     message = timestampMatch[2];

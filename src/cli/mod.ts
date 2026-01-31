@@ -3,7 +3,7 @@
  * Provides command-line interface functionality
  */
 
-export { getHelpText, parseArgs } from "./args.ts";
+export { getHelpText, parseArgs } from "./args.js";
 export type {
   Command,
   ConfigArgs,
@@ -17,7 +17,7 @@ export type {
   TuiArgs,
   VersionArgs,
   WorldsArgs,
-} from "./args.ts";
+} from "./args.js";
 
 export {
   clearActiveWatchdog,
@@ -29,4 +29,4 @@ export {
   startCommand,
   stopCommand,
   worldsCommand,
-} from "./commands/mod.ts";
+} from "./commands/mod.js";

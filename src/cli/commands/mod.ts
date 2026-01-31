@@ -3,13 +3,13 @@
  * Re-exports all command implementations
  */
 
-export { configCommand } from "./config.ts";
-export { installCommand } from "./install.ts";
-export { interactiveRcon, rconCommand } from "./rcon.ts";
+export { configCommand } from "./config.js";
+export { installCommand } from "./install.js";
+export { interactiveRcon, rconCommand } from "./rcon.js";
 export {
   clearActiveWatchdog,
   getActiveWatchdog,
   startCommand,
-} from "./start.ts";
-export { stopCommand } from "./stop.ts";
-export { worldsCommand } from "./worlds.ts";
+} from "./start.js";
+export { stopCommand } from "./stop.js";
+export { worldsCommand } from "./worlds.js";

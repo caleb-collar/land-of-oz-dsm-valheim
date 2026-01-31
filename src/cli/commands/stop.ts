@@ -3,8 +3,8 @@
  * Stops the running Valheim server
  */
 
-import type { StopArgs } from "../args.ts";
-import { clearActiveWatchdog, getActiveWatchdog } from "./start.ts";
+import type { StopArgs } from "../args.js";
+import { clearActiveWatchdog, getActiveWatchdog } from "./start.js";
 
 /**
  * Handles the stop command
@@ -16,7 +16,7 @@ export async function stopCommand(args: StopArgs): Promise<void> {
   if (!watchdog) {
     console.log("\nNo server is currently running in this process.");
     console.log(
-      "\nNote: If the server was started in a different terminal or as a",
+      "\nNote: If the server was started in a different terminal or as a"
     );
     console.log("background process, you'll need to stop it manually.");
     return;

@@ -2,9 +2,9 @@
  * MenuItem component for navigation menu
  */
 
-import { type FC } from "react";
 import { Box, Text } from "ink";
-import { theme } from "../theme.ts";
+import type { FC } from "react";
+import { theme } from "../theme.js";
 
 type MenuItemProps = {
   /** Keyboard shortcut key */

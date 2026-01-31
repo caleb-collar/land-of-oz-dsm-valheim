@@ -14,7 +14,7 @@ export {
   getValheimSaveDir,
   getValheimServerDir,
   type Platform,
-} from "./platform.ts";
+} from "./platform.js";
 
 export {
   configureLogger,
@@ -27,4 +27,4 @@ export {
   type LogLevel,
   parseValheimLog,
   warn,
-} from "./logger.ts";
+} from "./logger.js";

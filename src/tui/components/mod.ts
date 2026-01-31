@@ -2,10 +2,10 @@
  * TUI Components barrel export
  */
 
-export { Header } from "./Header.tsx";
-export { Menu } from "./Menu.tsx";
-export { MenuItem } from "./MenuItem.tsx";
-export { LogFeed } from "./LogFeed.tsx";
-export { LogEntry } from "./LogEntry.tsx";
-export { StatusBar } from "./StatusBar.tsx";
-export { ConfirmModal, Modal } from "./Modal.tsx";
+export { Header } from "./Header.js";
+export { Menu } from "./Menu.js";
+export { MenuItem } from "./MenuItem.js";
+export { LogFeed } from "./LogFeed.js";
+export { LogEntry } from "./LogEntry.js";
+export { StatusBar } from "./StatusBar.js";
+export { ConfirmModal, Modal } from "./Modal.js";

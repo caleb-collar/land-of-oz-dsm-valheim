@@ -3,7 +3,9 @@
  * Uses SteamCMD to download and update Valheim
  */
 
-import { getSteamPaths } from "./paths.ts";
+import { spawn } from "node:child_process";
+import fs from "node:fs/promises";
+import { getSteamPaths } from "./paths.js";
 
 /** Valheim Dedicated Server Steam App ID */
 export const VALHEIM_APP_ID = "896660";
@@ -33,7 +35,7 @@ export type UpdateCallback = (status: UpdateStatus) => void;
  * @throws Error if installation fails
  */
 export async function installValheim(
-  onProgress?: UpdateCallback,
+  onProgress?: UpdateCallback
 ): Promise<void> {
   const { steamcmd, steamcmdDir } = getSteamPaths();
 
@@ -60,40 +62,33 @@ export async function installValheim(
     "+quit",
   ];
 
-  const command = new Deno.Command(steamcmd, {
-    args,
-    stdout: "piped",
-    stderr: "piped",
+  const exitCode = await new Promise<number>((resolve, reject) => {
+    const proc = spawn(steamcmd, args, {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let buffer = "";
+
+    proc.stdout.on("data", (chunk: Buffer) => {
+      buffer += chunk.toString();
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        const progress = parseUpdateProgress(line);
+        if (progress) {
+          report(progress);
+        }
+      }
+    });
+
+    proc.on("close", (code) => resolve(code ?? 1));
+    proc.on("error", reject);
   });
 
-  const process = command.spawn();
-
-  // Stream and parse output for progress
-  const decoder = new TextDecoder();
-  const reader = process.stdout.getReader();
-  let buffer = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-
-    for (const line of lines) {
-      const progress = parseUpdateProgress(line);
-      if (progress) {
-        report(progress);
-      }
-    }
-  }
-
-  const status = await process.status;
-
-  if (!status.success) {
+  if (exitCode !== 0) {
     report({ stage: "error", progress: 0, message: "Installation failed" });
-    throw new Error(`Valheim installation failed with code ${status.code}`);
+    throw new Error(`Valheim installation failed with code ${exitCode}`);
   }
 
   report({
@@ -110,7 +105,7 @@ export async function installValheim(
  * @returns True if update was successful
  */
 export async function updateValheim(
-  onProgress?: UpdateCallback,
+  onProgress?: UpdateCallback
 ): Promise<boolean> {
   await installValheim(onProgress);
   return true;
@@ -135,11 +130,10 @@ export async function getInstalledVersion(): Promise<string | null> {
   const { steamcmdDir } = getSteamPaths();
 
   // Check manifest file for version info
-  const manifestPath =
-    `${steamcmdDir}/steamapps/appmanifest_${VALHEIM_APP_ID}.acf`;
+  const manifestPath = `${steamcmdDir}/steamapps/appmanifest_${VALHEIM_APP_ID}.acf`;
 
   try {
-    const content = await Deno.readTextFile(manifestPath);
+    const content = await fs.readFile(manifestPath, "utf-8");
     const match = content.match(/"buildid"\s+"(\d+)"/);
     return match ? match[1] : null;
   } catch {
@@ -160,7 +154,7 @@ function parseUpdateProgress(line: string): UpdateStatus | null {
 
   const downloadMatch = line.match(/downloading, progress: ([\d.]+)/);
   if (downloadMatch) {
-    const progress = Math.round(parseFloat(downloadMatch[1]));
+    const progress = Math.round(Number.parseFloat(downloadMatch[1]));
     return {
       stage: "downloading",
       progress,
@@ -170,7 +164,7 @@ function parseUpdateProgress(line: string): UpdateStatus | null {
 
   const verifyMatch = line.match(/verifying install, progress: ([\d.]+)/);
   if (verifyMatch) {
-    const progress = Math.round(parseFloat(verifyMatch[1]));
+    const progress = Math.round(Number.parseFloat(verifyMatch[1]));
     return {
       stage: "validating",
       progress,

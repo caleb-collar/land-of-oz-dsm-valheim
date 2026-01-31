@@ -7,7 +7,7 @@
  * @module
  */
 
-export { RconClient } from "./client.ts";
+export { RconClient } from "./client.js";
 export {
   createAuthPacket,
   createCommandPacket,
@@ -16,7 +16,7 @@ export {
   isAuthFailure,
   isAuthResponse,
   isAuthSuccess,
-} from "./protocol.ts";
+} from "./protocol.js";
 export {
   PacketType,
   type PacketType as PacketTypeValue,
@@ -26,4 +26,4 @@ export {
   type RconPacket,
   type RconState,
   ValheimCommands,
-} from "./types.ts";
+} from "./types.js";

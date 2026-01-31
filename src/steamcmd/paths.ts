@@ -3,8 +3,9 @@
  * Platform-specific paths for SteamCMD and Valheim dedicated server
  */
 
-import { join } from "@std/path";
-import { getHomeDir, getLocalDataDir, getPlatform } from "../utils/platform.ts";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { getHomeDir, getLocalDataDir, getPlatform } from "../utils/platform.js";
 
 /** All Steam-related paths for the current platform */
 export type SteamPaths = {
@@ -29,51 +30,49 @@ export function getSteamPaths(): SteamPaths {
   switch (platform) {
     case "windows": {
       const localAppData = getLocalDataDir();
-      const steamcmdDir = join(localAppData, "steamcmd");
+      const steamcmdDir = path.join(localAppData, "steamcmd");
       return {
         steamcmdDir,
-        steamcmd: join(steamcmdDir, "steamcmd.exe"),
-        valheimDir: join(
+        steamcmd: path.join(steamcmdDir, "steamcmd.exe"),
+        valheimDir: path.join(
           steamcmdDir,
           "steamapps",
           "common",
-          "Valheim dedicated server",
+          "Valheim dedicated server"
         ),
         executable: "valheim_server.exe",
       };
     }
 
     case "darwin": {
-      const steamcmdDir = join(
+      const steamcmdDir = path.join(
         home,
         "Library",
         "Application Support",
-        "steamcmd",
+        "steamcmd"
       );
       return {
         steamcmdDir,
-        steamcmd: join(steamcmdDir, "steamcmd.sh"),
-        valheimDir: join(
+        steamcmd: path.join(steamcmdDir, "steamcmd.sh"),
+        valheimDir: path.join(
           steamcmdDir,
           "steamapps",
           "common",
-          "Valheim dedicated server",
+          "Valheim dedicated server"
         ),
         executable: "valheim_server.x86_64",
       };
     }
-
-    case "linux":
     default: {
-      const steamcmdDir = join(home, ".local", "share", "steamcmd");
+      const steamcmdDir = path.join(home, ".local", "share", "steamcmd");
       return {
         steamcmdDir,
-        steamcmd: join(steamcmdDir, "steamcmd.sh"),
-        valheimDir: join(
+        steamcmd: path.join(steamcmdDir, "steamcmd.sh"),
+        valheimDir: path.join(
           steamcmdDir,
           "steamapps",
           "common",
-          "Valheim dedicated server",
+          "Valheim dedicated server"
         ),
         executable: "valheim_server.x86_64",
       };
@@ -87,7 +86,7 @@ export function getSteamPaths(): SteamPaths {
  */
 export function getValheimExecutablePath(): string {
   const paths = getSteamPaths();
-  return join(paths.valheimDir, paths.executable);
+  return path.join(paths.valheimDir, paths.executable);
 }
 
 /**
@@ -97,8 +96,8 @@ export function getValheimExecutablePath(): string {
 export async function isSteamCmdInstalled(): Promise<boolean> {
   const { steamcmd } = getSteamPaths();
   try {
-    const stat = await Deno.stat(steamcmd);
-    return stat.isFile;
+    const stat = await fs.stat(steamcmd);
+    return stat.isFile();
   } catch {
     return false;
   }
@@ -111,8 +110,8 @@ export async function isSteamCmdInstalled(): Promise<boolean> {
 export async function isValheimInstalled(): Promise<boolean> {
   const executable = getValheimExecutablePath();
   try {
-    const stat = await Deno.stat(executable);
-    return stat.isFile;
+    const stat = await fs.stat(executable);
+    return stat.isFile();
   } catch {
     return false;
   }

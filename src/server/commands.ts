@@ -4,9 +4,19 @@
  * Supports RCON when available, falls back to file-based lists
  */
 
-import { join } from "@std/path";
-import { ensureFile } from "@std/fs";
-import { RconClient, RconError } from "../rcon/mod.ts";
+import * as fs from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { RconClient, RconError } from "../rcon/mod.js";
+
+/** Helper to ensure a file exists, creating parent directories if needed */
+async function ensureFile(path: string): Promise<void> {
+  try {
+    await fs.access(path);
+  } catch {
+    await fs.mkdir(dirname(path), { recursive: true });
+    await fs.writeFile(path, "");
+  }
+}
 
 /** Types of player lists */
 export type ListType = "admin" | "banned" | "permitted";
@@ -103,7 +113,7 @@ export async function sendRconCommand(command: string): Promise<string> {
  */
 export async function sendServerCommand(
   command: string,
-  rconConfig?: RconCommandConfig,
+  rconConfig?: RconCommandConfig
 ): Promise<{ success: boolean; response: string }> {
   // Try existing RCON connection first
   if (rconClient?.isConnected()) {
@@ -170,19 +180,19 @@ function getListPath(listType: ListType, savedir: string): string {
  */
 export async function addToPermittedList(
   steamId: string,
-  savedir: string,
+  savedir: string
 ): Promise<void> {
   const path = getListPath("permitted", savedir);
   await ensureFile(path);
 
-  const content = await Deno.readTextFile(path).catch(() => "");
+  const content = await fs.readFile(path, "utf-8").catch(() => "");
   const lines = content.split("\n").map((l) => l.trim());
 
   if (!lines.includes(steamId)) {
     const newContent = content.trim()
       ? `${content.trim()}\n${steamId}\n`
       : `${steamId}\n`;
-    await Deno.writeTextFile(path, newContent);
+    await fs.writeFile(path, newContent);
   }
 }
 
@@ -193,19 +203,19 @@ export async function addToPermittedList(
  */
 export async function addToAdminList(
   steamId: string,
-  savedir: string,
+  savedir: string
 ): Promise<void> {
   const path = getListPath("admin", savedir);
   await ensureFile(path);
 
-  const content = await Deno.readTextFile(path).catch(() => "");
+  const content = await fs.readFile(path, "utf-8").catch(() => "");
   const lines = content.split("\n").map((l) => l.trim());
 
   if (!lines.includes(steamId)) {
     const newContent = content.trim()
       ? `${content.trim()}\n${steamId}\n`
       : `${steamId}\n`;
-    await Deno.writeTextFile(path, newContent);
+    await fs.writeFile(path, newContent);
   }
 }
 
@@ -216,19 +226,19 @@ export async function addToAdminList(
  */
 export async function addToBanList(
   steamId: string,
-  savedir: string,
+  savedir: string
 ): Promise<void> {
   const path = getListPath("banned", savedir);
   await ensureFile(path);
 
-  const content = await Deno.readTextFile(path).catch(() => "");
+  const content = await fs.readFile(path, "utf-8").catch(() => "");
   const lines = content.split("\n").map((l) => l.trim());
 
   if (!lines.includes(steamId)) {
     const newContent = content.trim()
       ? `${content.trim()}\n${steamId}\n`
       : `${steamId}\n`;
-    await Deno.writeTextFile(path, newContent);
+    await fs.writeFile(path, newContent);
   }
 }
 
@@ -239,16 +249,16 @@ export async function addToBanList(
  */
 export async function removeFromBanList(
   steamId: string,
-  savedir: string,
+  savedir: string
 ): Promise<void> {
   const path = getListPath("banned", savedir);
 
   try {
-    const content = await Deno.readTextFile(path);
+    const content = await fs.readFile(path, "utf-8");
     const lines = content
       .split("\n")
       .filter((line) => line.trim() !== steamId && line.trim() !== "");
-    await Deno.writeTextFile(path, lines.join("\n") + "\n");
+    await fs.writeFile(path, `${lines.join("\n")}\n`);
   } catch {
     // File doesn't exist, nothing to remove
   }
@@ -263,16 +273,16 @@ export async function removeFromBanList(
 export async function removeFromList(
   steamId: string,
   listType: ListType,
-  savedir: string,
+  savedir: string
 ): Promise<void> {
   const path = getListPath(listType, savedir);
 
   try {
-    const content = await Deno.readTextFile(path);
+    const content = await fs.readFile(path, "utf-8");
     const lines = content
       .split("\n")
       .filter((line) => line.trim() !== steamId && line.trim() !== "");
-    await Deno.writeTextFile(path, lines.join("\n") + "\n");
+    await fs.writeFile(path, `${lines.join("\n")}\n`);
   } catch {
     // File doesn't exist, nothing to remove
   }
@@ -286,12 +296,12 @@ export async function removeFromList(
  */
 export async function getListContents(
   listType: ListType,
-  savedir: string,
+  savedir: string
 ): Promise<string[]> {
   const path = getListPath(listType, savedir);
 
   try {
-    const content = await Deno.readTextFile(path);
+    const content = await fs.readFile(path, "utf-8");
     return content
       .split("\n")
       .map((line) => line.trim())
@@ -311,7 +321,7 @@ export async function getListContents(
 export async function isInList(
   steamId: string,
   listType: ListType,
-  savedir: string,
+  savedir: string
 ): Promise<boolean> {
   const contents = await getListContents(listType, savedir);
   return contents.includes(steamId);

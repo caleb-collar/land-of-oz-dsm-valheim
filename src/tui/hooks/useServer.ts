@@ -4,13 +4,13 @@
  */
 
 import { useCallback, useEffect, useRef } from "react";
-import { type ServerStatus, useStore } from "../store.ts";
 import {
   type ProcessState,
   type ServerLaunchConfig,
   Watchdog,
   type WatchdogEvents,
-} from "../../server/mod.ts";
+} from "../../server/mod.js";
+import { type ServerStatus, useStore } from "../store.js";
 
 /**
  * Maps ProcessState to ServerStatus for TUI store
@@ -109,17 +109,17 @@ export function useServer() {
       onWatchdogRestart: (attempt: number, maxAttempts: number) => {
         actions.addLog(
           "warn",
-          `Watchdog restarting server (attempt ${attempt}/${maxAttempts})...`,
+          `Watchdog restarting server (attempt ${attempt}/${maxAttempts})...`
         );
       },
       onWatchdogMaxRestarts: () => {
         actions.addLog(
           "error",
-          "Watchdog: Maximum restart attempts exceeded. Manual intervention required.",
+          "Watchdog: Maximum restart attempts exceeded. Manual intervention required."
         );
       },
     }),
-    [actions],
+    [actions]
   );
 
   /**

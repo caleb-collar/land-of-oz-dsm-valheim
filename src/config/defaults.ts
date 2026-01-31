@@ -3,7 +3,7 @@
  * These are used when initializing a fresh configuration
  */
 
-import type { AppConfig } from "./schema.ts";
+import type { AppConfig } from "./schema.js";
 
 /** Default application configuration */
 export const defaultConfig: AppConfig = {

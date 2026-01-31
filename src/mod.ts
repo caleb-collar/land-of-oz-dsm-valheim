@@ -4,19 +4,19 @@
  */
 
 // Utilities
-export * from "./utils/mod.ts";
+export * from "./utils/mod.js";
 
 // Configuration
-export * from "./config/mod.ts";
+export * from "./config/mod.js";
 
 // SteamCMD
-export * from "./steamcmd/mod.ts";
+export * from "./steamcmd/mod.js";
 
 // Server management
-export * from "./server/mod.ts";
+export * from "./server/mod.js";
 
 // RCON
-export * from "./rcon/mod.ts";
+export * from "./rcon/mod.js";
 
 // Valheim utilities (explicitly re-export to avoid naming conflicts with server module)
 export {
@@ -46,7 +46,7 @@ export {
   ValheimSettings,
   worldExists,
   type WorldInfo,
-} from "./valheim/mod.ts";
+} from "./valheim/mod.js";
 
 // Re-export valheim lists with different names to avoid conflict
 export {
@@ -57,13 +57,13 @@ export {
   type ListType as ValheimListType,
   readList as readValheimList,
   removeFromList as removeFromValheimList,
-} from "./valheim/mod.ts";
+} from "./valheim/mod.js";
 
 // CLI
-export * from "./cli/mod.ts";
+export * from "./cli/mod.js";
 
 // TUI
-export { launchTui, TUI_VERSION } from "./tui/mod.ts";
+export { launchTui, TUI_VERSION } from "./tui/mod.js";
 
 // Version info
 export const VERSION = "0.1.0";

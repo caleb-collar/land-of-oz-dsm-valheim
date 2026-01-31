@@ -2,10 +2,10 @@
  * LogEntry component for displaying a single log line
  */
 
-import { type FC } from "react";
 import { Box, Text } from "ink";
-import { logColors } from "../theme.ts";
-import type { LogEntry as LogEntryType, LogLevel } from "../store.ts";
+import type { FC } from "react";
+import type { LogEntry as LogEntryType, LogLevel } from "../store.js";
+import { logColors } from "../theme.js";
 
 type LogEntryProps = {
   entry: LogEntryType;

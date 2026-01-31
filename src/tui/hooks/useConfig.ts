@@ -3,11 +3,11 @@
  */
 
 import { useCallback, useEffect } from "react";
-import { useStore } from "../store.ts";
 import {
   loadConfig,
   updateServerConfig as persistServerConfig,
-} from "../../config/mod.ts";
+} from "../../config/mod.js";
+import { useStore } from "../store.js";
 
 /**
  * Hook for managing configuration
@@ -63,7 +63,7 @@ export function useConfig() {
         actions.addLog("error", `Failed to save config: ${error}`);
       }
     },
-    [config, actions],
+    [actions]
   );
 
   /**

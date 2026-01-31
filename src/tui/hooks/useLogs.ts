@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useEffect } from "react";
-import { type LogLevel, useStore } from "../store.ts";
+import { type LogLevel, useStore } from "../store.js";
 
 /**
  * Hook for managing log entries
@@ -20,7 +20,7 @@ export function useLogs() {
     (level: LogLevel, message: string) => {
       actions.addLog(level, message);
     },
-    [actions],
+    [actions]
   );
 
   /**
@@ -48,7 +48,7 @@ export function useLogs() {
     (level: LogLevel | null) => {
       actions.setLogFilter(level);
     },
-    [actions],
+    [actions]
   );
 
   /**
@@ -80,7 +80,7 @@ export function useLogs() {
  */
 export function useLogStream(
   stream: AsyncIterable<string> | null,
-  parser?: (line: string) => { level: LogLevel; message: string },
+  parser?: (line: string) => { level: LogLevel; message: string }
 ) {
   const addLog = useStore((s) => s.actions.addLog);
 

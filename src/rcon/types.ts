@@ -63,7 +63,7 @@ export type RconErrorCode =
 export class RconError extends Error {
   constructor(
     public readonly code: RconErrorCode,
-    message: string,
+    message: string
   ) {
     super(message);
     this.name = "RconError";

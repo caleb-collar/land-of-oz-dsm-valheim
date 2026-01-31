@@ -3,7 +3,8 @@
  * Provides cross-platform support for Windows, macOS, and Linux
  */
 
-import { join } from "@std/path";
+import path from "node:path";
+import process from "node:process";
 
 /** Supported operating systems */
 export type Platform = "windows" | "darwin" | "linux";
@@ -13,8 +14,8 @@ export type Platform = "windows" | "darwin" | "linux";
  * @returns The current platform identifier
  */
 export function getPlatform(): Platform {
-  const os = Deno.build.os;
-  if (os === "windows") return "windows";
+  const os = process.platform;
+  if (os === "win32") return "windows";
   if (os === "darwin") return "darwin";
   return "linux";
 }
@@ -26,13 +27,9 @@ export function getPlatform(): Platform {
 export function getHomeDir(): string {
   const platform = getPlatform();
   if (platform === "windows") {
-    return (
-      Deno.env.get("USERPROFILE") ??
-        Deno.env.get("HOME") ??
-        "C:\\Users\\Default"
-    );
+    return process.env.USERPROFILE ?? process.env.HOME ?? "C:\\Users\\Default";
   }
-  return Deno.env.get("HOME") ?? "/home";
+  return process.env.HOME ?? "/home";
 }
 
 /**
@@ -45,11 +42,11 @@ export function getConfigDir(): string {
 
   switch (platform) {
     case "windows":
-      return Deno.env.get("APPDATA") ?? join(home, "AppData", "Roaming");
+      return process.env.APPDATA ?? path.join(home, "AppData", "Roaming");
     case "darwin":
-      return join(home, "Library", "Application Support");
+      return path.join(home, "Library", "Application Support");
     default:
-      return Deno.env.get("XDG_CONFIG_HOME") ?? join(home, ".config");
+      return process.env.XDG_CONFIG_HOME ?? path.join(home, ".config");
   }
 }
 
@@ -64,11 +61,11 @@ export function getLocalDataDir(): string {
 
   switch (platform) {
     case "windows":
-      return Deno.env.get("LOCALAPPDATA") ?? join(home, "AppData", "Local");
+      return process.env.LOCALAPPDATA ?? path.join(home, "AppData", "Local");
     case "darwin":
-      return join(home, "Library", "Application Support");
+      return path.join(home, "Library", "Application Support");
     default:
-      return Deno.env.get("XDG_DATA_HOME") ?? join(home, ".local", "share");
+      return process.env.XDG_DATA_HOME ?? path.join(home, ".local", "share");
   }
 }
 
@@ -82,28 +79,28 @@ export function getValheimSaveDir(): string {
 
   switch (platform) {
     case "windows":
-      return join(
-        Deno.env.get("APPDATA") ?? join(home, "AppData", "Roaming"),
+      return path.join(
+        process.env.APPDATA ?? path.join(home, "AppData", "Roaming"),
         "IronGate",
         "Valheim",
-        "worlds_local",
+        "worlds_local"
       );
     case "darwin":
-      return join(
+      return path.join(
         home,
         "Library",
         "Application Support",
         "IronGate",
         "Valheim",
-        "worlds_local",
+        "worlds_local"
       );
     default:
-      return join(
-        Deno.env.get("XDG_CONFIG_HOME") ?? join(home, ".config"),
+      return path.join(
+        process.env.XDG_CONFIG_HOME ?? path.join(home, ".config"),
         "unity3d",
         "IronGate",
         "Valheim",
-        "worlds_local",
+        "worlds_local"
       );
   }
 }
@@ -113,7 +110,7 @@ export function getValheimSaveDir(): string {
  * @returns The absolute path to the oz-valheim config directory
  */
 export function getAppConfigDir(): string {
-  return join(getConfigDir(), "oz-valheim");
+  return path.join(getConfigDir(), "oz-valheim");
 }
 
 /**
@@ -121,7 +118,7 @@ export function getAppConfigDir(): string {
  * @returns The absolute path to the SteamCMD directory
  */
 export function getSteamCmdDir(): string {
-  return join(getLocalDataDir(), "steamcmd");
+  return path.join(getLocalDataDir(), "steamcmd");
 }
 
 /**
@@ -129,11 +126,11 @@ export function getSteamCmdDir(): string {
  * @returns The absolute path to the Valheim server directory
  */
 export function getValheimServerDir(): string {
-  return join(
+  return path.join(
     getSteamCmdDir(),
     "steamapps",
     "common",
-    "Valheim dedicated server",
+    "Valheim dedicated server"
   );
 }
 
@@ -147,10 +144,10 @@ export function getValheimExecutable(): string {
 
   switch (platform) {
     case "windows":
-      return join(serverDir, "valheim_server.exe");
+      return path.join(serverDir, "valheim_server.exe");
     case "darwin":
     case "linux":
-      return join(serverDir, "valheim_server.x86_64");
+      return path.join(serverDir, "valheim_server.x86_64");
   }
 }
 
@@ -164,8 +161,8 @@ export function getSteamCmdExecutable(): string {
 
   switch (platform) {
     case "windows":
-      return join(steamCmdDir, "steamcmd.exe");
+      return path.join(steamCmdDir, "steamcmd.exe");
     default:
-      return join(steamCmdDir, "steamcmd.sh");
+      return path.join(steamCmdDir, "steamcmd.sh");
   }
 }

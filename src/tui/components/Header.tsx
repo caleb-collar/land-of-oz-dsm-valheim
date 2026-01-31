@@ -2,10 +2,10 @@
  * Header component with animated ASCII logo and status
  */
 
-import { type FC, useEffect, useState } from "react";
 import { Box, Text } from "ink";
-import { useStore } from "../store.ts";
-import { getStatusColor, theme } from "../theme.ts";
+import { type FC, useEffect, useState } from "react";
+import { useStore } from "../store.js";
+import { getStatusColor, theme } from "../theme.js";
 
 // ASCII logo frames
 const logoFrames = [

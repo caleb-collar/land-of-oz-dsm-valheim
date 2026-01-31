@@ -3,7 +3,7 @@
  * Manages Valheim world saves
  */
 
-import type { WorldsArgs } from "../args.ts";
+import * as fs from "node:fs/promises";
 import {
   deleteWorld,
   exportWorld,
@@ -11,7 +11,8 @@ import {
   getWorldInfo,
   importWorld,
   listWorlds,
-} from "../../valheim/mod.ts";
+} from "../../valheim/mod.js";
+import type { WorldsArgs } from "../args.js";
 
 /**
  * Handles the worlds command
@@ -54,10 +55,10 @@ async function listWorldsCommand(): Promise<void> {
       console.log("No worlds found.");
       console.log("");
       console.log(
-        "Worlds are created when you first start the server with a world name.",
+        "Worlds are created when you first start the server with a world name."
       );
       console.log(
-        "You can also import existing worlds with 'oz-valheim worlds import'.",
+        "You can also import existing worlds with 'oz-valheim worlds import'."
       );
       return;
     }
@@ -79,12 +80,15 @@ async function listWorldsCommand(): Promise<void> {
 
     console.log(`Total: ${worlds.length} world(s)`);
   } catch (error) {
-    if ((error as Error).message.includes("NotFound")) {
+    if (
+      (error as Error).message.includes("NotFound") ||
+      (error as NodeJS.ErrnoException).code === "ENOENT"
+    ) {
       console.log("Worlds directory does not exist yet.");
       console.log("It will be created when you first start the server.");
     } else {
       console.error(`Error listing worlds: ${(error as Error).message}`);
-      Deno.exit(1);
+      process.exit(1);
     }
   }
 }
@@ -96,7 +100,7 @@ async function worldInfoCommand(name: string | undefined): Promise<void> {
   if (!name) {
     console.error("Error: World name is required.");
     console.log("Usage: oz-valheim worlds info <name>");
-    Deno.exit(1);
+    process.exit(1);
   }
 
   try {
@@ -105,7 +109,7 @@ async function worldInfoCommand(name: string | undefined): Promise<void> {
     if (!world) {
       console.error(`Error: World '${name}' not found.`);
       console.log("\nUse 'oz-valheim worlds list' to see available worlds.");
-      Deno.exit(1);
+      process.exit(1);
     }
 
     console.log(`\nWorld: ${world.name}`);
@@ -121,12 +125,12 @@ async function worldInfoCommand(name: string | undefined): Promise<void> {
 
     // Try to read additional info from .fwl file
     try {
-      const fwlContent = await Deno.readTextFile(world.fwlPath);
+      const fwlContent = await fs.readFile(world.fwlPath, "utf-8");
       // FWL format is simple - look for seed info
       if (fwlContent.length > 0) {
         console.log("");
         console.log(
-          "Note: Use this world name in your server config to load it.",
+          "Note: Use this world name in your server config to load it."
         );
       }
     } catch {
@@ -134,7 +138,7 @@ async function worldInfoCommand(name: string | undefined): Promise<void> {
     }
   } catch (error) {
     console.error(`Error: ${(error as Error).message}`);
-    Deno.exit(1);
+    process.exit(1);
   }
 }
 
@@ -143,18 +147,18 @@ async function worldInfoCommand(name: string | undefined): Promise<void> {
  */
 async function importWorldCommand(
   name: string | undefined,
-  path: string | undefined,
+  path: string | undefined
 ): Promise<void> {
   if (!name) {
     console.error("Error: World name is required.");
     console.log("Usage: oz-valheim worlds import <name> --path <source>");
-    Deno.exit(1);
+    process.exit(1);
   }
 
   if (!path) {
     console.error("Error: Source path is required.");
     console.log("Usage: oz-valheim worlds import <name> --path <source>");
-    Deno.exit(1);
+    process.exit(1);
   }
 
   // Determine db and fwl paths
@@ -167,13 +171,13 @@ async function importWorldCommand(
   try {
     // Check if source files exist
     try {
-      await Deno.stat(dbPath);
-      await Deno.stat(fwlPath);
+      await fs.stat(dbPath);
+      await fs.stat(fwlPath);
     } catch {
-      console.error(`\nError: World files not found.`);
+      console.error("\nError: World files not found.");
       console.log(`  Expected: ${dbPath}`);
       console.log(`  Expected: ${fwlPath}`);
-      Deno.exit(1);
+      process.exit(1);
     }
 
     const world = await importWorld(dbPath, fwlPath);
@@ -183,11 +187,11 @@ async function importWorldCommand(
     console.log(`  Location: ${world.dbPath}`);
     console.log("");
     console.log(
-      "You can now use this world by setting 'server.world' to this name.",
+      "You can now use this world by setting 'server.world' to this name."
     );
   } catch (error) {
     console.error(`\nError importing world: ${(error as Error).message}`);
-    Deno.exit(1);
+    process.exit(1);
   }
 }
 
@@ -196,18 +200,18 @@ async function importWorldCommand(
  */
 async function exportWorldCommand(
   name: string | undefined,
-  path: string | undefined,
+  path: string | undefined
 ): Promise<void> {
   if (!name) {
     console.error("Error: World name is required.");
     console.log("Usage: oz-valheim worlds export <name> --path <destination>");
-    Deno.exit(1);
+    process.exit(1);
   }
 
   if (!path) {
     console.error("Error: Destination path is required.");
     console.log("Usage: oz-valheim worlds export <name> --path <destination>");
-    Deno.exit(1);
+    process.exit(1);
   }
 
   console.log(`\nExporting world '${name}'...`);
@@ -218,7 +222,7 @@ async function exportWorldCommand(
     const world = await getWorldInfo(name);
     if (!world) {
       console.error(`\nError: World '${name}' not found.`);
-      Deno.exit(1);
+      process.exit(1);
     }
 
     await exportWorld(name, path);
@@ -229,7 +233,7 @@ async function exportWorldCommand(
     console.log(`  Metadata: ${path}/${name}.fwl`);
   } catch (error) {
     console.error(`\nError exporting world: ${(error as Error).message}`);
-    Deno.exit(1);
+    process.exit(1);
   }
 }
 
@@ -238,12 +242,12 @@ async function exportWorldCommand(
  */
 async function deleteWorldCommand(
   name: string | undefined,
-  force: boolean | undefined,
+  force: boolean | undefined
 ): Promise<void> {
   if (!name) {
     console.error("Error: World name is required.");
     console.log("Usage: oz-valheim worlds delete <name> --force");
-    Deno.exit(1);
+    process.exit(1);
   }
 
   if (!force) {
@@ -251,7 +255,7 @@ async function deleteWorldCommand(
     console.log("");
     console.log("This will permanently delete the world and all backups.");
     console.log(`Run: oz-valheim worlds delete ${name} --force`);
-    Deno.exit(1);
+    process.exit(1);
   }
 
   console.log(`\nDeleting world '${name}'...`);
@@ -261,7 +265,7 @@ async function deleteWorldCommand(
     const world = await getWorldInfo(name);
     if (!world) {
       console.error(`\nError: World '${name}' not found.`);
-      Deno.exit(1);
+      process.exit(1);
     }
 
     await deleteWorld(name);
@@ -270,6 +274,6 @@ async function deleteWorldCommand(
     console.log(`✓ World '${name}' deleted.`);
   } catch (error) {
     console.error(`\nError deleting world: ${(error as Error).message}`);
-    Deno.exit(1);
+    process.exit(1);
   }
 }

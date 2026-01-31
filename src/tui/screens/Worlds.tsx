@@ -2,10 +2,10 @@
  * Worlds screen - World management
  */
 
-import { type FC, useState } from "react";
 import { Box, Text, useInput } from "ink";
-import { useStore } from "../store.ts";
-import { theme } from "../theme.ts";
+import { type FC, useState } from "react";
+import { useStore } from "../store.js";
+import { theme } from "../theme.js";
 
 /** Mock world data until actual world discovery is implemented */
 type WorldInfo = {
@@ -43,7 +43,7 @@ export const Worlds: FC = () => {
   });
 
   return (
-    <Box flexDirection="column" padding={1}>
+    <Box flexDirection="column" flexGrow={1} padding={1} overflow="hidden">
       {/* Title */}
       <Box marginBottom={1}>
         <Text bold color={theme.primary}>
@@ -58,7 +58,9 @@ export const Worlds: FC = () => {
 
       {/* Worlds List */}
       <Box flexDirection="column">
-        {worlds.length === 0 ? <Text dimColor>No worlds found</Text> : (
+        {worlds.length === 0 ? (
+          <Text dimColor>No worlds found</Text>
+        ) : (
           worlds.map((world, index) => {
             const isSelected = index === selectedIndex;
 

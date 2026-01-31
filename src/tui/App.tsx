@@ -1,20 +1,23 @@
 /**
  * Root App component for the TUI
  * Three-zone layout: Header, Main Content (Menu + Screen), Log Feed
+ *
+ * Layout achieved with pure flexbox - withFullScreen from fullscreen-ink
+ * automatically wraps this in a FullScreenBox that fills the terminal.
  */
 
-import { type FC, useEffect } from "react";
 import { Box, useApp, useInput } from "ink";
-import { Header } from "./components/Header.tsx";
-import { Menu } from "./components/Menu.tsx";
-import { LogFeed } from "./components/LogFeed.tsx";
-import { Dashboard } from "./screens/Dashboard.tsx";
-import { Settings } from "./screens/Settings.tsx";
-import { Worlds } from "./screens/Worlds.tsx";
-import { Console } from "./screens/Console.tsx";
-import { type Screen, useStore } from "./store.ts";
-import { useConfigSync } from "./hooks/useConfig.ts";
-import { theme } from "./theme.ts";
+import { type FC, useEffect } from "react";
+import { Header } from "./components/Header.js";
+import { LogFeed } from "./components/LogFeed.js";
+import { Menu } from "./components/Menu.js";
+import { useConfigSync } from "./hooks/useConfig.js";
+import { Console } from "./screens/Console.js";
+import { Dashboard } from "./screens/Dashboard.js";
+import { Settings } from "./screens/Settings.js";
+import { Worlds } from "./screens/Worlds.js";
+import { type Screen, useStore } from "./store.js";
+import { theme } from "./theme.js";
 
 /** Screen component mapping */
 const screens: Record<Screen, FC> = {
@@ -26,6 +29,7 @@ const screens: Record<Screen, FC> = {
 
 /**
  * Main TUI Application component
+ * Uses fullscreen-ink which wraps this in a FullScreenBox
  */
 export const App: FC = () => {
   const { exit } = useApp();
@@ -48,7 +52,7 @@ export const App: FC = () => {
     // Don't handle global keys when modal is open
     if (modalOpen) return;
 
-    // Quit
+    // Quit - use useApp().exit() for proper fullscreen cleanup
     if (input === "q" || input === "Q" || (key.ctrl && input === "c")) {
       addLog("info", "Shutting down...");
       exit();
@@ -65,28 +69,30 @@ export const App: FC = () => {
   // Get the active screen component
   const ScreenComponent = screens[activeScreen] ?? Dashboard;
 
+  // Use percentage-based sizing like the working ink-app-template example
   return (
-    <Box flexDirection="column" minHeight={30}>
-      {/* Zone 1: Header */}
+    <Box flexDirection="column" height="100%" width="100%">
+      {/* Zone 1: Header - natural height based on content */}
       <Header />
 
-      {/* Zone 2: Main Content */}
-      <Box flexGrow={1} flexDirection="row">
-        {/* Left: Navigation Menu */}
+      {/* Zone 2: Main Content - expands to fill available space */}
+      <Box flexGrow={1} flexDirection="row" height="100%">
+        {/* Left: Navigation Menu - fixed width */}
         <Menu />
 
-        {/* Right: Content Area */}
+        {/* Right: Content Area - fills remaining width */}
         <Box
           flexGrow={1}
           borderStyle="single"
           borderColor={theme.muted}
           flexDirection="column"
+          height="100%"
         >
           <ScreenComponent />
         </Box>
       </Box>
 
-      {/* Zone 3: Log Feed */}
+      {/* Zone 3: Log Feed - natural height based on content */}
       <LogFeed />
     </Box>
   );

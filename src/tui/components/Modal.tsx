@@ -2,10 +2,10 @@
  * Modal component for overlay dialogs
  */
 
-import { type FC, type ReactNode } from "react";
 import { Box, Text, useInput } from "ink";
-import { useStore } from "../store.ts";
-import { theme } from "../theme.ts";
+import type { FC, ReactNode } from "react";
+import { useStore } from "../store.js";
+import { theme } from "../theme.js";
 
 type ModalProps = {
   /** Modal title */
@@ -66,7 +66,7 @@ type ConfirmModalProps = {
 };
 
 export const ConfirmModal: FC<ConfirmModalProps> = (
-  props: ConfirmModalProps,
+  props: ConfirmModalProps
 ) => {
   const { message, onConfirm, onCancel } = props;
   useInput((input, key) => {
@@ -82,7 +82,7 @@ export const ConfirmModal: FC<ConfirmModalProps> = (
       <Text>{message}</Text>
       <Box marginTop={1}>
         <Text color={theme.success}>[Y] Yes</Text>
-        <Text></Text>
+        <Text />
         <Text color={theme.error}>[N] No</Text>
       </Box>
     </Modal>

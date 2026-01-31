@@ -2,12 +2,12 @@
  * Navigation Menu component
  */
 
-import { type FC } from "react";
 import { Box, Text } from "ink";
-import { useStore } from "../store.ts";
-import { MenuItem } from "./MenuItem.tsx";
-import { theme } from "../theme.ts";
-import type { Screen } from "../store.ts";
+import type { FC } from "react";
+import { useStore } from "../store.js";
+import type { Screen } from "../store.js";
+import { theme } from "../theme.js";
+import { MenuItem } from "./MenuItem.js";
 
 /** Menu item configuration */
 type MenuItemConfig = {
@@ -24,16 +24,20 @@ const menuItems: MenuItemConfig[] = [
   { key: "Q", label: "Quit", screen: null },
 ];
 
+/** Props for Menu component */
+type MenuProps = Record<string, never>;
+
 /**
  * Navigation menu with keyboard shortcuts
  */
-export const Menu: FC = () => {
+export const Menu: FC<MenuProps> = () => {
   const activeScreen = useStore((s) => s.ui.activeScreen);
 
   return (
     <Box
       flexDirection="column"
       width={20}
+      flexGrow={1}
       borderStyle="single"
       borderColor={theme.muted}
       paddingX={1}

@@ -16,16 +16,17 @@
     "@std/assert": "jsr:@std/assert@1",
     "@std/path": "jsr:@std/path@1",
     "@std/fs": "jsr:@std/fs@1",
-    "react": "npm:react@19",
-    "react/jsx-runtime": "npm:react@19/jsx-runtime",
-    "ink": "npm:ink@6",
+    "react": "npm:react@18",
+    "react/jsx-runtime": "npm:react@18/jsx-runtime",
+    "ink": "npm:ink@5",
+    "fullscreen-ink": "npm:fullscreen-ink@0.0.2",
     "zustand": "npm:zustand@5",
     "zod": "npm:zod@4"
   },
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "types": ["npm:@types/react@19"]
+    "types": ["npm:@types/react@18"]
   },
   "lint": {
     "rules": {

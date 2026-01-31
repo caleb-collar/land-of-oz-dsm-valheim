@@ -2,10 +2,10 @@
  * Settings screen - Server configuration
  */
 
-import { type FC, useState } from "react";
 import { Box, Text, useInput } from "ink";
-import { useStore } from "../store.ts";
-import { theme } from "../theme.ts";
+import { type FC, useState } from "react";
+import { useStore } from "../store.js";
+import { theme } from "../theme.js";
 
 /** Settings item for display */
 type SettingItem = {
@@ -171,7 +171,7 @@ export const Settings: FC = () => {
   const renderSection = (
     title: string,
     sectionItems: SettingItem[],
-    startIndex: number,
+    startIndex: number
   ) => (
     <Box flexDirection="column" marginBottom={1}>
       <Box marginBottom={0}>
@@ -182,9 +182,12 @@ export const Settings: FC = () => {
       {sectionItems.map((item, idx) => {
         const globalIndex = startIndex + idx;
         const isSelected = globalIndex === selectedIndex;
-        const displayValue = typeof item.value === "boolean"
-          ? item.value ? "Yes" : "No"
-          : String(item.value);
+        const displayValue =
+          typeof item.value === "boolean"
+            ? item.value
+              ? "Yes"
+              : "No"
+            : String(item.value);
 
         return (
           <Box key={item.key}>
@@ -197,11 +200,15 @@ export const Settings: FC = () => {
             >
               {item.label}:
             </Text>
-            <Text></Text>
+            <Text />
             <Text
-              color={typeof item.value === "boolean"
-                ? item.value ? theme.success : theme.error
-                : theme.secondary}
+              color={
+                typeof item.value === "boolean"
+                  ? item.value
+                    ? theme.success
+                    : theme.error
+                  : theme.secondary
+              }
             >
               {displayValue}
             </Text>
@@ -212,7 +219,7 @@ export const Settings: FC = () => {
   );
 
   return (
-    <Box flexDirection="column" padding={1}>
+    <Box flexDirection="column" flexGrow={1} padding={1} overflow="hidden">
       {/* Title */}
       <Box marginBottom={1}>
         <Text bold color={theme.primary}>

@@ -1,51 +1,31 @@
 /**
- * Deno KV-based configuration persistence
+ * Configuration persistence using conf package
  * Handles loading, saving, and updating configuration
  */
 
-import { join } from "@std/path";
-import { ensureDir } from "@std/fs";
-import { type AppConfig, AppConfigSchema, type World } from "./schema.ts";
-import { defaultConfig } from "./defaults.ts";
-import { getAppConfigDir } from "../utils/platform.ts";
+import Conf from "conf";
+import { defaultConfig } from "./defaults.js";
+import { type AppConfig, AppConfigSchema, type World } from "./schema.js";
 
-const CONFIG_KEY = ["oz-valheim", "config"];
-
-let kv: Deno.Kv | null = null;
-
-/**
- * Gets or opens the Deno KV database
- * @returns The Deno KV instance
- */
-async function getKv(): Promise<Deno.Kv> {
-  if (kv) return kv;
-
-  const configDir = getAppConfigDir();
-  await ensureDir(configDir);
-
-  const dbPath = join(configDir, "config.db");
-  kv = await Deno.openKv(dbPath);
-  return kv;
-}
+// Create a typed config store
+const store = new Conf<{ config: AppConfig }>({
+  projectName: "oz-valheim",
+  defaults: {
+    config: defaultConfig,
+  },
+});
 
 /**
- * Loads the configuration from Deno KV
+ * Loads the configuration from storage
  * Returns defaults if no configuration exists
  * @returns The application configuration
  */
 export async function loadConfig(): Promise<AppConfig> {
-  const db = await getKv();
-  const result = await db.get<AppConfig>(CONFIG_KEY);
-
-  if (!result.value) {
-    // Initialize with defaults
-    await saveConfig(defaultConfig);
-    return defaultConfig;
-  }
+  const config = store.get("config");
 
   // Validate and merge with defaults for any missing fields
   try {
-    const validated = AppConfigSchema.parse(result.value);
+    const validated = AppConfigSchema.parse(config);
     return validated;
   } catch (error) {
     console.warn("Config validation failed, using defaults:", error);
@@ -54,15 +34,13 @@ export async function loadConfig(): Promise<AppConfig> {
 }
 
 /**
- * Saves the configuration to Deno KV
+ * Saves the configuration to storage
  * @param config The configuration to save
  */
 export async function saveConfig(config: AppConfig): Promise<void> {
   // Validate before saving
   const validated = AppConfigSchema.parse(config);
-
-  const db = await getKv();
-  await db.set(CONFIG_KEY, validated);
+  store.set("config", validated);
 }
 
 /**
@@ -71,7 +49,7 @@ export async function saveConfig(config: AppConfig): Promise<void> {
  * @returns The updated configuration
  */
 export async function updateConfig(
-  partial: Partial<AppConfig>,
+  partial: Partial<AppConfig>
 ): Promise<AppConfig> {
   const current = await loadConfig();
   const updated = { ...current, ...partial };
@@ -85,7 +63,7 @@ export async function updateConfig(
  * @returns The updated full configuration
  */
 export async function updateServerConfig(
-  partial: Partial<AppConfig["server"]>,
+  partial: Partial<AppConfig["server"]>
 ): Promise<AppConfig> {
   const current = await loadConfig();
   const updated = {
@@ -102,7 +80,7 @@ export async function updateServerConfig(
  * @returns The updated full configuration
  */
 export async function updateWatchdogConfig(
-  partial: Partial<AppConfig["watchdog"]>,
+  partial: Partial<AppConfig["watchdog"]>
 ): Promise<AppConfig> {
   const current = await loadConfig();
   const updated = {
@@ -119,7 +97,7 @@ export async function updateWatchdogConfig(
  * @returns The updated full configuration
  */
 export async function updateTuiConfig(
-  partial: Partial<AppConfig["tui"]>,
+  partial: Partial<AppConfig["tui"]>
 ): Promise<AppConfig> {
   const current = await loadConfig();
   const updated = {
@@ -140,14 +118,12 @@ export async function resetConfig(): Promise<AppConfig> {
 }
 
 /**
- * Closes the Deno KV database connection
+ * Closes the configuration store
+ * (No-op for conf package, kept for API compatibility)
  */
 export async function closeConfig(): Promise<void> {
-  if (kv) {
-    kv.close();
-    kv = null;
-  }
-  await Promise.resolve(); // Ensure async signature
+  // conf package doesn't need explicit closing
+  await Promise.resolve();
 }
 
 // World management helpers

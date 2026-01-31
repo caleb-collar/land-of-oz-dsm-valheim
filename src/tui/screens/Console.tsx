@@ -2,11 +2,11 @@
  * Console screen - Log viewer
  */
 
-import { type FC, useState } from "react";
 import { Box, Text, useInput } from "ink";
-import { type LogLevel, selectFilteredLogs, useStore } from "../store.ts";
-import { LogEntry } from "../components/LogEntry.tsx";
-import { logColors, theme } from "../theme.ts";
+import { type FC, useState } from "react";
+import { LogEntry } from "../components/LogEntry.js";
+import { type LogLevel, selectFilteredLogs, useStore } from "../store.js";
+import { logColors, theme } from "../theme.js";
 
 /** Available log filters */
 const LOG_FILTERS: (LogLevel | null)[] = [
@@ -31,7 +31,7 @@ export const Console: FC = () => {
   const maxScroll = Math.max(0, entries.length - visibleCount);
   const visibleEntries = entries.slice(
     scrollOffset,
-    scrollOffset + visibleCount,
+    scrollOffset + visibleCount
   );
 
   // Handle input
@@ -78,7 +78,7 @@ export const Console: FC = () => {
   });
 
   return (
-    <Box flexDirection="column" padding={1}>
+    <Box flexDirection="column" flexGrow={1} padding={1} overflow="hidden">
       {/* Title and controls */}
       <Box justifyContent="space-between" marginBottom={1}>
         <Text bold color={theme.primary}>
@@ -101,17 +101,15 @@ export const Console: FC = () => {
         height={visibleCount + 2}
         paddingX={1}
       >
-        {visibleEntries.length === 0
-          ? (
-            <Text dimColor>
-              No log entries{filter ? ` matching "${filter}"` : ""}
-            </Text>
-          )
-          : (
-            visibleEntries.map((entry) => (
-              <LogEntry key={entry.id} entry={entry} />
-            ))
-          )}
+        {visibleEntries.length === 0 ? (
+          <Text dimColor>
+            No log entries{filter ? ` matching "${filter}"` : ""}
+          </Text>
+        ) : (
+          visibleEntries.map((entry) => (
+            <LogEntry key={entry.id} entry={entry} />
+          ))
+        )}
       </Box>
 
       {/* Scroll indicator */}

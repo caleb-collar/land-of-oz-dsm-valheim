@@ -4,23 +4,23 @@
 
 echo "Running pre-commit checks..."
 
-# Check formatting
-echo "Checking formatting..."
-deno fmt --check
+# Check formatting and linting with Biome
+echo "Checking formatting and linting..."
+npx biome check .
 if [ $? -ne 0 ]; then
     echo ""
-    echo "❌ Formatting check failed!"
-    echo "Run 'deno fmt' to fix formatting issues."
+    echo "❌ Biome check failed!"
+    echo "Run 'npx biome check --fix .' to fix issues."
     exit 1
 fi
 
-# Run linter
-echo "Running linter..."
-deno lint
+# Type check
+echo "Running type check..."
+npx tsc --noEmit
 if [ $? -ne 0 ]; then
     echo ""
-    echo "❌ Lint check failed!"
-    echo "Fix the lint errors above before committing."
+    echo "❌ Type check failed!"
+    echo "Fix the TypeScript errors above before committing."
     exit 1
 fi
 

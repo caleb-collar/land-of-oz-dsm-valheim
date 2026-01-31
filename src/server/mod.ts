@@ -9,7 +9,7 @@ export {
   type ProcessState,
   type ServerLaunchConfig,
   ValheimProcess,
-} from "./process.ts";
+} from "./process.js";
 
 // Watchdog
 export {
@@ -17,7 +17,7 @@ export {
   type ServerWatchdogConfig,
   Watchdog,
   type WatchdogEvents,
-} from "./watchdog.ts";
+} from "./watchdog.js";
 
 // Log parsing
 export {
@@ -28,7 +28,7 @@ export {
   type ServerLogEntry,
   type ServerLogLevel,
   type ServerLogSubscriber,
-} from "./logs.ts";
+} from "./logs.js";
 
 // Admin commands and RCON integration
 export {
@@ -48,4 +48,4 @@ export {
   sendRconCommand,
   sendServerCommand,
   VALHEIM_COMMANDS,
-} from "./commands.ts";
+} from "./commands.js";

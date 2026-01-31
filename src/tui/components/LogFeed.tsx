@@ -2,19 +2,22 @@
  * LogFeed component for displaying scrollable log entries
  */
 
-import { type FC } from "react";
 import { Box, Text } from "ink";
-import { selectFilteredLogs, useStore } from "../store.ts";
-import { LogEntry } from "./LogEntry.tsx";
-import { theme } from "../theme.ts";
+import type { FC } from "react";
+import { selectFilteredLogs, useStore } from "../store.js";
+import { theme } from "../theme.js";
+import { LogEntry } from "./LogEntry.js";
 
-/** Number of log entries to display */
-const VISIBLE_ENTRIES = 8;
+/** Fixed number of log entries to display */
+const VISIBLE_ENTRIES = 6;
+
+/** Props for LogFeed component */
+type LogFeedProps = Record<string, never>;
 
 /**
  * Log feed displaying recent log entries
  */
-export const LogFeed: FC = () => {
+export const LogFeed: FC<LogFeedProps> = () => {
   const entries = useStore(selectFilteredLogs);
   const filter = useStore((s) => s.logs.filter);
 
@@ -40,7 +43,9 @@ export const LogFeed: FC = () => {
         )}
       </Box>
       <Box flexDirection="column" marginTop={0}>
-        {visible.length === 0 ? <Text dimColor>No log entries yet...</Text> : (
+        {visible.length === 0 ? (
+          <Text dimColor>No log entries yet...</Text>
+        ) : (
           visible.map((entry) => <LogEntry key={entry.id} entry={entry} />)
         )}
       </Box>
