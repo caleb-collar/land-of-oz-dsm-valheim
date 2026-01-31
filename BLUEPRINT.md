@@ -575,6 +575,191 @@ Common commands that should work via RCON:
 
 ---
 
+## Phase 7: Infrastructure & CI/CD 🔲 PENDING
+
+**Status**: Not Started\
+**Priority**: High
+
+### Overview
+
+Set up continuous integration, automated testing, and dependency management to
+ensure code quality and streamline the development workflow.
+
+### Tasks
+
+#### 7.1 GitHub Actions CI Workflow
+
+Create `.github/workflows/ci.yml`:
+
+- [ ] Trigger on push to `main` and pull requests
+- [ ] Matrix build: Windows, Linux, macOS
+- [ ] Steps:
+  - Checkout code
+  - Setup Deno
+  - Run `deno fmt --check`
+  - Run `deno lint`
+  - Run `deno check main.ts src/**/*.ts src/**/*.tsx`
+  - Run `deno task test`
+- [ ] Cache Deno dependencies for faster builds
+- [ ] Add status badge to README.md
+
+Example workflow:
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Format check
+        run: deno fmt --check
+
+      - name: Lint
+        run: deno lint
+
+      - name: Type check
+        run: deno check main.ts src/**/*.ts src/**/*.tsx
+
+      - name: Test
+        run: deno task test
+```
+
+#### 7.2 Release Workflow
+
+Create `.github/workflows/release.yml`:
+
+- [ ] Trigger on version tags (v\*)
+- [ ] Build compiled binaries for all platforms
+- [ ] Create GitHub Release with attached binaries
+- [ ] Generate changelog from commits
+
+#### 7.3 Automated Dependency Updates
+
+Create `renovate.json`:
+
+- [ ] Configure Renovate bot for automated PRs
+- [ ] Group minor/patch updates
+- [ ] Require CI to pass before auto-merge
+- [ ] Pin major versions (React 18, Ink 5, Zod 3)
+
+Example config:
+
+```json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:base"],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch"
+    },
+    {
+      "matchPackageNames": ["react", "ink", "zod"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
+}
+```
+
+#### 7.4 TUI Process Integration
+
+Complete the TODOs in `src/tui/hooks/useServer.ts`:
+
+- [ ] Integrate `useServer` hook with actual `ValheimProcess` class
+- [ ] Integrate with `Watchdog` for auto-restart in TUI mode
+- [ ] Wire up real process events to TUI store
+
+### Verification
+
+```bash
+# After creating workflows, verify locally with act (optional)
+act --list                    # List available jobs
+act push                      # Test push workflow
+
+# After renovate setup
+# Check Renovate dashboard on GitHub
+```
+
+### Completion Criteria
+
+- [ ] CI workflow runs on every PR
+- [ ] All platforms pass CI (Windows, Linux, macOS)
+- [ ] Release workflow creates binaries
+- [ ] Renovate creates dependency update PRs
+- [ ] TUI process management fully integrated
+- [ ] README has CI status badge
+
+---
+
+## Phase 8: Major Version Upgrades 🔲 FUTURE
+
+**Status**: Planned\
+**Priority**: Low (Future)
+
+### Overview
+
+Track major dependency updates for future migration when the ecosystem is ready.
+
+### Available Upgrades
+
+| Package | Current | Latest | Migration Notes                               |
+| ------- | ------- | ------ | --------------------------------------------- |
+| React   | 18.3.1  | 19.x   | Ink 5 requires React 18; wait for Ink 6/7     |
+| Ink     | 5.2.1   | 6.x    | Breaking changes in component APIs            |
+| Zod     | 3.x     | 4.x    | New inference patterns, schema syntax changes |
+
+### Migration Prerequisites
+
+#### React 19 + Ink 6
+
+- [ ] Ink 6 officially supports React 19
+- [ ] Review Ink 6 migration guide
+- [ ] Update all components for new APIs
+- [ ] Test TUI rendering thoroughly
+
+#### Zod 4
+
+- [ ] Review Zod 4 changelog for breaking changes
+- [ ] Update schema definitions
+- [ ] Test all validation paths
+- [ ] Update type exports if inference changes
+
+### Tasks (When Ready)
+
+1. [ ] Create feature branch for upgrades
+2. [ ] Update `deno.json` imports
+3. [ ] Fix breaking changes in code
+4. [ ] Run full test suite
+5. [ ] Manual TUI testing
+6. [ ] Update documentation
+
+### Notes
+
+- Do NOT upgrade React/Ink without verifying compatibility
+- Zod 4 can be tested independently
+- Create issues to track each major upgrade
+
+---
+
 ## Agent Handoff Protocol
 
 When completing a phase, provide:
