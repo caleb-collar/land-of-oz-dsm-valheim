@@ -1,5 +1,7 @@
 # Land of OZ - Dedicated Server Manager - Valheim
 
+[![CI](https://github.com/caleb-collar/land-of-oz-dsm-valheim/actions/workflows/ci.yml/badge.svg)](https://github.com/caleb-collar/land-of-oz-dsm-valheim/actions/workflows/ci.yml)
+
 ## About
 
 - This software is a dedicated server manager (DSM) for Valheim.

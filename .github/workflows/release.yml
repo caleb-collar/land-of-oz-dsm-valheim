@@ -1,0 +1,138 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            ext: ""
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            ext: ".exe"
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            ext: ""
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            ext: ""
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Cache Deno dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/deno
+          key: ${{ runner.os }}-deno-${{ hashFiles('deno.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-
+
+      - name: Run tests
+        run: deno task test
+
+      - name: Compile binary
+        run: >
+          deno compile
+          --allow-all
+          --unstable-kv
+          --target ${{ matrix.target }}
+          --output oz-valheim-${{ matrix.target }}${{ matrix.ext }}
+          main.ts
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: oz-valheim-${{ matrix.target }}
+          path: oz-valheim-${{ matrix.target }}${{ matrix.ext }}
+          retention-days: 1
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          for dir in artifacts/*/; do
+            cp "$dir"* release/ 2>/dev/null || true
+          done
+          ls -la release/
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s" HEAD)
+          else
+            COMMITS=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD)
+          fi
+
+          cat << EOF > changelog.md
+          ## What's Changed
+
+          $COMMITS
+
+          ## Installation
+
+          Download the appropriate binary for your platform:
+
+          | Platform | Binary |
+          | --- | --- |
+          | Windows (x64) | \`oz-valheim-x86_64-pc-windows-msvc.exe\` |
+          | Linux (x64) | \`oz-valheim-x86_64-unknown-linux-gnu\` |
+          | macOS (x64) | \`oz-valheim-x86_64-apple-darwin\` |
+          | macOS (ARM64) | \`oz-valheim-aarch64-apple-darwin\` |
+
+          ### Quick Start
+
+          \`\`\`bash
+          # Make executable (Linux/macOS)
+          chmod +x oz-valheim-*
+
+          # Run
+          ./oz-valheim --help
+          \`\`\`
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: changelog.md
+          files: release/*
+          draft: false
+          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

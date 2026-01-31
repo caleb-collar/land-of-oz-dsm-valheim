@@ -1,0 +1,52 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:base"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 2,
+  "schedule": ["before 6am on Monday"],
+  "packageRules": [
+    {
+      "description": "Group all minor and patch updates",
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch"
+    },
+    {
+      "description": "Disable major updates for React/Ink (wait for Ink 6)",
+      "matchPackageNames": ["react", "ink"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Disable major Zod updates (breaking changes)",
+      "matchPackageNames": ["zod"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "JSR standard library updates",
+      "matchPackagePatterns": ["^@std/"],
+      "groupName": "Deno standard library"
+    },
+    {
+      "description": "Type definitions",
+      "matchPackagePatterns": ["^@types/"],
+      "groupName": "Type definitions"
+    }
+  ],
+  "deno": {
+    "enabled": true,
+    "fileMatch": ["(^|/)deno\\.json$"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["deno\\.json$"],
+      "matchStrings": ["\"(?<depName>npm:[^@]+)@(?<currentValue>[^\"]+)\""],
+      "datasourceTemplate": "npm",
+      "extractVersionTemplate": "^npm:(?<depName>[^@]+)@(?<currentValue>.*)$"
+    }
+  ]
+}
