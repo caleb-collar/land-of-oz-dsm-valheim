@@ -116,8 +116,8 @@ function createMockRconServer(options: {
             receivedCommands.push(body);
 
             // Get response or use default
-            const responseBody = options.responses?.get(body) ??
-              `Command executed: ${body}`;
+            const responseBody =
+              options.responses?.get(body) ?? `Command executed: ${body}`;
 
             const response = encodePacket({
               id,
@@ -369,11 +369,7 @@ Deno.test(
       timeout: 500,
     });
 
-    await assertRejects(
-      () => client.connect(),
-      RconError,
-      "timeout",
-    );
+    await assertRejects(() => client.connect(), RconError, "timeout");
   },
 );
 
