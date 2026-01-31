@@ -1,8 +1,22 @@
 {
   "tasks": {
-    "dev": "deno run --watch main.ts"
+    "dev": "deno run --watch --allow-all --unstable-kv main.ts",
+    "start": "deno run --allow-all --unstable-kv main.ts",
+    "test": "deno test --allow-all --unstable-kv",
+    "check": "deno check src/**/*.ts src/**/*.tsx"
   },
   "imports": {
-    "@std/assert": "jsr:@std/assert@1"
-  }
+    "@std/assert": "jsr:@std/assert@1",
+    "@std/path": "jsr:@std/path@1",
+    "@std/fs": "jsr:@std/fs@1",
+    "react": "npm:react@18",
+    "ink": "npm:ink@5",
+    "zustand": "npm:zustand@5",
+    "zod": "npm:zod@3"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
+  },
+  "unstable": ["kv"]
 }

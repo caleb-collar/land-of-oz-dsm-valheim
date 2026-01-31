@@ -244,3 +244,78 @@ For detailed implementation guidance, see `.agent-docs/`:
 - Check `README.md` for architecture diagrams
 - Review `.agent-docs/` for detailed specs
 - Run `deno doc src/mod.ts` for API documentation
+
+## Agentic Workflow Checklists
+
+### Before Starting Any Task
+
+- [ ] Read relevant documentation (AGENTS.md, README.md, .agent-docs/)
+- [ ] Understand the current project state
+- [ ] Check for any existing errors: `deno check main.ts src/**/*.ts`
+- [ ] Identify files that will be modified
+
+### During Implementation
+
+- [ ] Follow TypeScript conventions (use `type` over `interface`)
+- [ ] Use Zod for runtime validation where needed
+- [ ] Export from `mod.ts` barrel files
+- [ ] Add JSDoc comments to public functions
+- [ ] Use `@std/path` for cross-platform paths
+
+### After Every File Edit
+
+- [ ] Run `deno check` on modified files
+- [ ] Fix any type errors immediately
+- [ ] Verify imports are correct
+
+### Before Completing Any Task
+
+Run this verification sequence and fix any issues:
+
+```bash
+# 1. Type check all source files
+deno check main.ts src/**/*.ts src/**/*.tsx
+
+# 2. Run linter
+deno lint
+
+# 3. Format code
+deno fmt
+
+# 4. Run tests
+deno test --allow-all --unstable-kv
+
+# 5. Verify the app runs
+deno task start --version
+deno task start --help
+```
+
+### Mandatory Completion Checklist
+
+**DO NOT mark a task as complete until ALL of these pass:**
+
+1. **Type Check**: `deno check main.ts src/**/*.ts` exits with code 0
+2. **Lint**: `deno lint` reports no errors
+3. **Build/Run**: `deno task start --version` runs successfully
+4. **No Regressions**: Previously working functionality still works
+5. **Documentation**: Any new public APIs have JSDoc comments
+
+### Troubleshooting Common Issues
+
+| Problem | Solution |
+|---------|----------|
+| `Module not found` | Check import paths, ensure `mod.ts` exports |
+| `JSR package not installed` | Run `deno install` or check deno.json imports |
+| `Deno.openKv is not a function` | Add `--unstable-kv` flag or `"unstable": ["kv"]` to deno.json |
+| `Password validation failed` | Check Zod schema allows empty strings where needed |
+| `Cannot find module 'react'` | Ensure `"react": "npm:react@18"` in deno.json imports |
+
+### Handoff Protocol
+
+When completing a phase/task, provide:
+
+1. **Summary**: What was implemented
+2. **Files Changed**: List of new/modified files
+3. **Verification**: Evidence that checks pass (command output)
+4. **Next Steps**: What the next agent should work on
+5. **Known Issues**: Any remaining problems or TODOs

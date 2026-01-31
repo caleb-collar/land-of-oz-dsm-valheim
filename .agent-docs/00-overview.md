@@ -87,3 +87,75 @@ Phase 5: Polish (testing, docs, compilation)
 - [ ] Watchdog recovers from crashes
 - [ ] Works on Windows, Mac, and Linux
 - [ ] Update checks and installs via SteamCMD
+
+## Agent Quality Assurance
+
+### Pre-Implementation Checklist
+
+Before writing any code:
+
+- [ ] Read AGENTS.md for coding standards
+- [ ] Review relevant .agent-docs/ files for the feature
+- [ ] Check current project compiles: `deno check main.ts src/**/*.ts`
+- [ ] Understand existing patterns in codebase
+
+### Implementation Checklist
+
+While implementing:
+
+- [ ] Follow established patterns (see existing files for reference)
+- [ ] Export all public APIs from `mod.ts` barrel files
+- [ ] Add JSDoc comments to functions and types
+- [ ] Handle errors appropriately (don't swallow exceptions)
+- [ ] Use cross-platform path handling (`@std/path`)
+
+### Post-Implementation Verification
+
+**MUST complete before finishing:**
+
+```bash
+# Step 1: Type check (REQUIRED - must pass)
+deno check main.ts src/**/*.ts src/**/*.tsx
+
+# Step 2: Lint (REQUIRED - must pass)
+deno lint
+
+# Step 3: Format (recommended)
+deno fmt
+
+# Step 4: Test (REQUIRED if tests exist)
+deno test --allow-all --unstable-kv
+
+# Step 5: Runtime verification (REQUIRED)
+deno task start --version
+deno task start --config
+```
+
+### Error Resolution Protocol
+
+If any check fails:
+
+1. **Read the error message carefully**
+2. **Identify the root cause** (import issue, type mismatch, etc.)
+3. **Fix the issue** in the appropriate file
+4. **Re-run the failing check** to confirm the fix
+5. **Run all checks again** to ensure no regressions
+
+### Phase Completion Gates
+
+Each phase has specific verification requirements:
+
+| Phase | Verification Command | Expected Result |
+|-------|---------------------|-----------------|
+| Phase 1 | `deno task start --config` | Shows configuration |
+| Phase 2 | `deno task start install --dry-run` | Shows SteamCMD steps |
+| Phase 3 | `deno task start --tui` | TUI renders |
+| Phase 4 | `deno task start --help` | Shows all commands |
+
+### Never Complete Without
+
+1. ✅ `deno check` passes with exit code 0
+2. ✅ `deno lint` passes with no errors
+3. ✅ `deno task start --version` runs successfully
+4. ✅ Summary of changes provided
+5. ✅ Next steps documented for following agent
