@@ -182,12 +182,9 @@ export const Settings: FC = () => {
       {sectionItems.map((item, idx) => {
         const globalIndex = startIndex + idx;
         const isSelected = globalIndex === selectedIndex;
-        const displayValue =
-          typeof item.value === "boolean"
-            ? item.value
-              ? "Yes"
-              : "No"
-            : String(item.value);
+        const displayValue = typeof item.value === "boolean"
+          ? item.value ? "Yes" : "No"
+          : String(item.value);
 
         return (
           <Box key={item.key}>
@@ -202,13 +199,9 @@ export const Settings: FC = () => {
             </Text>
             <Text></Text>
             <Text
-              color={
-                typeof item.value === "boolean"
-                  ? item.value
-                    ? theme.success
-                    : theme.error
-                  : theme.secondary
-              }
+              color={typeof item.value === "boolean"
+                ? item.value ? theme.success : theme.error
+                : theme.secondary}
             >
               {displayValue}
             </Text>

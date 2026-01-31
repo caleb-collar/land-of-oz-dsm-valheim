@@ -4,7 +4,7 @@
  */
 
 import { join } from "@std/path";
-import { getPlatform, getLocalDataDir, getHomeDir } from "../utils/platform.ts";
+import { getHomeDir, getLocalDataDir, getPlatform } from "../utils/platform.ts";
 
 /** All Steam-related paths for the current platform */
 export type SteamPaths = {

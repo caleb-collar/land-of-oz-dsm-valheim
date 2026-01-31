@@ -135,7 +135,8 @@ export async function getInstalledVersion(): Promise<string | null> {
   const { steamcmdDir } = getSteamPaths();
 
   // Check manifest file for version info
-  const manifestPath = `${steamcmdDir}/steamapps/appmanifest_${VALHEIM_APP_ID}.acf`;
+  const manifestPath =
+    `${steamcmdDir}/steamapps/appmanifest_${VALHEIM_APP_ID}.acf`;
 
   try {
     const content = await Deno.readTextFile(manifestPath);

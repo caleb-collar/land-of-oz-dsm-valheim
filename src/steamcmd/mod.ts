@@ -14,20 +14,20 @@ export {
 
 // SteamCMD installer
 export {
-  installSteamCmd,
   type InstallProgress,
   type InstallStage,
+  installSteamCmd,
   type ProgressCallback,
 } from "./installer.ts";
 
 // Valheim updater
 export {
-  VALHEIM_APP_ID,
-  installValheim,
-  updateValheim,
   checkForUpdates,
   getInstalledVersion,
-  type UpdateStatus,
-  type UpdateStage,
+  installValheim,
   type UpdateCallback,
+  type UpdateStage,
+  type UpdateStatus,
+  updateValheim,
+  VALHEIM_APP_ID,
 } from "./updater.ts";

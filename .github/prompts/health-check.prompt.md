@@ -1,14 +1,19 @@
 # Repository Health Check Agent
 
-You are tasked with performing a comprehensive health check and improvement pass on this Deno-based repository. Your goal is to ensure the codebase follows best practices, dependencies are current, configurations are correct, and critical code areas are robust.
+You are tasked with performing a comprehensive health check and improvement pass
+on this Deno-based repository. Your goal is to ensure the codebase follows best
+practices, dependencies are current, configurations are correct, and critical
+code areas are robust.
 
 ## Pre-Check: Understand the Project
 
 Before making any changes:
 
-1. Read `AGENTS.md` and `README.md` to understand the project structure and conventions
+1. Read `AGENTS.md` and `README.md` to understand the project structure and
+   conventions
 2. Review `.agent-docs/` for detailed implementation specifications
-3. Understand this is a Deno 2.x project using Ink (React for terminals), Zustand, and Zod
+3. Understand this is a Deno 2.x project using Ink (React for terminals),
+   Zustand, and Zod
 
 ## Health Check Phases
 
@@ -45,7 +50,8 @@ Execute each phase in order, fixing issues as you find them.
 
 ### Phase 2: Configuration Validation
 
-**Objective:** Ensure all configuration files are correct and follow best practices.
+**Objective:** Ensure all configuration files are correct and follow best
+practices.
 
 #### deno.json Checks:
 
@@ -67,7 +73,8 @@ Execute each phase in order, fixing issues as you find them.
 
 #### Other Config Files:
 
-- [ ] Check for `.vscode/` settings if present (launch configs, recommended extensions)
+- [ ] Check for `.vscode/` settings if present (launch configs, recommended
+      extensions)
 - [ ] Verify any CI/CD configuration in `.github/workflows/`
 - [ ] Check for missing configs (`.editorconfig`, `renovate.json`, etc.)
 
@@ -219,8 +226,7 @@ After completing the health check, provide a summary report:
 ```markdown
 ## Health Check Report
 
-**Date:** [Current Date]
-**Overall Health:** [Good/Fair/Needs Attention]
+**Date:** [Current Date] **Overall Health:** [Good/Fair/Needs Attention]
 
 ### Dependencies
 
@@ -275,10 +281,13 @@ After completing the health check, provide a summary report:
 
 1. **Make incremental changes** - Don't refactor everything at once
 2. **Test after each change** - Run `deno check` and `deno test` frequently
-3. **Preserve functionality** - Health improvements should not break existing features
-4. **Document changes** - Update relevant documentation when making significant changes
+3. **Preserve functionality** - Health improvements should not break existing
+   features
+4. **Document changes** - Update relevant documentation when making significant
+   changes
 5. **Commit logically** - Group related changes together
-6. **Ask before major changes** - If a fix requires significant refactoring, discuss first
+6. **Ask before major changes** - If a fix requires significant refactoring,
+   discuss first
 
 ## Verification Checklist
 
