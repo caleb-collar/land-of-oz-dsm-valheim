@@ -1,8 +1,8 @@
 # Repository Health Check Agent
 
 You are tasked with performing a comprehensive health check and improvement pass
-on this Deno-based repository. Your goal is to ensure the codebase follows best
-practices, dependencies are current, configurations are correct, and critical
+on the **oz-dsm-valheim** repository. Your goal is to ensure the codebase follows
+best practices, dependencies are current, configurations are correct, and critical
 code areas are robust.
 
 ## Pre-Check: Understand the Project
@@ -12,8 +12,13 @@ Before making any changes:
 1. Read `AGENTS.md` and `README.md` to understand the project structure and
    conventions
 2. Review `.agent-docs/` for detailed implementation specifications
-3. Understand this is a Deno 2.x project using Ink (React for terminals),
-   Zustand, and Zod
+3. Understand this is a **Node.js 22.x** project using:
+   - **Ink 5.x** (React 18 for terminals) for the TUI
+   - **Zustand 5.x** for state management
+   - **Zod 3.x** for runtime validation
+   - **Biome** for linting and formatting
+   - **Vitest** for testing
+   - **tsx** for TypeScript execution
 
 ## Health Check Phases
 
@@ -27,24 +32,25 @@ Execute each phase in order, fixing issues as you find them.
 
 #### Tasks:
 
-1. **Check deno.json imports** for outdated packages:
-   - JSR packages (`jsr:@std/*`) - verify latest versions
-   - npm packages (`npm:*`) - check for major/minor updates
-   - Run: `deno outdated` (if available) or manually check package registries
+1. **Check package.json dependencies** for outdated packages:
+   - Run: `npm outdated` to see available updates
+   - Review both `dependencies` and `devDependencies`
 
-2. **Verify import map correctness:**
-   - All imports resolve correctly
-   - No duplicate or conflicting entries
-   - React 19 compatibility with Ink 6
+2. **Verify dependency compatibility:**
+   - React 18 compatibility with Ink 5
+   - All peer dependencies satisfied
+   - No conflicting version requirements
 
 3. **Check for security advisories:**
-   - Review npm packages for known vulnerabilities
-   - Consider running: `deno info --json main.ts` to inspect dependency tree
+   - Run: `npm audit` to check for vulnerabilities
+   - Run: `npm audit fix` for automatic fixes (patch updates only)
+   - Review any high/critical vulnerabilities
 
 4. **Update strategy:**
    - Update patch versions immediately
    - Test minor version updates before committing
    - Major version updates require careful review and testing
+   - Use Renovate (renovate.json) for automated dependency updates
 
 ---
 
@@ -53,18 +59,30 @@ Execute each phase in order, fixing issues as you find them.
 **Objective:** Ensure all configuration files are correct and follow best
 practices.
 
-#### deno.json Checks:
+#### package.json Checks:
 
-- [ ] `tasks` are correctly defined and functional
-- [ ] `imports` use specific version pinning (avoid `@latest`)
-- [ ] `compilerOptions` are correct for React JSX
-- [ ] `unstable` features are documented and necessary
-- [ ] Consider adding `lint` and `fmt` configuration if missing
+- [ ] `scripts` are correctly defined and functional
+- [ ] Dependencies use specific version pinning (avoid `*` or `latest`)
+- [ ] `engines` field specifies Node.js >=22.0.0
+- [ ] `type: "module"` is set for ES modules
+
+#### tsconfig.json Checks:
+
+- [ ] `jsx: "react-jsx"` for React 18 JSX transform
+- [ ] `module: "NodeNext"` and `moduleResolution: "NodeNext"`
+- [ ] `strict: true` for type safety
+- [ ] Path aliases work correctly
+
+#### biome.json Checks:
+
+- [ ] Linter rules are appropriate
+- [ ] Formatter settings match project conventions
+- [ ] Ignored files are correct
 
 #### .gitignore Checks:
 
 - [ ] All build outputs are ignored (`/dist/`, `/build/`)
-- [ ] Deno-specific ignores (`.deno/`, `node_modules/`)
+- [ ] Node.js ignores (`node_modules/`, `*.log`)
 - [ ] Sensitive files excluded (`.env*`, credentials)
 - [ ] IDE files ignored (`.idea/`, `.vscode/settings.json`)
 - [ ] OS-specific files ignored (`.DS_Store`, `Thumbs.db`)
@@ -73,31 +91,32 @@ practices.
 
 #### Other Config Files:
 
-- [ ] Check for `.vscode/` settings if present (launch configs, recommended
-      extensions)
-- [ ] Verify any CI/CD configuration in `.github/workflows/`
-- [ ] Check for missing configs (`.editorconfig`, `renovate.json`, etc.)
+- [ ] `.vscode/extensions.json` - recommended extensions
+- [ ] `.vscode/settings.json` - Biome integration
+- [ ] `.github/workflows/` - CI/CD workflows pass
+- [ ] `renovate.json` - dependency update automation
+- [ ] `vitest.config.ts` - test configuration
 
 ---
 
 ### Phase 3: Code Quality & Linting
 
-**Objective:** Ensure code follows Deno and project conventions.
+**Objective:** Ensure code follows Node.js and project conventions.
 
 #### Run Quality Tools:
 
 ```bash
 # Type checking
-deno check main.ts src/**/*.ts src/**/*.tsx
+npm run typecheck
 
-# Linting
-deno lint
+# Linting and formatting check
+npm run lint
 
-# Formatting
-deno fmt --check
+# Auto-fix linting and formatting issues
+npm run lint:fix
 
-# If formatting issues found:
-deno fmt
+# Format only
+npm run format
 ```
 
 #### Fix Common Issues:
@@ -107,6 +126,7 @@ deno fmt
 - Missing JSDoc on public APIs
 - Inconsistent formatting
 - Prefer `type` over `interface` per project conventions
+- Use `node:` prefix for Node.js built-in imports
 
 ---
 
@@ -117,7 +137,14 @@ deno fmt
 #### Run Tests:
 
 ```bash
-deno test --allow-all --unstable-kv
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
 ```
 
 #### Analyze Results:
@@ -130,6 +157,7 @@ deno test --allow-all --unstable-kv
   - Platform detection utilities
   - CLI argument parsing
   - SteamCMD path resolution
+  - RCON protocol encoding/decoding
 
 #### Fix Failing Tests:
 
@@ -146,26 +174,29 @@ deno test --allow-all --unstable-kv
 #### Verification Commands:
 
 ```bash
-# Verify app starts
-deno task start --version
-deno task start --help
+# Verify CLI version displays
+npx tsx main.ts --version
+
+# Verify CLI help displays
+npx tsx main.ts --help
 
 # Type check passes
-deno task check
+npm run typecheck
 
-# Development mode works
-# (start and immediately stop)
-deno task dev &
-sleep 2
-# Kill the process
+# Build for production
+npm run build
+
+# Run diagnostics
+npx tsx main.ts doctor
 ```
 
 #### Check for:
 
 - [ ] No runtime errors on startup
-- [ ] CLI commands work as expected
-- [ ] TUI renders without errors (if applicable)
+- [ ] CLI commands work as expected (`start`, `stop`, `config`, `worlds`, `rcon`, `doctor`)
+- [ ] TUI renders without errors
 - [ ] No deprecation warnings
+- [ ] Version bumped appropriately (see AGENTS.md Version Management)
 
 ---
 
@@ -192,7 +223,7 @@ sleep 2
    - Watchdog reliability
 
 4. **Cross-Platform Compatibility**
-   - Windows/Linux/macOS path handling
+   - Windows/Linux/macOS path handling (use `node:path`)
    - Platform-specific code uses proper detection
    - No hardcoded paths
 
@@ -210,10 +241,13 @@ sleep 2
 #### Check:
 
 - [ ] README.md accurately describes the project
+- [ ] README.md has Quick Start and Troubleshooting sections
 - [ ] AGENTS.md conventions match actual code
+- [ ] AGENTS.md Version Management section is followed
 - [ ] `.agent-docs/` files are up to date
 - [ ] JSDoc comments on public APIs
 - [ ] CLI help text is accurate
+- [ ] CONTRIBUTING.md has dev setup instructions
 
 ---
 
@@ -226,13 +260,17 @@ After completing the health check, provide a summary report:
 ```markdown
 ## Health Check Report
 
-**Date:** [Current Date] **Overall Health:** [Good/Fair/Needs Attention]
+**Date:** [Current Date]
+**Package:** oz-dsm-valheim
+**Version:** [version from package.json]
+**Overall Health:** [Good/Fair/Needs Attention]
 
 ### Dependencies
 
 - Updated: [list of updated packages]
 - Current: [packages already at latest]
 - Held: [packages intentionally not updated, with reason]
+- Security: [npm audit results]
 
 ### Configuration
 
@@ -252,12 +290,15 @@ After completing the health check, provide a summary report:
 - Passed: [count]
 - Failed: [count]
 - Skipped: [count]
+- Coverage: [percentage if available]
 
 ### Build Status
 
 - Type Check: [pass/fail]
+- Build: [pass/fail]
 - Runtime: [pass/fail]
 - CLI Commands: [pass/fail]
+- Doctor: [pass/fail]
 
 ### Critical Improvements Made
 
@@ -273,6 +314,13 @@ After completing the health check, provide a summary report:
 
 1. [Future improvement suggestion]
 2. [Future improvement suggestion]
+
+### Version Bump
+
+- [ ] Version bumped in package.json (if changes were made)
+- Type of bump: [major/minor/patch]
+- Previous: [old version]
+- New: [new version]
 ```
 
 ---
@@ -280,7 +328,7 @@ After completing the health check, provide a summary report:
 ## Important Guidelines
 
 1. **Make incremental changes** - Don't refactor everything at once
-2. **Test after each change** - Run `deno check` and `deno test` frequently
+2. **Test after each change** - Run `npm run typecheck` and `npm test` frequently
 3. **Preserve functionality** - Health improvements should not break existing
    features
 4. **Document changes** - Update relevant documentation when making significant
@@ -288,14 +336,16 @@ After completing the health check, provide a summary report:
 5. **Commit logically** - Group related changes together
 6. **Ask before major changes** - If a fix requires significant refactoring,
    discuss first
+7. **Bump version** - Follow AGENTS.md Version Management for semantic versioning
 
 ## Verification Checklist
 
 Before completing the health check:
 
-- [ ] `deno check main.ts src/**/*.ts src/**/*.tsx` passes
-- [ ] `deno lint` reports no errors
-- [ ] `deno fmt --check` passes
-- [ ] `deno test --allow-all --unstable-kv` all tests pass
-- [ ] `deno task start --version` runs successfully
+- [ ] `npm run typecheck` passes with no errors
+- [ ] `npm run lint` reports no errors
+- [ ] `npm test` - all tests pass
+- [ ] `npx tsx main.ts --version` runs successfully
+- [ ] `npx tsx main.ts doctor` reports no critical issues
 - [ ] No regressions in existing functionality
+- [ ] Version bumped in package.json if changes were made

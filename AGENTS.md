@@ -282,6 +282,72 @@ For detailed implementation guidance, see `.agent-docs/`:
 - Review `.agent-docs/` for detailed specs
 - Run `npm run typecheck` to validate TypeScript
 
+## Version Management
+
+### Semantic Versioning Rules
+
+This project uses [Semantic Versioning](https://semver.org/) (SemVer). The package
+name is `oz-dsm-valheim` and the version format is `MAJOR.MINOR.PATCH`.
+
+**When to bump versions:**
+
+| Change Type | Version Bump | Examples |
+| ----------- | ------------ | -------- |
+| Breaking changes | MAJOR (1.0.0 → 2.0.0) | API changes, removed features, config schema changes |
+| New features | MINOR (1.0.0 → 1.1.0) | New commands, new TUI screens, new config options |
+| Bug fixes | PATCH (1.0.0 → 1.0.1) | Bug fixes, typo corrections, dependency updates |
+
+### Version Bump Checklist
+
+**MANDATORY: Bump the version when implementing changes!**
+
+1. **Determine the appropriate version bump** based on the change type above
+2. **Update `package.json`** version field
+3. **Update any version constants** in source code if applicable
+4. **Add a changelog entry** (if CHANGELOG.md exists)
+
+### How to Bump Version
+
+```bash
+# For patch releases (bug fixes)
+npm version patch --no-git-tag-version
+
+# For minor releases (new features)
+npm version minor --no-git-tag-version
+
+# For major releases (breaking changes)
+npm version major --no-git-tag-version
+```
+
+Or manually edit `package.json`:
+
+```json
+{
+  "name": "oz-valheim",
+  "version": "X.Y.Z"  // Update this
+}
+```
+
+### Pre-release Versions
+
+For pre-release versions, use suffixes:
+
+- Alpha: `1.0.0-alpha.1`
+- Beta: `1.0.0-beta.1`
+- Release Candidate: `1.0.0-rc.1`
+
+### Version Tagging
+
+After bumping the version and committing changes, create a git tag:
+
+```bash
+# Create annotated tag for release
+git tag -a v$(node -p "require('./package.json').version") -m "Release v$(node -p "require('./package.json').version")"
+
+# Push tag to trigger release workflow
+git push origin --tags
+```
+
 ## Agentic Workflow Checklists
 
 ### Before Starting Any Task
@@ -333,6 +399,7 @@ npx tsx main.ts --help
 3. **Build/Run**: `npx tsx main.ts --version` runs successfully
 4. **No Regressions**: Previously working functionality still works
 5. **Documentation**: Any new public APIs have JSDoc comments
+6. **Version Bump**: If implementing features or fixes, bump version in `package.json` (see [Version Management](#version-management))
 
 ### Troubleshooting Common Issues
 

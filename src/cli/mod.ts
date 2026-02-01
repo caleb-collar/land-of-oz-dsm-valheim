@@ -7,6 +7,7 @@ export { getHelpText, parseArgs } from "./args.js";
 export type {
   Command,
   ConfigArgs,
+  DoctorArgs,
   GlobalArgs,
   HelpArgs,
   InstallArgs,
@@ -22,6 +23,7 @@ export type {
 export {
   clearActiveWatchdog,
   configCommand,
+  doctorCommand,
   getActiveWatchdog,
   installCommand,
   interactiveRcon,

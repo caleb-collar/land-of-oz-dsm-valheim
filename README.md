@@ -20,6 +20,80 @@
       server tooling for generating beautiful and efficient animated ascii based
       art.
 
+## Quick Start
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/caleb-collar/land-of-oz-dsm-valheim.git
+cd land-of-oz-dsm-valheim
+
+# Install dependencies
+npm install
+
+# Run the TUI (recommended)
+npx tsx main.ts
+
+# Or use CLI commands directly
+npx tsx main.ts --help
+```
+
+### Common Usage Examples
+
+```bash
+# Launch the interactive TUI
+npx tsx main.ts tui
+
+# Install SteamCMD and Valheim server
+npx tsx main.ts install
+
+# Check your setup for issues
+npx tsx main.ts doctor
+
+# Start the server
+npx tsx main.ts start --name "My Viking Server" --world "MyWorld"
+
+# Start in background mode
+npx tsx main.ts start --background
+
+# Stop the server gracefully
+npx tsx main.ts stop
+
+# Force stop if unresponsive
+npx tsx main.ts stop --force
+
+# View/edit configuration
+npx tsx main.ts config list
+npx tsx main.ts config set server.port 2457
+npx tsx main.ts config get server.name
+
+# Manage worlds
+npx tsx main.ts worlds list
+npx tsx main.ts worlds info MyWorld
+npx tsx main.ts worlds export MyWorld --path ./backup
+
+# Send RCON commands (requires BepInEx mod)
+npx tsx main.ts rcon save
+npx tsx main.ts rcon "kick PlayerName"
+npx tsx main.ts rcon --interactive
+```
+
+### TUI Keyboard Shortcuts
+
+| Key       | Action               |
+| --------- | -------------------- |
+| `1`       | Dashboard            |
+| `2`       | Settings             |
+| `3`       | Worlds               |
+| `4`       | Console              |
+| `?`       | Show help overlay    |
+| `S`       | Start server         |
+| `X`       | Stop server          |
+| `Q`       | Quit application     |
+| `Ctrl+C`  | Force quit           |
+| `Esc`     | Close modal          |
+
 ## Features
 
 ### Key features are as follows, all features have configuration available in the TUI:
@@ -52,7 +126,7 @@ via Ink. Motion is created using ASCII Motion.
 > ASCII header anchors the top of the screen, followed by a responsive layout
 > that separates active management from passive monitoring. Where possible, the
 > system uses Ink to display data (realtime active react components). There is a
-> real-time log feed with color-coded event markers. ![TUI Mockup](image.png)
+> real-time log feed with color-coded event markers. ![oz-dsm-valheim](image-1.png)
 
 ---
 
@@ -320,6 +394,94 @@ node dist/main.js --help
 
 - Node.js 22.x or later
 - npm 10.x or later
+
+---
+
+## Troubleshooting
+
+Run `npx tsx main.ts doctor` to automatically diagnose common issues.
+
+### Common Issues
+
+#### SteamCMD not found
+
+```
+Error: SteamCMD not found
+```
+
+**Solution:** Run `npx tsx main.ts install` to automatically download and install SteamCMD.
+
+#### Valheim server not starting
+
+**Possible causes:**
+
+1. **Port already in use** - Valheim requires ports 2456-2458. Check if another process is using them:
+   ```bash
+   # Windows
+   netstat -ano | findstr :2456
+   
+   # Linux/macOS
+   lsof -i :2456
+   ```
+
+2. **Insufficient permissions** - Run as administrator/root on first launch.
+
+3. **SteamCMD needs update** - Run `npx tsx main.ts install --force` to reinstall.
+
+#### Configuration errors
+
+```
+Error: Failed to load configuration
+```
+
+**Solution:** Reset configuration to defaults:
+```bash
+npx tsx main.ts config reset
+```
+
+#### Terminal display issues
+
+If the TUI appears corrupted or doesn't render correctly:
+
+1. **Try a different terminal** - Windows Terminal, PowerShell, or iTerm2 work best
+2. **Check terminal size** - Minimum 80x24 recommended
+3. **Disable Unicode fallback** - Some terminals need UTF-8 encoding enabled
+
+#### RCON connection failed
+
+```
+Error: RCON connection refused
+```
+
+**Possible causes:**
+
+1. RCON requires the BepInEx mod pack with RCON plugin installed on the server
+2. Check RCON port and password match your server configuration:
+   ```bash
+   npx tsx main.ts config set rcon.port 25575
+   npx tsx main.ts config set rcon.password "yourpassword"
+   ```
+
+#### Server crashes immediately
+
+Check the Valheim log file for details:
+- **Windows:** `%USERPROFILE%\AppData\LocalLow\IronGate\Valheim\`
+- **Linux:** `~/.config/unity3d/IronGate/Valheim/`
+
+Common causes:
+- Invalid world name (use alphanumeric characters only)
+- Password too short (minimum 5 characters)
+- Corrupted world files
+
+### Getting Help
+
+1. Run diagnostics: `npx tsx main.ts doctor`
+2. Check logs in the TUI Console screen (press `4`)
+3. Review Valheim server logs in the save directory
+4. Open an issue on GitHub with:
+   - Output of `npx tsx main.ts doctor --json`
+   - Relevant error messages
+   - Your platform and Node.js version
 
 ---
 

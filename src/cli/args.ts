@@ -13,6 +13,7 @@ export type Command =
   | "config"
   | "worlds"
   | "rcon"
+  | "doctor"
   | "tui"
   | "help"
   | "version";
@@ -22,6 +23,8 @@ export type GlobalArgs = {
   help: boolean;
   version: boolean;
   debug: boolean;
+  json: boolean;
+  quiet: boolean;
 };
 
 /** Start command arguments */
@@ -85,6 +88,12 @@ export type TuiArgs = GlobalArgs & {
   command: "tui";
 };
 
+/** Doctor command arguments */
+export type DoctorArgs = GlobalArgs & {
+  command: "doctor";
+  fix?: boolean;
+};
+
 /** Help command arguments */
 export type HelpArgs = GlobalArgs & {
   command: "help";
@@ -104,6 +113,7 @@ export type ParsedArgs =
   | ConfigArgs
   | WorldsArgs
   | RconArgs
+  | DoctorArgs
   | TuiArgs
   | HelpArgs
   | VersionArgs
@@ -122,6 +132,8 @@ export function parseArgs(args: string[]): ParsedArgs {
     help: false,
     version: false,
     debug: false,
+    json: false,
+    quiet: false,
   };
 
   // Check for global flags anywhere in args
@@ -129,6 +141,8 @@ export function parseArgs(args: string[]): ParsedArgs {
     if (arg === "-h" || arg === "--help") globalArgs.help = true;
     if (arg === "-v" || arg === "--version") globalArgs.version = true;
     if (arg === "-d" || arg === "--debug") globalArgs.debug = true;
+    if (arg === "--json") globalArgs.json = true;
+    if (arg === "-q" || arg === "--quiet") globalArgs.quiet = true;
   }
 
   // If --version flag, return version command
@@ -163,6 +177,8 @@ export function parseArgs(args: string[]): ParsedArgs {
       return parseWorldsArgs(args, globalArgs);
     case "rcon":
       return parseRconArgs(args, globalArgs);
+    case "doctor":
+      return parseDoctorArgs(args, globalArgs);
     case "tui":
       return { ...globalArgs, command: "tui" };
     case "help":
@@ -201,6 +217,7 @@ function isValidCommand(cmd: string): cmd is Command {
     "config",
     "worlds",
     "rcon",
+    "doctor",
     "tui",
     "help",
     "version",
@@ -480,6 +497,17 @@ function parseHelpArgs(args: string[], global: GlobalArgs): HelpArgs {
 }
 
 /**
+ * Parses doctor command arguments
+ */
+function parseDoctorArgs(args: string[], global: GlobalArgs): DoctorArgs {
+  return {
+    ...global,
+    command: "doctor",
+    fix: hasFlag(args, "--fix", "-f"),
+  };
+}
+
+/**
  * Generates help text for the CLI
  * @param command Optional command to show help for
  * @returns Help text string
@@ -499,6 +527,8 @@ OPTIONS:
     -h, --help       Show this help message
     -v, --version    Show version information
     -d, --debug      Enable debug logging
+    --json           Output results as JSON (machine-readable)
+    -q, --quiet      Suppress non-essential output
 
 COMMANDS:
     start            Start the Valheim server
@@ -507,6 +537,7 @@ COMMANDS:
     config           Manage configuration
     worlds           Manage world saves
     rcon             Send RCON commands to server
+    doctor           Diagnose common issues
     tui              Launch the TUI interface (default)
     help [COMMAND]   Show help for a command
 
@@ -685,6 +716,32 @@ EXAMPLES:
     oz-valheim rcon save
     oz-valheim rcon "kick PlayerName" --password secret
     oz-valheim rcon --interactive -H 192.168.1.100
+`;
+
+    case "doctor":
+      return `
+Diagnose common issues with your Valheim server setup
+
+USAGE:
+    oz-valheim doctor [OPTIONS]
+
+OPTIONS:
+    -f, --fix              Attempt to automatically fix issues
+    --json                 Output results as JSON
+
+CHECKS:
+    - SteamCMD installation and version
+    - Valheim dedicated server installation
+    - Configuration file validity
+    - Port availability (UDP 2456-2458)
+    - Directory permissions
+    - Required dependencies
+    - World file integrity
+
+EXAMPLES:
+    oz-valheim doctor
+    oz-valheim doctor --fix
+    oz-valheim doctor --json
 `;
 
     default:

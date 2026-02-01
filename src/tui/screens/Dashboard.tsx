@@ -4,6 +4,8 @@
 
 import { Box, Text, useInput } from "ink";
 import type { FC } from "react";
+import { ConfirmModal } from "../components/Modal.js";
+import { Spinner } from "../components/Spinner.js";
 import { useServer } from "../hooks/useServer.js";
 import { useStore } from "../store.js";
 import { getStatusColor, theme } from "../theme.js";
@@ -38,14 +40,27 @@ export const Dashboard: FC<DashboardProps> = () => {
   const players = useStore((s) => s.server.players);
   const pid = useStore((s) => s.server.pid);
   const config = useStore((s) => s.config);
+  const modalOpen = useStore((s) => s.ui.modalOpen);
+  const openModal = useStore((s) => s.actions.openModal);
+  const closeModal = useStore((s) => s.actions.closeModal);
   const addLog = useStore((s) => s.actions.addLog);
 
   const { start, stop } = useServer();
 
   const statusColor = getStatusColor(status);
 
+  // Handle confirmed stop
+  const handleStopConfirm = () => {
+    closeModal();
+    stop();
+    addLog("info", "Stopping server...");
+  };
+
   // Handle keyboard shortcuts
   useInput((input) => {
+    // Don't handle if modal is open
+    if (modalOpen) return;
+
     if (input === "s" || input === "S") {
       if (status === "offline") {
         start();
@@ -54,11 +69,37 @@ export const Dashboard: FC<DashboardProps> = () => {
     }
     if (input === "x" || input === "X") {
       if (status === "online") {
-        stop();
-        addLog("info", "Stopping server...");
+        // Show confirmation dialog
+        openModal(
+          <ConfirmModal
+            message="Stop the server? Players will be disconnected."
+            onConfirm={handleStopConfirm}
+            onCancel={closeModal}
+          />
+        );
       }
     }
   });
+
+  // Render loading state for starting/stopping
+  const renderStatusWithLoading = () => {
+    if (status === "starting" || status === "stopping") {
+      return (
+        <Box>
+          <Spinner />
+          <Text color={statusColor} bold>
+            {" "}
+            {status.toUpperCase()}
+          </Text>
+        </Box>
+      );
+    }
+    return (
+      <Text color={statusColor} bold>
+        ● {status.toUpperCase()}
+      </Text>
+    );
+  };
 
   return (
     <Box flexDirection="column" flexGrow={1} padding={1}>
@@ -74,31 +115,29 @@ export const Dashboard: FC<DashboardProps> = () => {
         <Text bold>Server Status</Text>
         <Box marginLeft={2} flexDirection="column">
           <Box>
-            <Text>Status:</Text>
-            <Text color={statusColor} bold>
-              ● {status.toUpperCase()}
-            </Text>
+            <Text>Status: </Text>
+            {renderStatusWithLoading()}
           </Box>
           <Box>
-            <Text>Server Name:</Text>
+            <Text>Server Name: </Text>
             <Text color={theme.primary}>{config.serverName}</Text>
           </Box>
           <Box>
-            <Text>World:</Text>
+            <Text>World: </Text>
             <Text color={theme.primary}>{config.world}</Text>
           </Box>
           <Box>
-            <Text>Port:</Text>
+            <Text>Port: </Text>
             <Text>{config.port}</Text>
           </Box>
           {pid && (
             <Box>
-              <Text>PID:</Text>
+              <Text>PID: </Text>
               <Text dimColor>{pid}</Text>
             </Box>
           )}
           <Box>
-            <Text>Uptime:</Text>
+            <Text>Uptime: </Text>
             <Text>{formatUptime(uptime)}</Text>
           </Box>
         </Box>
@@ -125,16 +164,18 @@ export const Dashboard: FC<DashboardProps> = () => {
         <Box marginLeft={2} marginTop={1}>
           {status === "offline" ? (
             <Box>
-              <Text color={theme.success}>[S]</Text>
+              <Text color={theme.success}>[S] </Text>
               <Text>Start Server</Text>
             </Box>
           ) : status === "online" ? (
             <Box>
-              <Text color={theme.error}>[X]</Text>
+              <Text color={theme.error}>[X] </Text>
               <Text>Stop Server</Text>
             </Box>
           ) : (
-            <Text dimColor>Server is {status}...</Text>
+            <Box>
+              <Spinner label={`Server is ${status}...`} />
+            </Box>
           )}
         </Box>
       </Box>

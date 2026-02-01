@@ -5,6 +5,7 @@
 
 import {
   configCommand,
+  doctorCommand,
   getHelpText,
   installCommand,
   interactiveRcon,
@@ -103,6 +104,10 @@ async function main(): Promise<void> {
         } else {
           await rconCommand(args);
         }
+        break;
+
+      case "doctor":
+        await doctorCommand(args);
         break;
 
       case "tui":

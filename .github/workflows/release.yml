@@ -82,6 +82,12 @@ jobs:
           done
           ls -la release/
 
+      - name: Generate checksums
+        run: |
+          cd release
+          sha256sum * > checksums.sha256
+          cat checksums.sha256
+
       - name: Generate changelog
         id: changelog
         run: |
@@ -109,6 +115,18 @@ jobs:
           | Linux (x64) | \`oz-valheim-linux-x64\` |
           | macOS (x64) | \`oz-valheim-macos-x64\` |
           | macOS (ARM64) | \`oz-valheim-macos-arm64\` |
+
+          ### Verify Download
+
+          Download \`checksums.sha256\` and verify your binary:
+
+          \`\`\`bash
+          # Linux/macOS
+          sha256sum -c checksums.sha256 --ignore-missing
+
+          # Windows (PowerShell)
+          (Get-FileHash oz-valheim-win-x64.exe -Algorithm SHA256).Hash
+          \`\`\`
 
           ### Quick Start
 

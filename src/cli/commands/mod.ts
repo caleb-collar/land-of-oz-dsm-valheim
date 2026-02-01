@@ -4,6 +4,7 @@
  */
 
 export { configCommand } from "./config.js";
+export { doctorCommand } from "./doctor.js";
 export { installCommand } from "./install.js";
 export { interactiveRcon, rconCommand } from "./rcon.js";
 export {

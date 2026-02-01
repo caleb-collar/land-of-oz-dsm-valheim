@@ -9,6 +9,7 @@
 import { Box, useApp, useInput } from "ink";
 import { type FC, useEffect } from "react";
 import { Header } from "./components/Header.js";
+import { HelpOverlay } from "./components/HelpOverlay.js";
 import { LogFeed } from "./components/LogFeed.js";
 import { Menu } from "./components/Menu.js";
 import { useConfigSync } from "./hooks/useConfig.js";
@@ -35,7 +36,9 @@ export const App: FC = () => {
   const { exit } = useApp();
   const activeScreen = useStore((s) => s.ui.activeScreen);
   const modalOpen = useStore((s) => s.ui.modalOpen);
+  const modalContent = useStore((s) => s.ui.modalContent);
   const setScreen = useStore((s) => s.actions.setScreen);
+  const openModal = useStore((s) => s.actions.openModal);
   const addLog = useStore((s) => s.actions.addLog);
 
   // Sync configuration on mount
@@ -44,18 +47,24 @@ export const App: FC = () => {
   // Log startup message
   useEffect(() => {
     addLog("info", "TUI started");
-    addLog("info", "Press 1-4 to navigate, Q to quit");
+    addLog("info", "Press 1-4 to navigate, ? for help, Q to quit");
   }, [addLog]);
 
   // Global keyboard handling
   useInput((input, key) => {
-    // Don't handle global keys when modal is open
+    // Don't handle global keys when modal is open (except ?)
     if (modalOpen) return;
 
     // Quit - use useApp().exit() for proper fullscreen cleanup
     if (input === "q" || input === "Q" || (key.ctrl && input === "c")) {
       addLog("info", "Shutting down...");
       exit();
+      return;
+    }
+
+    // Help overlay
+    if (input === "?") {
+      openModal(<HelpOverlay />);
       return;
     }
 
@@ -94,6 +103,20 @@ export const App: FC = () => {
 
       {/* Zone 3: Log Feed - natural height based on content */}
       <LogFeed />
+
+      {/* Modal Overlay - centered over content */}
+      {modalOpen && modalContent && (
+        <Box
+          position="absolute"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          width="100%"
+          height="100%"
+        >
+          {modalContent}
+        </Box>
+      )}
     </Box>
   );
 };
