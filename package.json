@@ -1,6 +1,6 @@
 {
   "name": "oz-dsm-valheim",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Land of OZ - Valheim Dedicated Server Manager",
   "type": "module",
   "bin": {
@@ -32,6 +32,7 @@
     "prepublishOnly": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
+    "@caleb-collar/steamcmd": "^1.0.0-alpha.1",
     "conf": "^13.0.1",
     "fullscreen-ink": "^0.1.0",
     "ink": "^6.6.0",

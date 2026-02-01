@@ -2359,8 +2359,8 @@ Created `CHANGELOG.md` with:
 
 ## Phase 15: node-steamcmd Package Integration
 
-**Status**: Not Started\
-**Priority**: High\
+**Status**: ✅ COMPLETE\
+**Completed**: January 2026\
 **Goal**: Replace custom SteamCMD implementation with the `node-steamcmd` npm package
 
 ### Overview
@@ -2856,16 +2856,16 @@ npx tsx main.ts tui            # Update action works
 ### Completion Criteria
 
 - [x] `@caleb-collar/steamcmd` package published to npm (v1.0.0-alpha.1)
-- [ ] Package added to dependencies
-- [ ] `src/steamcmd/paths.ts` refactored to use package
-- [ ] `src/steamcmd/installer.ts` refactored to use package
-- [ ] `src/steamcmd/updater.ts` refactored to use package
-- [ ] CLI install command uses new progress API
-- [ ] CLI doctor command uses package
-- [ ] TUI Dashboard update action uses EventEmitter
-- [ ] All tests updated and passing
-- [ ] Type checking passes
-- [ ] Manual testing complete
+- [x] Package added to dependencies
+- [x] `src/steamcmd/paths.ts` refactored to use package
+- [x] `src/steamcmd/installer.ts` refactored to use package
+- [x] `src/steamcmd/updater.ts` refactored to use package
+- [x] CLI install command uses new progress API
+- [x] CLI doctor command uses package
+- [x] TUI Dashboard update action uses EventEmitter
+- [x] All tests updated and passing
+- [x] Type checking passes
+- [x] Manual testing complete
 
 ---
 

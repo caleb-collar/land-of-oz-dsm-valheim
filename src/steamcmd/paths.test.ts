@@ -1,10 +1,30 @@
 /**
- * Integration tests for SteamCMD module (mocked)
- * These tests verify the module logic without actually calling SteamCMD
+ * Integration tests for SteamCMD module
+ * Uses @caleb-collar/steamcmd package
  */
 
-import { describe, expect, it } from "vitest";
-import { getPlatform } from "../utils/platform.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Mock the @caleb-collar/steamcmd package - must be inline, not using variables
+vi.mock("@caleb-collar/steamcmd", () => ({
+  default: {
+    getInfo: () => ({
+      directory:
+        process.platform === "win32"
+          ? "C:\\Users\\TestUser\\AppData\\Local\\steamcmd"
+          : "/home/testuser/.local/share/steamcmd",
+      executable:
+        process.platform === "win32"
+          ? "C:\\Users\\TestUser\\AppData\\Local\\steamcmd\\steamcmd.exe"
+          : "/home/testuser/.local/share/steamcmd/steamcmd.sh",
+      platform: process.platform,
+      isSupported: true,
+    }),
+    isInstalled: () => Promise.resolve(false),
+  },
+}));
+
+// Import after mock setup
 import {
   getSteamPaths,
   getValheimExecutablePath,
@@ -13,6 +33,10 @@ import {
 } from "./paths.js";
 
 describe("SteamCMD paths", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("getSteamPaths returns valid paths object", () => {
     const paths = getSteamPaths();
 
@@ -29,9 +53,9 @@ describe("SteamCMD paths", () => {
 
   it("getSteamPaths returns platform-appropriate executable names", () => {
     const paths = getSteamPaths();
-    const platform = getPlatform();
+    const platform = process.platform;
 
-    if (platform === "windows") {
+    if (platform === "win32") {
       expect(paths.steamcmd).toMatch(/steamcmd\.exe$/);
       expect(paths.executable).toBe("valheim_server.exe");
     } else {
@@ -52,6 +76,7 @@ describe("SteamCMD paths", () => {
     const installed = await isSteamCmdInstalled();
 
     expect(typeof installed).toBe("boolean");
+    expect(installed).toBe(false);
   });
 
   it("isValheimInstalled returns a boolean", async () => {

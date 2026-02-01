@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-01-31
+
+### Added
+- Integrated `@caleb-collar/steamcmd` npm package for SteamCMD operations
+- Re-exported steamcmd package error classes (SteamCmdError, DownloadError, InstallError)
+- Enhanced doctor command with package-based platform detection
+
+### Changed
+- Refactored `src/steamcmd/paths.ts` to use steamcmd package for path resolution
+- Refactored `src/steamcmd/installer.ts` to use steamcmd package's ensureInstalled
+- Refactored `src/steamcmd/updater.ts` to use steamcmd package's install/getInstalledVersion
+- Simplified SteamCMD module by delegating core functionality to external package
+- Updated VALHEIM_APP_ID from string to number type
+
+### Removed
+- Custom SteamCMD download and extraction logic (now handled by package)
+- Manual archive extraction functions (extractZip, extractTarGz)
+
+## [0.3.0] - 2026-01-30
+
 ### Added
 - Enhanced Renovate configuration with auto-merge for patch/minor updates
 - npm publish workflow for automated npm releases
@@ -58,6 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Platform detection for Windows, Linux, macOS
 - Basic TUI framework with Ink
 
-[Unreleased]: https://github.com/land-of-oz/valheim-dsm/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/land-of-oz/valheim-dsm/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/land-of-oz/valheim-dsm/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/land-of-oz/valheim-dsm/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/land-of-oz/valheim-dsm/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/land-of-oz/valheim-dsm/releases/tag/v0.1.0

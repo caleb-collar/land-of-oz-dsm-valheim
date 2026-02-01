@@ -1,20 +1,21 @@
 /**
  * Doctor command - Diagnose common issues
  * Checks SteamCMD, Valheim, config, ports, permissions
+ * Uses @caleb-collar/steamcmd package for SteamCMD checks
  */
 
 import fs from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
+import steamcmd from "@caleb-collar/steamcmd";
 import { type AppConfig, loadConfig } from "../../config/mod.js";
 import {
-  getPlatform,
-  getSteamCmdDir,
-  getSteamCmdExecutable,
-  getValheimExecutable,
-  getValheimSaveDir,
-  getValheimServerDir,
-} from "../../utils/platform.js";
+  getInstalledVersion,
+  getSteamPaths,
+  isSteamCmdInstalled,
+  isValheimInstalled,
+} from "../../steamcmd/mod.js";
+import { getPlatform, getValheimSaveDir } from "../../utils/platform.js";
 import type { DoctorArgs } from "../args.js";
 
 /** Result of a single check */
@@ -69,14 +70,21 @@ async function isPortAvailable(port: number): Promise<boolean> {
  * Run SteamCMD installation check
  */
 async function checkSteamCmd(): Promise<CheckResult> {
-  const steamCmdPath = getSteamCmdExecutable();
-  const steamCmdDir = getSteamCmdDir();
+  const info = steamcmd.getInfo();
 
-  if (await exists(steamCmdPath)) {
+  if (!info.isSupported) {
+    return {
+      name: "SteamCMD Installation",
+      status: "fail",
+      message: `Platform not supported: ${info.platform}`,
+    };
+  }
+
+  if (await isSteamCmdInstalled()) {
     return {
       name: "SteamCMD Installation",
       status: "pass",
-      message: `SteamCMD found at ${steamCmdDir}`,
+      message: `SteamCMD found at ${info.directory}`,
     };
   }
 
@@ -92,14 +100,14 @@ async function checkSteamCmd(): Promise<CheckResult> {
  * Run Valheim server installation check
  */
 async function checkValheimServer(): Promise<CheckResult> {
-  const valheimPath = getValheimExecutable();
-  const valheimDir = getValheimServerDir();
+  const paths = getSteamPaths();
 
-  if (await exists(valheimPath)) {
+  if (await isValheimInstalled()) {
+    const version = await getInstalledVersion();
     return {
       name: "Valheim Server Installation",
       status: "pass",
-      message: `Valheim server found at ${valheimDir}`,
+      message: `Valheim server found at ${paths.valheimDir}${version ? ` (build ${version})` : ""}`,
     };
   }
 
@@ -226,7 +234,8 @@ async function checkPorts(): Promise<CheckResult> {
  * Check directory write permissions
  */
 async function checkPermissions(): Promise<CheckResult> {
-  const steamCmdDir = getSteamCmdDir();
+  const info = steamcmd.getInfo();
+  const steamCmdDir = info.directory;
   const testFile = path.join(steamCmdDir, ".oz-test-write");
 
   try {
