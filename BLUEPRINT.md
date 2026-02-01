@@ -1543,6 +1543,474 @@ polish features, and ensuring the project is ready for production use.
 
 ---
 
+## Phase 13: TUI Enhancement - Settings, Dashboard & Worlds
+
+**Status**: Not Started\
+**Priority**: High\
+**Goal**: Complete the TUI with fully functional Settings, enhanced Dashboard actions, and real World management
+
+### Overview
+
+The current TUI has placeholder implementations for several key features:
+- Settings screen only toggles booleans; string/number fields cannot be edited
+- Dashboard only has Start/Stop actions
+- Worlds screen shows mock data and has no management capabilities
+
+This phase completes these screens with full functionality.
+
+### Prerequisites
+
+- Phase 12 complete (TUI foundation, components, hooks)
+- Backend world management functions exist in `src/valheim/worlds.ts`
+- Configuration schema supports all settings in `src/config/schema.ts`
+
+---
+
+### Task 13.1: Input Components
+
+Create reusable input components for the Settings screen.
+
+#### 13.1.1 TextInput Component (`src/tui/components/TextInput.tsx`)
+
+- [x] Single-line text input with cursor
+- [x] Support for masked input (passwords)
+- [x] Focus state styling
+- [x] Submit on Enter, cancel on Escape
+- [x] Character limit support
+- [x] Placeholder text
+
+```tsx
+type TextInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit?: (value: string) => void;
+  onCancel?: () => void;
+  placeholder?: string;
+  mask?: boolean;  // For passwords
+  maxLength?: number;
+  width?: number;
+};
+```
+
+#### 13.1.2 NumberInput Component (`src/tui/components/NumberInput.tsx`)
+
+- [x] Numeric input with increment/decrement (↑/↓ or +/-)
+- [x] Min/max value constraints
+- [x] Step size support
+- [x] Direct number entry mode
+- [x] Validation feedback
+
+```tsx
+type NumberInputProps = {
+  value: number;
+  onChange: (value: number) => void;
+  onSubmit?: (value: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  suffix?: string;  // e.g., "s" for seconds
+};
+```
+
+#### 13.1.3 SelectInput Component (`src/tui/components/SelectInput.tsx`)
+
+- [x] Dropdown-style selection
+- [x] Keyboard navigation (↑/↓, Enter to select)
+- [x] Search/filter for long lists
+- [x] Current selection indicator
+- [x] Scrollable for many options
+
+```tsx
+type SelectOption<T> = {
+  label: string;
+  value: T;
+  description?: string;
+};
+
+type SelectInputProps<T> = {
+  options: SelectOption<T>[];
+  value: T;
+  onChange: (value: T) => void;
+  placeholder?: string;
+};
+```
+
+#### 13.1.4 Toggle Component (`src/tui/components/Toggle.tsx`)
+
+- [x] Simple on/off toggle with visual indicator
+- [x] Keyboard toggle (Space/Enter)
+- [x] Customizable labels (Yes/No, On/Off, Enabled/Disabled)
+
+---
+
+### Task 13.2: Enhanced Settings Screen
+
+Rewrite the Settings screen to support editing all configuration options.
+
+#### 13.2.1 Settings Architecture
+
+- [x] Edit mode vs view mode per setting
+- [x] Enter key enters edit mode for selected setting
+- [x] Escape cancels edit, Enter confirms
+- [x] Visual indication of modified (unsaved) settings
+- [x] Auto-save or explicit Save button
+
+#### 13.2.2 Server Settings Section
+
+| Setting       | Type   | Component    | Constraints           |
+| ------------- | ------ | ------------ | --------------------- |
+| Server Name   | string | TextInput    | 1-64 chars            |
+| Port          | number | NumberInput  | 1024-65535            |
+| Password      | string | TextInput    | Empty or 5+ chars     |
+| World         | string | SelectInput  | From discovered worlds|
+| Public        | bool   | Toggle       | -                     |
+| Crossplay     | bool   | Toggle       | -                     |
+| Save Interval | number | NumberInput  | 60-7200 seconds       |
+| Backups       | number | NumberInput  | 1-100                 |
+
+#### 13.2.3 Difficulty/Modifiers Section
+
+| Setting       | Type   | Component    | Options                              |
+| ------------- | ------ | ------------ | ------------------------------------ |
+| Preset        | enum   | SelectInput  | normal, casual, easy, hard, etc.     |
+| Combat        | enum   | SelectInput  | veryeasy, easy, default, hard, etc.  |
+| Death Penalty | enum   | SelectInput  | casual, veryeasy, easy, default, etc.|
+| Resources     | enum   | SelectInput  | muchless, less, default, more, etc.  |
+| Raids         | bool   | Toggle       | -                                    |
+| Portals       | enum   | SelectInput  | default, casual, hard, veryhard      |
+
+#### 13.2.4 Watchdog Section
+
+| Setting            | Type   | Component   | Constraints     |
+| ------------------ | ------ | ----------- | --------------- |
+| Enabled            | bool   | Toggle      | -               |
+| Max Restarts       | number | NumberInput | 0-100           |
+| Restart Delay      | number | NumberInput | 1000-300000 ms  |
+| Cooldown Period    | number | NumberInput | 60000-3600000   |
+| Backoff Multiplier | number | NumberInput | 1-10            |
+
+#### 13.2.5 RCON Section (existing, enhance)
+
+| Setting       | Type   | Component   | Constraints    |
+| ------------- | ------ | ----------- | -------------- |
+| Enabled       | bool   | Toggle      | -              |
+| Host          | string | TextInput   | hostname/IP    |
+| Port          | number | NumberInput | 1024-65535     |
+| Password      | string | TextInput   | masked         |
+| Timeout       | number | NumberInput | 1000-60000 ms  |
+| Auto-Reconnect| bool   | Toggle      | -              |
+
+#### 13.2.6 TUI Settings Section
+
+| Setting       | Type   | Component   | Options           |
+| ------------- | ------ | ----------- | ----------------- |
+| Color Scheme  | enum   | SelectInput | dark, light, auto |
+| Animations    | bool   | Toggle      | -                 |
+| Log Max Lines | number | NumberInput | 10-1000           |
+| Refresh Rate  | number | NumberInput | 100-5000 ms       |
+
+#### 13.2.7 Configuration Persistence
+
+- [x] Integrate with `useConfig` hook for persistence
+- [x] Add RCON config persistence to hook
+- [x] Add watchdog config persistence to hook
+- [x] Add modifiers config persistence to hook
+- [x] Show toast/notification on save success/failure
+
+---
+
+### Task 13.3: Enhanced Dashboard
+
+Add more quick actions to the Dashboard screen.
+
+#### 13.3.1 New Quick Actions
+
+| Key | Action          | Condition           | Description                    |
+| --- | --------------- | ------------------- | ------------------------------ |
+| S   | Start Server    | status === offline  | Existing                       |
+| X   | Stop Server     | status === online   | Existing                       |
+| R   | Restart Server  | status === online   | Stop then start                |
+| U   | Update Server   | status === offline  | Run SteamCMD update            |
+| F   | Force Save      | RCON connected      | Send save command via RCON     |
+| K   | Kill Server     | status !== offline  | Force kill (no graceful stop)  |
+
+#### 13.3.2 Implementation Details
+
+- [x] Add `restart` function to `useServer` hook
+- [x] Add update action using SteamCMD updater
+- [x] Add RCON save command (requires RCON connection)
+- [x] Add kill action with confirmation dialog
+- [x] Show appropriate actions based on current state
+- [x] Disable actions when conditions not met (dimmed with explanation)
+
+#### 13.3.3 Status Enhancements
+
+- [x] Show current Valheim version (if installed)
+- [x] Show available update (if update available)
+- [x] Show last save time (if RCON connected)
+- [x] Show memory usage (if available from process)
+
+---
+
+### Task 13.4: Worlds Screen Implementation
+
+Complete the Worlds screen with real world management.
+
+#### 13.4.1 World Discovery
+
+- [x] Use `listWorlds()` from `src/valheim/worlds.ts`
+- [x] Show all discovered worlds with metadata:
+  - Name
+  - Size (formatted: KB, MB)
+  - Last modified date
+  - Active indicator (if selected for server)
+- [x] Auto-refresh on screen mount
+- [x] Manual refresh action (R key)
+
+#### 13.4.2 World Actions
+
+| Key   | Action        | Description                              |
+| ----- | ------------- | ---------------------------------------- |
+| Enter | Set Active    | Set as active world for server           |
+| N     | New World     | Enter name for new world (created on run)|
+| I     | Import World  | Import .db/.fwl files from path          |
+| E     | Export World  | Export to specified path                 |
+| B     | Backup World  | Create timestamped backup                |
+| D     | Delete World  | Delete with confirmation                 |
+| R     | Refresh       | Reload world list                        |
+
+#### 13.4.3 Import World Modal
+
+- [x] Text input for .db file path
+- [x] Auto-detect corresponding .fwl file
+- [x] Validate files exist before import
+- [x] Show progress/status during import
+- [x] Confirmation of successful import
+
+#### 13.4.4 Export World Modal
+
+- [x] Select destination directory
+- [x] Default to home directory or last used
+- [x] Show progress during export
+- [x] Confirmation with export path
+
+#### 13.4.5 Delete Confirmation
+
+- [x] Show world name prominently
+- [x] Warn about permanent deletion
+- [x] Require explicit confirmation (type world name or Y/N)
+
+#### 13.4.6 New World Flow
+
+- [x] Simple text input for world name
+- [x] Validate name (1-64 chars, valid filename)
+- [x] Note: World created automatically when server starts
+- [x] Option to set as active immediately
+
+---
+
+### Task 13.5: File/Path Input Component
+
+For import/export functionality, create a path input component.
+
+#### 13.5.1 PathInput Component (`src/tui/components/PathInput.tsx`)
+
+- [x] Text input for file/directory paths
+- [x] Tab completion for paths (optional, stretch goal)
+- [x] Validate path exists (for imports)
+- [x] Show file type indicator
+- [x] Platform-aware path formatting
+
+```tsx
+type PathInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  mode: 'file' | 'directory';
+  mustExist?: boolean;
+  filter?: string;  // e.g., ".db" for world files
+};
+```
+
+---
+
+### Task 13.6: Store Updates
+
+Update the Zustand store to support new functionality.
+
+#### 13.6.1 New Store State
+
+```typescript
+// Add to Store type
+type WorldsState = {
+  worlds: WorldInfo[];
+  loading: boolean;
+  error: string | null;
+  selectedIndex: number;
+};
+
+// Add to config state
+modifiers: {
+  combat: CombatModifier;
+  deathpenalty: DeathPenalty;
+  resources: ResourceModifier;
+  raids: boolean;
+  portals: PortalMode;
+};
+
+preset: Preset | null;
+
+watchdog: {
+  enabled: boolean;
+  maxRestarts: number;
+  restartDelay: number;
+  cooldownPeriod: number;
+  backoffMultiplier: number;
+};
+
+tui: {
+  colorScheme: 'dark' | 'light' | 'auto';
+  animationsEnabled: boolean;
+  logMaxLines: number;
+  refreshRate: number;
+};
+```
+
+#### 13.6.2 New Actions
+
+```typescript
+// Worlds actions
+loadWorlds: () => Promise<void>;
+setActiveWorld: (name: string) => void;
+importWorld: (dbPath: string, fwlPath: string) => Promise<void>;
+exportWorld: (name: string, targetDir: string) => Promise<void>;
+deleteWorld: (name: string) => Promise<void>;
+backupWorld: (name: string) => Promise<void>;
+
+// Config actions
+updateModifiers: (partial: Partial<Modifiers>) => void;
+updateWatchdog: (partial: Partial<WatchdogConfig>) => void;
+updateTui: (partial: Partial<TuiConfig>) => void;
+setPreset: (preset: Preset | null) => void;
+```
+
+---
+
+### Task 13.7: Hook Updates
+
+#### 13.7.1 useWorlds Hook (`src/tui/hooks/useWorlds.ts`)
+
+```typescript
+function useWorlds() {
+  return {
+    worlds: WorldInfo[];
+    loading: boolean;
+    error: string | null;
+    activeWorld: string | null;
+    refresh: () => Promise<void>;
+    setActive: (name: string) => Promise<void>;
+    importWorld: (dbPath: string) => Promise<void>;
+    exportWorld: (name: string, targetDir: string) => Promise<void>;
+    deleteWorld: (name: string) => Promise<void>;
+    backupWorld: (name: string) => Promise<void>;
+  };
+}
+```
+
+#### 13.7.2 Update useConfig Hook
+
+- [x] Add modifiers management
+- [x] Add watchdog management
+- [x] Add TUI settings management
+- [x] Add preset management
+
+#### 13.7.3 Update useServer Hook
+
+- [x] Add restart function (stop + start)
+- [x] Add update function (calls SteamCMD)
+- [x] Add force save via RCON
+
+---
+
+### Files to Create
+
+| File                               | Purpose                      |
+| ---------------------------------- | ---------------------------- |
+| `src/tui/components/TextInput.tsx` | Text input component         |
+| `src/tui/components/NumberInput.tsx` | Number input component     |
+| `src/tui/components/SelectInput.tsx` | Dropdown select component  |
+| `src/tui/components/Toggle.tsx`    | Boolean toggle component     |
+| `src/tui/components/PathInput.tsx` | File/directory path input    |
+| `src/tui/hooks/useWorlds.ts`       | World management hook        |
+
+### Files to Modify
+
+| File                              | Changes                              |
+| --------------------------------- | ------------------------------------ |
+| `src/tui/screens/Settings.tsx`    | Complete rewrite with all settings   |
+| `src/tui/screens/Dashboard.tsx`   | Add restart, update, save actions    |
+| `src/tui/screens/Worlds.tsx`      | Complete rewrite with world mgmt     |
+| `src/tui/store.ts`                | Add worlds, modifiers, watchdog, tui |
+| `src/tui/hooks/useConfig.ts`      | Add modifiers, watchdog, tui mgmt    |
+| `src/tui/hooks/useServer.ts`      | Add restart, update, save functions  |
+| `src/tui/hooks/mod.ts`            | Export useWorlds                     |
+| `src/tui/components/mod.ts`       | Export new input components          |
+
+---
+
+### Verification Checklist
+
+```bash
+npm run typecheck              # Passes
+npm run lint                   # No errors
+npm test                       # All tests pass
+npx tsx main.ts tui            # TUI launches
+```
+
+Manual testing:
+- [ ] Settings: Can edit server name (string)
+- [ ] Settings: Can edit port (number with constraints)
+- [ ] Settings: Can edit password (masked)
+- [ ] Settings: Can select world from dropdown
+- [ ] Settings: Can toggle all boolean settings
+- [ ] Settings: Can change difficulty modifiers
+- [ ] Settings: Changes persist after restart
+- [ ] Dashboard: R key restarts server
+- [ ] Dashboard: U key updates server (when offline)
+- [ ] Dashboard: K key force kills with confirmation
+- [ ] Worlds: Shows discovered worlds
+- [ ] Worlds: Can set active world
+- [ ] Worlds: Can import world from files
+- [ ] Worlds: Can export world
+- [ ] Worlds: Can delete world with confirmation
+- [ ] Worlds: Can backup world
+
+---
+
+### Completion Criteria
+
+- [ ] All input components created and tested
+- [ ] Settings screen edits all config options
+- [ ] Settings changes persist to disk
+- [ ] Dashboard has restart, update, kill actions
+- [ ] Worlds screen discovers real worlds
+- [ ] Worlds supports import/export/delete/backup
+- [ ] All type checks pass
+- [ ] All tests pass
+- [ ] Manual testing complete
+
+---
+
+### Notes
+
+- Ink's TextInput from `ink-text-input` package may be useful for text inputs
+- Consider `ink-select-input` for select components
+- World deletion is destructive - require confirmation
+- RCON commands require connected RCON client
+- Server must be offline for update action
+- New world names are validated on input, created on first server start
+
+---
+
 ## Agent Handoff Protocol
 
 When completing a phase, provide:
