@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-02-01
+
+### Added
+- Valheim Dedicated Server status section in Dashboard showing installation status, verification, build ID, and location
+- Automatic Valheim server installation after SteamCMD is installed
+- Installation verification that checks for required files (executable, data folder, DLLs)
+- `[V]` keyboard shortcut to manually install/reinstall/verify Valheim server
+- `verifyValheimInstallation()` function with detailed verification results
+- Valheim server state management in Zustand store
+
+### Changed
+- Server start and update actions now require Valheim to be installed (not just SteamCMD)
+- Quick Actions section updated to show Valheim install prompts when needed
+
+### Fixed
+- Valheim dedicated server now installs to the correct location (`steamapps/common/Valheim dedicated server`)
+
 ## [1.4.3] - 2026-02-01
 
 ### Fixed
@@ -123,12 +140,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Platform detection for Windows, Linux, macOS
 - Basic TUI framework with Ink
 
-[Unreleased]: https://github.com/land-of-oz/valheim-dsm/compare/v1.0.9...HEAD
-[1.0.9]: https://github.com/land-of-oz/valheim-dsm/compare/v1.0.8...v1.0.9
-[1.0.8]: https://github.com/land-of-oz/valheim-dsm/compare/v1.0.7...v1.0.8
-[1.0.7]: https://github.com/land-of-oz/valheim-dsm/compare/v1.0.0...v1.0.7
-[1.0.0]: https://github.com/land-of-oz/valheim-dsm/compare/v0.4.0...v1.0.0
-[0.4.0]: https://github.com/land-of-oz/valheim-dsm/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/land-of-oz/valheim-dsm/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/land-of-oz/valheim-dsm/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/land-of-oz/valheim-dsm/releases/tag/v0.1.0
+[Unreleased]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.4.3...v1.5.0
+[1.4.3]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.0.9...v1.4.3
+[1.0.9]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.0.8...v1.0.9
+[1.0.8]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.0.7...v1.0.8
+[1.0.7]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.0.0...v1.0.7
+[1.0.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v0.4.0...v1.0.0
+[0.4.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/releases/tag/v0.1.0
