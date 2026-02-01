@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-02-01
+
+### Fixed
+- Fixed Valheim server installing to wrong location (was installing directly to steamcmd Data folder instead of `steamapps/common/Valheim dedicated server`)
+- Removed unnecessary custom path from `steamcmd.install()` call to use SteamCMD's default installation directory structure
+
 ## [1.5.0] - 2026-02-01
 
 ### Added
@@ -140,7 +146,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Platform detection for Windows, Linux, macOS
 - Basic TUI framework with Ink
 
-[Unreleased]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.4.3...v1.5.0
 [1.4.3]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.0.9...v1.4.3
 [1.0.9]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.0.8...v1.0.9

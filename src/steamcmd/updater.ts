@@ -3,7 +3,6 @@
  * Uses @caleb-collar/steamcmd package for installation
  */
 
-import fs from "node:fs/promises";
 import steamcmd from "@caleb-collar/steamcmd";
 import { getSteamPaths } from "./paths.js";
 
@@ -54,8 +53,6 @@ function mapPhaseToStage(phase: string): UpdateStage {
 export async function installValheim(
   onProgress?: UpdateCallback
 ): Promise<void> {
-  const { steamcmdDir } = getSteamPaths();
-
   const report = (status: UpdateStatus) => {
     onProgress?.(status);
   };
@@ -71,13 +68,6 @@ export async function installValheim(
     throw new Error("SteamCMD is not installed");
   }
 
-  // Ensure the steamcmd directory exists
-  try {
-    await fs.mkdir(steamcmdDir, { recursive: true });
-  } catch {
-    // Directory likely exists, continue
-  }
-
   report({
     stage: "downloading",
     progress: 0,
@@ -85,9 +75,10 @@ export async function installValheim(
   });
 
   try {
+    // Don't pass a custom path - let SteamCMD install to its default
+    // steamapps/common/Valheim dedicated server directory
     await steamcmd.install({
       applicationId: VALHEIM_APP_ID,
-      path: steamcmdDir,
       onProgress: (p) => {
         const stage = mapPhaseToStage(p.phase);
         const progress = p.percent ?? 0;
@@ -190,6 +181,7 @@ export async function getInstalledVersion(): Promise<string | null> {
   const { steamcmdDir } = getSteamPaths();
 
   try {
+    // Pass the steamcmd directory where the app manifest is stored
     const versionInfo = await steamcmd.getInstalledVersion({
       applicationId: VALHEIM_APP_ID,
       path: steamcmdDir,
