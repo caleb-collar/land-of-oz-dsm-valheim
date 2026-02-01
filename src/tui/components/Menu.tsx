@@ -4,8 +4,8 @@
 
 import { Box, Text } from "ink";
 import type { FC } from "react";
-import { useStore } from "../store.js";
 import type { Screen } from "../store.js";
+import { useStore } from "../store.js";
 import { theme } from "../theme.js";
 import { MenuItem } from "./MenuItem.js";
 

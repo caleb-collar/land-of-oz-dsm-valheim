@@ -5,10 +5,10 @@
  * connection, authentication, and command execution.
  */
 
-import { type Server, type Socket, createServer } from "node:net";
+import { createServer, type Server, type Socket } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
 import { RconClient } from "./client.js";
-import { PacketType, RconError, encodePacket } from "./mod.js";
+import { encodePacket, PacketType, RconError } from "./mod.js";
 
 /**
  * Creates a mock RCON server for testing

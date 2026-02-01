@@ -8,22 +8,10 @@ import React from "react";
 import { App } from "./App.js";
 
 // Version
-export const TUI_VERSION = "0.2.0";
+export const TUI_VERSION = "0.3.0";
 
 // Core exports
 export { App } from "./App.js";
-export { useStore } from "./store.js";
-export type {
-  LogEntry,
-  LogLevel,
-  Screen,
-  ServerStatus,
-  Store,
-} from "./store.js";
-
-// Theme
-export { getStatusColor, logColors, theme } from "./theme.js";
-
 // Components
 export {
   ConfirmModal,
@@ -35,20 +23,28 @@ export {
   Modal,
   StatusBar,
 } from "./components/mod.js";
-
-// Screens
-export { Console, Dashboard, Settings, Worlds } from "./screens/mod.js";
-
+export type { TerminalSize } from "./hooks/mod.js";
 // Hooks
 export {
   useConfig,
   useConfigSync,
-  useLogs,
   useLogStream,
+  useLogs,
   useServer,
   useTerminalSize,
 } from "./hooks/mod.js";
-export type { TerminalSize } from "./hooks/mod.js";
+// Screens
+export { Console, Dashboard, Settings, Worlds } from "./screens/mod.js";
+export type {
+  LogEntry,
+  LogLevel,
+  Screen,
+  ServerStatus,
+  Store,
+} from "./store.js";
+export { useStore } from "./store.js";
+// Theme
+export { getStatusColor, logColors, theme } from "./theme.js";
 
 /**
  * Launches the TUI application in fullscreen mode

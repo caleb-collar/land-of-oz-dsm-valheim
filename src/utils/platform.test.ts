@@ -4,7 +4,6 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  type Platform,
   getAppConfigDir,
   getConfigDir,
   getHomeDir,
@@ -15,6 +14,7 @@ import {
   getValheimExecutable,
   getValheimSaveDir,
   getValheimServerDir,
+  type Platform,
 } from "./platform.js";
 
 describe("platform utilities", () => {

@@ -3,6 +3,13 @@
  * Provides installation and update functionality for SteamCMD and Valheim
  */
 
+// SteamCMD installer
+export {
+  type InstallProgress,
+  type InstallStage,
+  installSteamCmd,
+  type ProgressCallback,
+} from "./installer.js";
 // Path utilities
 export {
   getSteamPaths,
@@ -11,14 +18,6 @@ export {
   isValheimInstalled,
   type SteamPaths,
 } from "./paths.js";
-
-// SteamCMD installer
-export {
-  type InstallProgress,
-  type InstallStage,
-  installSteamCmd,
-  type ProgressCallback,
-} from "./installer.js";
 
 // Valheim updater
 export {

@@ -4,12 +4,12 @@
 
 import { useCallback, useEffect } from "react";
 import {
-  type WorldInfo,
   backupWorld as backupWorldFile,
   deleteWorld as deleteWorldFile,
   exportWorld as exportWorldFile,
   importWorld as importWorldFile,
   listWorlds,
+  type WorldInfo,
 } from "../../valheim/worlds.js";
 import { useStore } from "../store.js";
 

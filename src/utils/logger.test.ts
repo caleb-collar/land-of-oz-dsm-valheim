@@ -4,12 +4,12 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  type LogLevel,
   configureLogger,
   createLogger,
   debug,
   error,
   info,
+  type LogLevel,
   parseValheimLog,
   warn,
 } from "./logger.js";

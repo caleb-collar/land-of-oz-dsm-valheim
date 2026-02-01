@@ -202,7 +202,7 @@ describe("buildServerArgs", () => {
     const args = buildServerArgs(config);
 
     const argStr = args.join(" ");
-    expect(argStr).toMatch(/\-modifier deathpenalty hardcore/);
+    expect(argStr).toMatch(/-modifier deathpenalty hardcore/);
   });
 
   it("includes non-default resources modifier", () => {
@@ -214,7 +214,7 @@ describe("buildServerArgs", () => {
     const args = buildServerArgs(config);
 
     const argStr = args.join(" ");
-    expect(argStr).toMatch(/\-modifier resources muchmore/);
+    expect(argStr).toMatch(/-modifier resources muchmore/);
   });
 
   it("includes raids=none when disabled", () => {
@@ -226,7 +226,7 @@ describe("buildServerArgs", () => {
     const args = buildServerArgs(config);
 
     const argStr = args.join(" ");
-    expect(argStr).toMatch(/\-modifier raids none/);
+    expect(argStr).toMatch(/-modifier raids none/);
   });
 
   it("excludes raids when enabled (default)", () => {
@@ -250,7 +250,7 @@ describe("buildServerArgs", () => {
     const args = buildServerArgs(config);
 
     const argStr = args.join(" ");
-    expect(argStr).toMatch(/\-modifier portals casual/);
+    expect(argStr).toMatch(/-modifier portals casual/);
   });
 
   it("handles multiple modifiers", () => {
@@ -265,11 +265,11 @@ describe("buildServerArgs", () => {
     const args = buildServerArgs(config);
 
     const argStr = args.join(" ");
-    expect(argStr).toMatch(/\-modifier combat veryhard/);
-    expect(argStr).toMatch(/\-modifier deathpenalty casual/);
-    expect(argStr).toMatch(/\-modifier resources less/);
-    expect(argStr).toMatch(/\-modifier raids none/);
-    expect(argStr).toMatch(/\-modifier portals hard/);
+    expect(argStr).toMatch(/-modifier combat veryhard/);
+    expect(argStr).toMatch(/-modifier deathpenalty casual/);
+    expect(argStr).toMatch(/-modifier resources less/);
+    expect(argStr).toMatch(/-modifier raids none/);
+    expect(argStr).toMatch(/-modifier portals hard/);
   });
 });
 

@@ -5,19 +5,16 @@
 
 // Argument builder
 export { buildServerArgs, parseServerArgs } from "./args.js";
-
-// World management
+// Player lists
 export {
-  backupWorld,
-  deleteWorld,
-  exportWorld,
-  getDefaultWorldsDir,
-  getWorldInfo,
-  importWorld,
-  listWorlds,
-  worldExists,
-  type WorldInfo,
-} from "./worlds.js";
+  addToList,
+  clearList,
+  getListCount,
+  isInList,
+  type ListType,
+  readList,
+  removeFromList,
+} from "./lists.js";
 
 // Settings definitions
 export {
@@ -37,14 +34,15 @@ export {
   type SettingDefinition,
   ValheimSettings,
 } from "./settings.js";
-
-// Player lists
+// World management
 export {
-  addToList,
-  clearList,
-  getListCount,
-  isInList,
-  type ListType,
-  readList,
-  removeFromList,
-} from "./lists.js";
+  backupWorld,
+  deleteWorld,
+  exportWorld,
+  getDefaultWorldsDir,
+  getWorldInfo,
+  importWorld,
+  listWorlds,
+  type WorldInfo,
+  worldExists,
+} from "./worlds.js";

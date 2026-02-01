@@ -11,8 +11,8 @@ export { MenuItem } from "./MenuItem.js";
 export { ConfirmModal, Modal } from "./Modal.js";
 export { NumberInput } from "./NumberInput.js";
 export { PathInput } from "./PathInput.js";
-export { SelectInput } from "./SelectInput.js";
 export type { SelectOption } from "./SelectInput.js";
+export { SelectInput } from "./SelectInput.js";
 export {
   LoadingBox,
   ProgressBar,

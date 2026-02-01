@@ -3,6 +3,18 @@
  */
 
 export {
+  configureLogger,
+  createLogger,
+  debug,
+  error,
+  info,
+  type LogEntry,
+  type LoggerConfig,
+  type LogLevel,
+  parseValheimLog,
+  warn,
+} from "./logger.js";
+export {
   getAppConfigDir,
   getConfigDir,
   getHomeDir,
@@ -15,16 +27,3 @@ export {
   getValheimServerDir,
   type Platform,
 } from "./platform.js";
-
-export {
-  configureLogger,
-  createLogger,
-  debug,
-  error,
-  info,
-  type LogEntry,
-  type LoggerConfig,
-  type LogLevel,
-  parseValheimLog,
-  warn,
-} from "./logger.js";

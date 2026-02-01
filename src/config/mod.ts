@@ -2,6 +2,7 @@
  * Configuration module exports
  */
 
+export { defaultConfig } from "./defaults.js";
 export {
   type AppConfig,
   AppConfigSchema,
@@ -26,8 +27,6 @@ export {
   type World,
   WorldSchema,
 } from "./schema.js";
-
-export { defaultConfig } from "./defaults.js";
 
 export {
   addWorld,

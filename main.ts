@@ -16,7 +16,7 @@ import {
   worldsCommand,
 } from "./src/cli/mod.js";
 import { type AppConfig, closeConfig, loadConfig } from "./src/config/mod.js";
-import { APP_NAME, VERSION, launchTui } from "./src/mod.js";
+import { APP_NAME, launchTui, VERSION } from "./src/mod.js";
 import { createLogger, getPlatform, info } from "./src/utils/mod.js";
 
 const log = createLogger("main");

@@ -1,40 +1,77 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base"],
+  "extends": ["config:base", "schedule:weekly"],
+  "timezone": "America/Chicago",
   "labels": ["dependencies"],
   "prConcurrentLimit": 3,
   "prHourlyLimit": 2,
   "schedule": ["before 6am on Monday"],
+  "dependencyDashboard": true,
   "packageRules": [
     {
-      "description": "Group all minor and patch updates",
+      "description": "Group all patch updates with auto-merge",
       "matchPackagePatterns": ["*"],
-      "matchUpdateTypes": ["patch", "minor"],
-      "groupName": "all non-major dependencies",
-      "groupSlug": "all-minor-patch"
+      "matchUpdateTypes": ["patch"],
+      "groupName": "patch dependencies",
+      "groupSlug": "all-patch",
+      "automerge": true,
+      "automergeType": "pr"
     },
     {
-      "description": "React/Ink major updates require careful testing",
-      "matchPackageNames": ["react", "ink"],
+      "description": "Group minor updates with auto-merge",
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["minor"],
+      "groupName": "minor dependencies",
+      "groupSlug": "all-minor",
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Major updates require manual review",
+      "matchPackagePatterns": ["*"],
       "matchUpdateTypes": ["major"],
       "automerge": false,
       "labels": ["dependencies", "breaking-change"]
+    },
+    {
+      "description": "React/Ink major updates - test together",
+      "matchPackageNames": ["react", "ink", "@types/react"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "React + Ink major",
+      "automerge": false,
+      "labels": ["dependencies", "breaking-change", "tui"]
     },
     {
       "description": "Zod major updates require schema migration",
       "matchPackageNames": ["zod"],
       "matchUpdateTypes": ["major"],
       "automerge": false,
-      "labels": ["dependencies", "breaking-change"]
+      "labels": ["dependencies", "breaking-change", "schema"]
     },
     {
-      "description": "Type definitions",
+      "description": "Biome updates may need config migration",
+      "matchPackageNames": ["@biomejs/biome"],
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "breaking-change", "tooling"]
+    },
+    {
+      "description": "Security updates - high priority, auto-merge",
+      "matchDepTypes": ["dependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "vulnerabilitySeverity": ["critical", "high"],
+      "automerge": true,
+      "schedule": ["at any time"]
+    },
+    {
+      "description": "Type definitions - group together",
       "matchPackagePatterns": ["^@types/"],
       "groupName": "Type definitions"
     },
     {
-      "description": "Dev dependencies",
+      "description": "Dev dependencies - lower priority",
       "matchDepTypes": ["devDependencies"],
+      "excludePackageNames": ["@biomejs/biome", "typescript", "vitest"],
       "groupName": "Dev dependencies"
     }
   ]

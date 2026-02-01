@@ -3,7 +3,6 @@
  * Provides command-line interface functionality
  */
 
-export { getHelpText, parseArgs } from "./args.js";
 export type {
   Command,
   ConfigArgs,
@@ -19,6 +18,7 @@ export type {
   VersionArgs,
   WorldsArgs,
 } from "./args.js";
+export { getHelpText, parseArgs } from "./args.js";
 
 export {
   clearActiveWatchdog,
