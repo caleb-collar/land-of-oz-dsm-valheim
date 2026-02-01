@@ -6,9 +6,13 @@ import { Box, Text, useInput } from "ink";
 import { type FC, useEffect, useState } from "react";
 import type { StartupPhase } from "../../server/logs.js";
 import {
+  getInstalledVersion,
   getSteamPaths,
   installSteamCmd,
+  installValheim,
   isSteamCmdInstalled,
+  isValheimInstalled,
+  verifyValheimInstallation,
 } from "../../steamcmd/mod.js";
 import {
   isStartupTaskRegistered,
@@ -126,6 +130,24 @@ export const Dashboard: FC<DashboardProps> = () => {
   const setSteamCmdPath = useStore((s) => s.actions.setSteamCmdPath);
   const resetSteamCmdInstall = useStore((s) => s.actions.resetSteamCmdInstall);
 
+  // Valheim server state
+  const valheimInstalled = useStore((s) => s.valheim.installed);
+  const valheimInstalling = useStore((s) => s.valheim.installing);
+  const valheimProgress = useStore((s) => s.valheim.installProgress);
+  const valheimPercent = useStore((s) => s.valheim.installPercent);
+  const valheimPath = useStore((s) => s.valheim.path);
+  const valheimVerified = useStore((s) => s.valheim.verified);
+  const valheimBuildId = useStore((s) => s.valheim.buildId);
+  const setValheimInstalled = useStore((s) => s.actions.setValheimInstalled);
+  const setValheimInstalling = useStore((s) => s.actions.setValheimInstalling);
+  const setValheimInstallProgress = useStore(
+    (s) => s.actions.setValheimInstallProgress
+  );
+  const setValheimPath = useStore((s) => s.actions.setValheimPath);
+  const setValheimVerified = useStore((s) => s.actions.setValheimVerified);
+  const setValheimBuildId = useStore((s) => s.actions.setValheimBuildId);
+  const resetValheimInstall = useStore((s) => s.actions.resetValheimInstall);
+
   const { start, stop, restart, update, forceSave } = useServer();
 
   const [isUpdating, setIsUpdating] = useState(false);
@@ -153,6 +175,120 @@ export const Dashboard: FC<DashboardProps> = () => {
     };
     checkSteamCmd();
   }, [setSteamCmdInstalled, setSteamCmdPath]);
+
+  // Check Valheim installation status when SteamCMD is installed
+  useEffect(() => {
+    if (steamCmdInstalled !== true) return;
+
+    const checkValheim = async () => {
+      try {
+        const installed = await isValheimInstalled();
+        setValheimInstalled(installed);
+
+        if (installed) {
+          const paths = getSteamPaths();
+          setValheimPath(paths.valheimDir);
+
+          // Verify installation
+          const verification = await verifyValheimInstallation();
+          setValheimVerified(verification.valid);
+
+          if (!verification.valid) {
+            addLog("warn", verification.message);
+          }
+
+          // Get build ID
+          const buildId = await getInstalledVersion();
+          setValheimBuildId(buildId);
+        }
+      } catch {
+        setValheimInstalled(false);
+        setValheimVerified(false);
+      }
+    };
+    checkValheim();
+  }, [
+    steamCmdInstalled,
+    setValheimInstalled,
+    setValheimPath,
+    setValheimVerified,
+    setValheimBuildId,
+    addLog,
+  ]);
+
+  // Auto-install Valheim when SteamCMD becomes installed and Valheim is not installed
+  useEffect(() => {
+    if (
+      steamCmdInstalled === true &&
+      valheimInstalled === false &&
+      !valheimInstalling
+    ) {
+      // Auto-trigger Valheim installation inline
+      const autoInstallValheim = async () => {
+        setValheimInstalling(true);
+        addLog("info", "Auto-installing Valheim Dedicated Server...");
+
+        try {
+          await installValheim((status) => {
+            setValheimInstallProgress(status.message, status.progress);
+            if (status.stage === "complete") {
+              addLog(
+                "info",
+                "Valheim Dedicated Server installed successfully!"
+              );
+            }
+          });
+
+          setValheimInstalled(true);
+          const paths = getSteamPaths();
+          setValheimPath(paths.valheimDir);
+
+          // Verify installation
+          const verification = await verifyValheimInstallation();
+          setValheimVerified(verification.valid);
+
+          if (verification.valid) {
+            addLog(
+              "info",
+              `Installation verified at: ${verification.installPath}`
+            );
+          } else {
+            addLog("warn", verification.message);
+          }
+
+          // Get build ID
+          const buildId = await getInstalledVersion();
+          setValheimBuildId(buildId);
+          if (buildId) {
+            addLog("info", `Valheim build ID: ${buildId}`);
+          }
+        } catch (error) {
+          addLog(
+            "error",
+            `Valheim installation failed: ${error instanceof Error ? error.message : String(error)}`
+          );
+          setValheimInstalled(false);
+          setValheimVerified(false);
+        } finally {
+          resetValheimInstall();
+        }
+      };
+
+      autoInstallValheim();
+    }
+  }, [
+    steamCmdInstalled,
+    valheimInstalled,
+    valheimInstalling,
+    setValheimInstalling,
+    setValheimInstallProgress,
+    setValheimInstalled,
+    setValheimPath,
+    setValheimVerified,
+    setValheimBuildId,
+    resetValheimInstall,
+    addLog,
+  ]);
 
   // Check startup task registration status on mount
   useEffect(() => {
@@ -191,6 +327,52 @@ export const Dashboard: FC<DashboardProps> = () => {
       setSteamCmdInstalled(false);
     } finally {
       resetSteamCmdInstall();
+    }
+  };
+
+  // Handle Valheim installation
+  const handleInstallValheim = async () => {
+    closeModal();
+    setValheimInstalling(true);
+    addLog("info", "Starting Valheim Dedicated Server installation...");
+
+    try {
+      await installValheim((status) => {
+        setValheimInstallProgress(status.message, status.progress);
+        if (status.stage === "complete") {
+          addLog("info", "Valheim Dedicated Server installed successfully!");
+        }
+      });
+
+      setValheimInstalled(true);
+      const paths = getSteamPaths();
+      setValheimPath(paths.valheimDir);
+
+      // Verify installation
+      const verification = await verifyValheimInstallation();
+      setValheimVerified(verification.valid);
+
+      if (verification.valid) {
+        addLog("info", `Installation verified at: ${verification.installPath}`);
+      } else {
+        addLog("warn", verification.message);
+      }
+
+      // Get build ID
+      const buildId = await getInstalledVersion();
+      setValheimBuildId(buildId);
+      if (buildId) {
+        addLog("info", `Valheim build ID: ${buildId}`);
+      }
+    } catch (error) {
+      addLog(
+        "error",
+        `Valheim installation failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+      setValheimInstalled(false);
+      setValheimVerified(false);
+    } finally {
+      resetValheimInstall();
     }
   };
 
@@ -281,13 +463,19 @@ export const Dashboard: FC<DashboardProps> = () => {
 
   // Handle keyboard shortcuts
   useInput((input) => {
-    // Don't handle if modal is open or updating or installing steamcmd or processing startup task
-    if (modalOpen || isUpdating || steamCmdInstalling || startupTaskProcessing)
+    // Don't handle if modal is open or updating or installing or processing startup task
+    if (
+      modalOpen ||
+      isUpdating ||
+      steamCmdInstalling ||
+      valheimInstalling ||
+      startupTaskProcessing
+    )
       return;
 
     // S = Start
     if (input === "s" || input === "S") {
-      if (status === "offline" && steamCmdInstalled) {
+      if (status === "offline" && steamCmdInstalled && valheimInstalled) {
         start();
         addLog("info", "Starting server...");
       }
@@ -321,7 +509,7 @@ export const Dashboard: FC<DashboardProps> = () => {
 
     // U = Update
     if (input === "u" || input === "U") {
-      if (status === "offline" && steamCmdInstalled) {
+      if (status === "offline" && steamCmdInstalled && valheimInstalled) {
         openModal(
           <ConfirmModal
             message="Update server via SteamCMD? This may take a few minutes."
@@ -339,6 +527,21 @@ export const Dashboard: FC<DashboardProps> = () => {
           <ConfirmModal
             message="Install SteamCMD? This is required to download and update Valheim."
             onConfirm={handleInstallSteamCmd}
+            onCancel={closeModal}
+          />
+        );
+      }
+    }
+
+    // V = Install/Reinstall Valheim
+    if (input === "v" || input === "V") {
+      if (steamCmdInstalled && !valheimInstalling) {
+        const action =
+          valheimInstalled === false ? "Install" : "Reinstall/Verify";
+        openModal(
+          <ConfirmModal
+            message={`${action} Valheim Dedicated Server? This may take several minutes.`}
+            onConfirm={handleInstallValheim}
             onCancel={closeModal}
           />
         );
@@ -491,6 +694,38 @@ export const Dashboard: FC<DashboardProps> = () => {
     );
   }
 
+  // Render Valheim installing state
+  if (valheimInstalling) {
+    return (
+      <Box flexDirection="column" flexGrow={1} padding={1}>
+        <Box marginBottom={1}>
+          <Text bold color={theme.primary}>
+            ─ Dashboard ─
+          </Text>
+        </Box>
+        <Box
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          flexGrow={1}
+        >
+          <Spinner label="Installing Valheim Dedicated Server..." />
+          {valheimProgress && (
+            <Box marginTop={1}>
+              <Text dimColor>
+                {valheimProgress}
+                {valheimPercent > 0 && ` (${valheimPercent}%)`}
+              </Text>
+            </Box>
+          )}
+          <Box marginTop={1}>
+            <Text dimColor>Please wait, this may take several minutes...</Text>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box flexDirection="column" flexGrow={1} padding={1}>
       {/* Title */}
@@ -518,6 +753,47 @@ export const Dashboard: FC<DashboardProps> = () => {
             <Box flexShrink={0}>
               <Text>Location: </Text>
               <Text dimColor>{steamCmdPath}</Text>
+            </Box>
+          )}
+        </Box>
+      </Box>
+
+      {/* Valheim Dedicated Server Status Section */}
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold>Valheim Dedicated Server</Text>
+        <Box marginLeft={2} flexDirection="column">
+          <Box flexShrink={0}>
+            <Text>Status: </Text>
+            {steamCmdInstalled !== true ? (
+              <Text dimColor>Waiting for SteamCMD...</Text>
+            ) : valheimInstalled === null ? (
+              <Text dimColor>Checking...</Text>
+            ) : valheimInstalled ? (
+              <Text color={theme.success}>● Installed</Text>
+            ) : (
+              <Text color={theme.warning}>○ Not Installed</Text>
+            )}
+          </Box>
+          {valheimInstalled && valheimVerified !== null && (
+            <Box flexShrink={0}>
+              <Text>Verified: </Text>
+              {valheimVerified ? (
+                <Text color={theme.success}>● Yes</Text>
+              ) : (
+                <Text color={theme.error}>○ Files Missing</Text>
+              )}
+            </Box>
+          )}
+          {valheimInstalled && valheimBuildId && (
+            <Box flexShrink={0}>
+              <Text>Build ID: </Text>
+              <Text dimColor>{valheimBuildId}</Text>
+            </Box>
+          )}
+          {valheimInstalled && valheimPath && (
+            <Box flexShrink={0}>
+              <Text>Location: </Text>
+              <Text dimColor>{valheimPath}</Text>
             </Box>
           )}
         </Box>
@@ -620,8 +896,34 @@ export const Dashboard: FC<DashboardProps> = () => {
             </Box>
           )}
 
-          {/* Server Actions - only available when SteamCMD is installed */}
-          {steamCmdInstalled ? (
+          {/* Valheim Install Option - when SteamCMD installed but Valheim is not */}
+          {steamCmdInstalled &&
+            valheimInstalled === false &&
+            !valheimInstalling && (
+              <Box marginBottom={1} flexShrink={0}>
+                <Box flexShrink={0}>
+                  <Text color={theme.info}>[V] </Text>
+                  <Text>Install Valheim Server</Text>
+                  <Text color={theme.warning}> (required)</Text>
+                </Box>
+              </Box>
+            )}
+
+          {/* Valheim Reinstall Option - when installed but verification failed */}
+          {steamCmdInstalled &&
+            valheimInstalled &&
+            valheimVerified === false && (
+              <Box marginBottom={1} flexShrink={0}>
+                <Box flexShrink={0}>
+                  <Text color={theme.warning}>[V] </Text>
+                  <Text>Reinstall Valheim Server</Text>
+                  <Text color={theme.error}> (verification failed)</Text>
+                </Box>
+              </Box>
+            )}
+
+          {/* Server Actions - only available when both SteamCMD and Valheim are installed */}
+          {steamCmdInstalled && valheimInstalled ? (
             status === "offline" ? (
               <Box flexDirection="column">
                 <Box flexShrink={0}>
@@ -632,6 +934,10 @@ export const Dashboard: FC<DashboardProps> = () => {
                   <Text color={theme.info}>[U] </Text>
                   <Text>Update Server</Text>
                   {updateAvailable && <Text color={theme.warning}> ★</Text>}
+                </Box>
+                <Box flexShrink={0}>
+                  <Text color={theme.info}>[V] </Text>
+                  <Text dimColor>Verify/Reinstall Server</Text>
                 </Box>
               </Box>
             ) : status === "online" ? (
@@ -663,9 +969,13 @@ export const Dashboard: FC<DashboardProps> = () => {
               </Box>
             )
           ) : steamCmdInstalled === null ? (
-            <Text dimColor>Checking SteamCMD status...</Text>
-          ) : (
+            <Text dimColor>Checking installation status...</Text>
+          ) : !steamCmdInstalled ? (
             <Text dimColor>Install SteamCMD to manage server</Text>
+          ) : valheimInstalled === null ? (
+            <Text dimColor>Checking Valheim installation...</Text>
+          ) : (
+            <Text dimColor>Install Valheim to manage server</Text>
           )}
 
           {/* Auto-start toggle - always available */}

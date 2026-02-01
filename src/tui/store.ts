@@ -163,6 +163,24 @@ type SteamCmdState = {
   path: string | null;
 };
 
+/** Valheim dedicated server state slice */
+type ValheimServerState = {
+  /** Whether Valheim server is installed (null = not yet checked) */
+  installed: boolean | null;
+  /** Whether Valheim installation is in progress */
+  installing: boolean;
+  /** Current installation progress message */
+  installProgress: string;
+  /** Installation progress percentage (0-100) */
+  installPercent: number;
+  /** Valheim server installation directory path */
+  path: string | null;
+  /** Whether installation verification passed */
+  verified: boolean | null;
+  /** Installed build ID */
+  buildId: string | null;
+};
+
 /** Store actions */
 type Actions = {
   // Server actions
@@ -229,6 +247,15 @@ type Actions = {
   setSteamCmdInstallProgress: (message: string, percent: number) => void;
   setSteamCmdPath: (path: string | null) => void;
   resetSteamCmdInstall: () => void;
+
+  // Valheim server actions
+  setValheimInstalled: (installed: boolean | null) => void;
+  setValheimInstalling: (installing: boolean) => void;
+  setValheimInstallProgress: (message: string, percent: number) => void;
+  setValheimPath: (path: string | null) => void;
+  setValheimVerified: (verified: boolean | null) => void;
+  setValheimBuildId: (buildId: string | null) => void;
+  resetValheimInstall: () => void;
 };
 
 /** Complete store type */
@@ -243,6 +270,7 @@ export type Store = {
   rcon: RconState;
   worlds: WorldsState;
   steamcmd: SteamCmdState;
+  valheim: ValheimServerState;
   actions: Actions;
 };
 
@@ -354,6 +382,17 @@ export const useStore = create<Store>((set) => ({
     installProgress: "",
     installPercent: 0,
     path: null,
+  },
+
+  // Initial Valheim server state
+  valheim: {
+    installed: null,
+    installing: false,
+    installProgress: "",
+    installPercent: 0,
+    path: null,
+    verified: null,
+    buildId: null,
   },
 
   // Actions
@@ -633,6 +672,51 @@ export const useStore = create<Store>((set) => ({
           installPercent: 0,
         },
       })),
+
+    // Valheim server actions
+    setValheimInstalled: (installed) =>
+      set((state) => ({
+        valheim: { ...state.valheim, installed },
+      })),
+
+    setValheimInstalling: (installing) =>
+      set((state) => ({
+        valheim: { ...state.valheim, installing },
+      })),
+
+    setValheimInstallProgress: (message, percent) =>
+      set((state) => ({
+        valheim: {
+          ...state.valheim,
+          installProgress: message,
+          installPercent: percent,
+        },
+      })),
+
+    setValheimPath: (path) =>
+      set((state) => ({
+        valheim: { ...state.valheim, path },
+      })),
+
+    setValheimVerified: (verified) =>
+      set((state) => ({
+        valheim: { ...state.valheim, verified },
+      })),
+
+    setValheimBuildId: (buildId) =>
+      set((state) => ({
+        valheim: { ...state.valheim, buildId },
+      })),
+
+    resetValheimInstall: () =>
+      set((state) => ({
+        valheim: {
+          ...state.valheim,
+          installing: false,
+          installProgress: "",
+          installPercent: 0,
+        },
+      })),
   },
 }));
 
@@ -693,6 +777,11 @@ export const selectWorlds = (state: Store) => state.worlds;
  * Selector for SteamCMD state
  */
 export const selectSteamCmd = (state: Store) => state.steamcmd;
+
+/**
+ * Selector for Valheim server state
+ */
+export const selectValheim = (state: Store) => state.valheim;
 
 /**
  * Selector for actions

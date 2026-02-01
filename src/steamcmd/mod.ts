@@ -26,6 +26,8 @@ export {
   isSteamCmdInstalled,
   isValheimInstalled,
   type SteamPaths,
+  type VerificationResult,
+  verifyValheimInstallation,
 } from "./paths.js";
 // Valheim updater
 export {
