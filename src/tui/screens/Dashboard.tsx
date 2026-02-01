@@ -449,7 +449,7 @@ export const Dashboard: FC<DashboardProps> = () => {
       <Box flexDirection="column" marginBottom={1}>
         <Text bold>SteamCMD</Text>
         <Box marginLeft={2} flexDirection="column">
-          <Box>
+          <Box flexShrink={0}>
             <Text>Status: </Text>
             {steamCmdInstalled === null ? (
               <Text dimColor>Checking...</Text>
@@ -460,7 +460,7 @@ export const Dashboard: FC<DashboardProps> = () => {
             )}
           </Box>
           {steamCmdInstalled && steamCmdPath && (
-            <Box>
+            <Box flexShrink={0}>
               <Text>Location: </Text>
               <Text dimColor>{steamCmdPath}</Text>
             </Box>
@@ -472,24 +472,24 @@ export const Dashboard: FC<DashboardProps> = () => {
       <Box flexDirection="column" marginBottom={1}>
         <Text bold>Server Status</Text>
         <Box marginLeft={2} flexDirection="column">
-          <Box>
+          <Box flexShrink={0}>
             <Text>Status: </Text>
             {renderStatusWithLoading()}
           </Box>
-          <Box>
+          <Box flexShrink={0}>
             <Text>Server Name: </Text>
             <Text color={theme.primary}>{config.serverName}</Text>
           </Box>
-          <Box>
+          <Box flexShrink={0}>
             <Text>World: </Text>
             <Text color={theme.primary}>{config.world}</Text>
           </Box>
-          <Box>
+          <Box flexShrink={0}>
             <Text>Port: </Text>
             <Text>{config.port}</Text>
           </Box>
           {version && (
-            <Box>
+            <Box flexShrink={0}>
               <Text>Version: </Text>
               <Text>{version}</Text>
               {updateAvailable && (
@@ -498,21 +498,21 @@ export const Dashboard: FC<DashboardProps> = () => {
             </Box>
           )}
           {pid && (
-            <Box>
+            <Box flexShrink={0}>
               <Text>PID: </Text>
               <Text dimColor>{pid}</Text>
             </Box>
           )}
-          <Box>
+          <Box flexShrink={0}>
             <Text>Uptime: </Text>
             <Text>{formatUptime(uptime)}</Text>
           </Box>
-          <Box>
+          <Box flexShrink={0}>
             <Text>Last Save: </Text>
             <Text>{formatLastSave(lastSave)}</Text>
           </Box>
           {memoryUsage !== null && memoryUsage > 0 && (
-            <Box>
+            <Box flexShrink={0}>
               <Text>Memory: </Text>
               <Text>{formatBytes(memoryUsage)}</Text>
             </Box>
@@ -527,7 +527,7 @@ export const Dashboard: FC<DashboardProps> = () => {
             <Text dimColor>No players connected</Text>
           ) : (
             players.map((player) => (
-              <Box key={player}>
+              <Box key={player} flexShrink={0}>
                 <Text color={theme.primary}>• {player}</Text>
               </Box>
             ))
@@ -538,7 +538,7 @@ export const Dashboard: FC<DashboardProps> = () => {
       {/* Auto-start Status */}
       <Box flexDirection="column" marginBottom={1}>
         <Text bold>Auto-start</Text>
-        <Box marginLeft={2}>
+        <Box marginLeft={2} flexShrink={0}>
           <Text>Status: </Text>
           {startupTaskRegistered === null ? (
             <Text dimColor>Checking...</Text>
@@ -556,8 +556,8 @@ export const Dashboard: FC<DashboardProps> = () => {
         <Box marginLeft={2} marginTop={1} flexDirection="column">
           {/* SteamCMD Install Option */}
           {steamCmdInstalled === false && (
-            <Box marginBottom={1}>
-              <Box>
+            <Box marginBottom={1} flexShrink={0}>
+              <Box flexShrink={0}>
                 <Text color={theme.info}>[I] </Text>
                 <Text>Install SteamCMD</Text>
                 <Text color={theme.warning}> (required)</Text>
@@ -569,11 +569,11 @@ export const Dashboard: FC<DashboardProps> = () => {
           {steamCmdInstalled ? (
             status === "offline" ? (
               <Box flexDirection="column">
-                <Box>
+                <Box flexShrink={0}>
                   <Text color={theme.success}>[S] </Text>
                   <Text>Start Server</Text>
                 </Box>
-                <Box>
+                <Box flexShrink={0}>
                   <Text color={theme.info}>[U] </Text>
                   <Text>Update Server</Text>
                   {updateAvailable && <Text color={theme.warning}> ★</Text>}
@@ -581,19 +581,19 @@ export const Dashboard: FC<DashboardProps> = () => {
               </Box>
             ) : status === "online" ? (
               <Box flexDirection="column">
-                <Box>
+                <Box flexShrink={0}>
                   <Text color={theme.error}>[X] </Text>
                   <Text>Stop Server</Text>
                 </Box>
-                <Box>
+                <Box flexShrink={0}>
                   <Text color={theme.warning}>[R] </Text>
                   <Text>Restart Server</Text>
                 </Box>
-                <Box>
+                <Box flexShrink={0}>
                   <Text color={theme.info}>[F] </Text>
                   <Text>Force Save</Text>
                 </Box>
-                <Box>
+                <Box flexShrink={0}>
                   <Text color={theme.error}>[K] </Text>
                   <Text>Kill Process</Text>
                 </Box>
@@ -601,7 +601,7 @@ export const Dashboard: FC<DashboardProps> = () => {
             ) : (
               <Box flexDirection="column">
                 <Spinner label={`Server is ${status}...`} />
-                <Box marginTop={1}>
+                <Box marginTop={1} flexShrink={0}>
                   <Text color={theme.error}>[K] </Text>
                   <Text dimColor>Force Kill (if stuck)</Text>
                 </Box>
@@ -614,13 +614,13 @@ export const Dashboard: FC<DashboardProps> = () => {
           )}
 
           {/* Auto-start toggle - always available */}
-          <Box marginTop={1}>
+          <Box marginTop={1} flexShrink={0}>
             {startupTaskProcessing ? (
               <Spinner label="Updating auto-start..." />
             ) : startupTaskRegistered === null ? (
               <Text dimColor>Checking auto-start status...</Text>
             ) : (
-              <Box>
+              <Box flexShrink={0}>
                 <Text
                   color={startupTaskRegistered ? theme.warning : theme.success}
                 >

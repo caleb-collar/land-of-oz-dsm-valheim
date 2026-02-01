@@ -1,6 +1,6 @@
 {
   "name": "valheim-oz-dsm",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "Land of OZ - Valheim Dedicated Server Manager",
   "type": "module",
   "bin": {

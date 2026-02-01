@@ -3,7 +3,7 @@
  */
 
 import { Box, Text, useInput } from "ink";
-import { type FC, useCallback, useState } from "react";
+import { type FC, useCallback, useMemo, useState } from "react";
 import { NumberInput } from "../components/NumberInput.js";
 import { SelectInput, type SelectOption } from "../components/SelectInput.js";
 import { TextInput } from "../components/TextInput.js";
@@ -137,20 +137,32 @@ export const Settings: FC = () => {
 
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [localValue, setLocalValue] = useState<string | number | boolean>("");
+  const [scrollOffset, setScrollOffset] = useState(0);
+
+  // Track which sections are expanded (only Server expanded by default)
+  const [expandedSections, setExpandedSections] = useState<Set<SettingSection>>(
+    () => new Set(["server"])
+  );
+
+  // Maximum visible rows (excluding header/footer)
+  const MAX_VISIBLE_ROWS = 15;
 
   // Build world options from discovered worlds
-  const worldOptions: SelectOption<string>[] = [
-    {
-      value: "",
-      label: "Create New...",
-      description: "Enter world name to create",
-    },
-    ...worlds.map((w) => ({
-      value: w.name,
-      label: w.name,
-      description: `${(w.size / 1024 / 1024).toFixed(1)} MB`,
-    })),
-  ];
+  const worldOptions: SelectOption<string>[] = useMemo(
+    () => [
+      {
+        value: "",
+        label: "Create New...",
+        description: "Enter world name to create",
+      },
+      ...worlds.map((w) => ({
+        value: w.name,
+        label: w.name,
+        description: `${(w.size / 1024 / 1024).toFixed(1)} MB`,
+      })),
+    ],
+    [worlds]
+  );
 
   // Define all settings
   const settings: SettingDef[] = [
@@ -451,8 +463,65 @@ export const Settings: FC = () => {
     },
   ];
 
-  const currentSetting = settings[selectedIndex];
+  // Type for navigable items (section headers + settings)
+  type NavItem =
+    | { type: "section"; section: SettingSection; label: string }
+    | { type: "setting"; setting: SettingDef };
+
+  // Build flat list of navigable items based on expanded state
+  // Note: settings array is stable in structure, only expandedSections changes navigation
+  // biome-ignore lint/correctness/useExhaustiveDependencies: settings structure is stable
+  const navItems = useMemo((): NavItem[] => {
+    const items: NavItem[] = [];
+    for (const section of SECTION_ORDER) {
+      // Add section header
+      items.push({
+        type: "section",
+        section,
+        label: SECTION_LABELS[section],
+      });
+      // Add settings if section is expanded
+      if (expandedSections.has(section)) {
+        for (const setting of settings.filter((s) => s.section === section)) {
+          items.push({ type: "setting", setting });
+        }
+      }
+    }
+    return items;
+  }, [expandedSections]);
+
+  // Get current item
+  const currentItem = navItems[selectedIndex];
+  const currentSetting =
+    currentItem?.type === "setting" ? currentItem.setting : null;
   const isEditing = editingField !== null;
+
+  // Toggle section expansion
+  const toggleSection = useCallback((section: SettingSection) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(section)) {
+        next.delete(section);
+      } else {
+        next.add(section);
+      }
+      return next;
+    });
+  }, []);
+
+  // Update scroll offset when selection changes
+  const updateScrollOffset = useCallback(
+    (newIndex: number) => {
+      // Keep at least 2 items visible above and below selection
+      const padding = 2;
+      if (newIndex < scrollOffset + padding) {
+        setScrollOffset(Math.max(0, newIndex - padding));
+      } else if (newIndex >= scrollOffset + MAX_VISIBLE_ROWS - padding) {
+        setScrollOffset(Math.max(0, newIndex - MAX_VISIBLE_ROWS + padding + 1));
+      }
+    },
+    [scrollOffset]
+  );
 
   // Start editing the current field
   const startEditing = useCallback(() => {
@@ -487,59 +556,84 @@ export const Settings: FC = () => {
 
       // Navigation
       if (key.upArrow || input === "k") {
-        setSelectedIndex((prev) => Math.max(0, prev - 1));
+        const newIndex = Math.max(0, selectedIndex - 1);
+        setSelectedIndex(newIndex);
+        updateScrollOffset(newIndex);
         return;
       }
       if (key.downArrow || input === "j") {
-        setSelectedIndex((prev) => Math.min(settings.length - 1, prev + 1));
+        const newIndex = Math.min(navItems.length - 1, selectedIndex + 1);
+        setSelectedIndex(newIndex);
+        updateScrollOffset(newIndex);
         return;
       }
 
-      // Enter to edit
-      if (key.return) {
-        // For toggles, just toggle directly
+      // Enter/Space to toggle section or edit setting
+      if (key.return || input === " ") {
+        if (currentItem?.type === "section") {
+          toggleSection(currentItem.section);
+          return;
+        }
         if (currentSetting?.type === "toggle") {
           const newValue = !currentSetting.getValue();
           currentSetting.setValue(newValue);
           addLog("info", `Toggled ${currentSetting.label}`);
-        } else {
+        } else if (currentSetting) {
           startEditing();
         }
         return;
       }
 
-      // Space also toggles for toggle types
-      if (input === " " && currentSetting?.type === "toggle") {
-        const newValue = !currentSetting.getValue();
-        currentSetting.setValue(newValue);
-        addLog("info", `Toggled ${currentSetting.label}`);
+      // Tab to collapse all / expand all
+      if (key.tab) {
+        const allExpanded = SECTION_ORDER.every((s) => expandedSections.has(s));
+        if (allExpanded) {
+          setExpandedSections(new Set());
+        } else {
+          setExpandedSections(new Set(SECTION_ORDER));
+        }
+        // Reset to first item
+        setSelectedIndex(0);
+        setScrollOffset(0);
         return;
       }
     },
     { isActive: !isEditing }
   );
 
-  // Group settings by section
-  const groupedSettings = SECTION_ORDER.map((section) => ({
-    section,
-    label: SECTION_LABELS[section],
-    items: settings.filter((s) => s.section === section),
-  }));
+  // Calculate visible items range
+  const visibleItems = navItems.slice(
+    scrollOffset,
+    scrollOffset + MAX_VISIBLE_ROWS
+  );
+  const hasMoreAbove = scrollOffset > 0;
+  const hasMoreBelow = scrollOffset + MAX_VISIBLE_ROWS < navItems.length;
 
-  // Calculate section start indices
-  const sectionStartIndices: Record<SettingSection, number> = {} as Record<
-    SettingSection,
-    number
-  >;
-  let runningIndex = 0;
-  for (const group of groupedSettings) {
-    sectionStartIndices[group.section] = runningIndex;
-    runningIndex += group.items.length;
-  }
+  // Render a navigation item (section header or setting)
+  const renderNavItem = (item: NavItem, globalIndex: number) => {
+    const isSelected = globalIndex === selectedIndex;
 
-  // Render a setting row
-  const renderSetting = (setting: SettingDef, index: number) => {
-    const isSelected = index === selectedIndex;
+    if (item.type === "section") {
+      const isExpanded = expandedSections.has(item.section);
+      const itemCount = settings.filter(
+        (s) => s.section === item.section
+      ).length;
+
+      return (
+        <Box key={`section-${item.section}`} flexShrink={0} minHeight={1}>
+          <Text color={isSelected ? theme.primary : undefined}>
+            {isSelected ? "▶ " : "  "}
+          </Text>
+          <Text bold color={isSelected ? theme.primary : theme.secondary}>
+            {isExpanded ? "▼" : "▶"} {item.label}
+          </Text>
+          <Text dimColor> ({itemCount})</Text>
+        </Box>
+      );
+    }
+
+    // It's a setting
+    const setting = item.setting;
     const isThisEditing = editingField === setting.key;
     const value = setting.getValue();
 
@@ -549,8 +643,8 @@ export const Settings: FC = () => {
         case "text":
         case "password":
           return (
-            <Box key={setting.key}>
-              <Text color={theme.primary}>▶ {setting.label}: </Text>
+            <Box key={setting.key} flexShrink={0} minHeight={1}>
+              <Text color={theme.primary}> ▶ {setting.label}: </Text>
               <TextInput
                 value={localValue as string}
                 onChange={setLocalValue}
@@ -563,8 +657,8 @@ export const Settings: FC = () => {
           );
         case "number":
           return (
-            <Box key={setting.key}>
-              <Text color={theme.primary}>▶ {setting.label}: </Text>
+            <Box key={setting.key} flexShrink={0} minHeight={1}>
+              <Text color={theme.primary}> ▶ {setting.label}: </Text>
               <NumberInput
                 value={localValue as number}
                 onChange={(v) => setLocalValue(v)}
@@ -580,11 +674,11 @@ export const Settings: FC = () => {
           );
         case "select":
           return (
-            <Box key={setting.key} flexDirection="column">
-              <Box>
-                <Text color={theme.primary}>▶ {setting.label}: </Text>
+            <Box key={setting.key} flexDirection="column" flexShrink={0}>
+              <Box flexShrink={0}>
+                <Text color={theme.primary}> ▶ {setting.label}: </Text>
               </Box>
-              <Box marginLeft={2}>
+              <Box marginLeft={4}>
                 <SelectInput
                   options={setting.options ?? []}
                   value={localValue as string}
@@ -622,9 +716,9 @@ export const Settings: FC = () => {
             : `${value}${setting.suffix ?? ""}`;
 
     return (
-      <Box key={setting.key}>
+      <Box key={setting.key} flexShrink={0} minHeight={1}>
         <Text color={isSelected ? theme.primary : undefined}>
-          {isSelected ? "▶ " : "  "}
+          {isSelected ? "  ▶ " : "    "}
         </Text>
         <Text bold={isSelected} color={isSelected ? theme.primary : undefined}>
           {setting.label}:
@@ -648,49 +742,49 @@ export const Settings: FC = () => {
   return (
     <Box flexDirection="column" flexGrow={1} padding={1} overflow="hidden">
       {/* Title */}
-      <Box marginBottom={1}>
+      <Box marginBottom={1} flexShrink={0} minHeight={1}>
         <Text bold color={theme.primary}>
           ─ Settings ─
         </Text>
       </Box>
 
       {/* Help */}
-      <Box marginBottom={1}>
+      <Box marginBottom={1} flexShrink={0} minHeight={1}>
         <Text dimColor>
           {isEditing
             ? "Enter to save, Esc to cancel"
-            : "↑/↓ navigate, Enter to edit, Space to toggle"}
+            : "↑/↓ navigate • Enter expand/edit • Tab collapse all"}
         </Text>
       </Box>
 
-      {/* Sections */}
-      {groupedSettings.map((group) => {
-        const startIdx = sectionStartIndices[group.section];
-        const endIdx = startIdx + group.items.length;
-        const sectionActive =
-          selectedIndex >= startIdx && selectedIndex < endIdx;
+      {/* Scroll indicator - above */}
+      {hasMoreAbove && (
+        <Box flexShrink={0} minHeight={1}>
+          <Text dimColor> ↑ {scrollOffset} more above</Text>
+        </Box>
+      )}
 
-        return (
-          <Box key={group.section} flexDirection="column" marginBottom={1}>
-            <Box marginBottom={0}>
-              <Text
-                bold
-                dimColor={!sectionActive}
-                color={sectionActive ? theme.primary : undefined}
-              >
-                ─ {group.label} ─
-              </Text>
-            </Box>
-            {group.items.map((setting, idx) =>
-              renderSetting(setting, startIdx + idx)
-            )}
-          </Box>
-        );
-      })}
+      {/* Visible Items */}
+      <Box flexDirection="column" flexGrow={1} overflow="hidden">
+        {visibleItems.map((item, visibleIdx) => {
+          const globalIndex = scrollOffset + visibleIdx;
+          return renderNavItem(item, globalIndex);
+        })}
+      </Box>
+
+      {/* Scroll indicator - below */}
+      {hasMoreBelow && (
+        <Box flexShrink={0} minHeight={1}>
+          <Text dimColor>
+            {"  "}↓ {navItems.length - scrollOffset - MAX_VISIBLE_ROWS} more
+            below
+          </Text>
+        </Box>
+      )}
 
       {/* RCON Status */}
       {rcon.enabled && (
-        <Box marginTop={1}>
+        <Box marginTop={1} flexShrink={0} minHeight={1}>
           <Text dimColor>RCON Status: </Text>
           <Text color={rcon.connected ? theme.success : theme.error}>
             {rcon.connected ? "Connected" : "Disconnected"}
@@ -699,7 +793,7 @@ export const Settings: FC = () => {
       )}
 
       {/* Footer hint */}
-      <Box marginTop={1}>
+      <Box marginTop={1} flexShrink={0} minHeight={1}>
         <Text dimColor>Note: Restart server for changes to take effect</Text>
       </Box>
     </Box>

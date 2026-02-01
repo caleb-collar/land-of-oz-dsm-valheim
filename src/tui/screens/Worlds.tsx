@@ -582,12 +582,13 @@ export const Worlds: FC = () => {
         {config.world && !worlds.some((w) => w.name === config.world) && (
           <Box
             flexDirection="column"
+            flexShrink={0}
             borderStyle={worlds.length === 0 ? "single" : undefined}
             borderColor={worlds.length === 0 ? theme.primary : undefined}
             paddingX={worlds.length === 0 ? 1 : 0}
             marginBottom={1}
           >
-            <Box>
+            <Box flexShrink={0}>
               <Text color={theme.primary} bold>
                 {config.world}
               </Text>
@@ -606,7 +607,7 @@ export const Worlds: FC = () => {
                 <Text color={theme.warning}> - Not generated</Text>
               )}
             </Box>
-            <Box marginLeft={2}>
+            <Box marginLeft={2} flexShrink={0}>
               {worldGenerating ? (
                 <Text dimColor>
                   New world is being generated (this may take ~1 minute)
@@ -629,12 +630,13 @@ export const Worlds: FC = () => {
               <Box
                 key={world.name}
                 flexDirection="column"
+                flexShrink={0}
                 borderStyle={isSelected ? "single" : undefined}
                 borderColor={isSelected ? theme.primary : undefined}
                 paddingX={isSelected ? 1 : 0}
                 marginBottom={1}
               >
-                <Box>
+                <Box flexShrink={0}>
                   <Text color={isSelected ? theme.primary : undefined} bold>
                     {world.name}
                   </Text>
@@ -643,7 +645,7 @@ export const Worlds: FC = () => {
                     <Text color={theme.warning}> - Pending Save</Text>
                   )}
                 </Box>
-                <Box marginLeft={2}>
+                <Box marginLeft={2} flexShrink={0}>
                   {world.pendingSave ? (
                     <Text dimColor>
                       World generated but not yet saved to disk
@@ -660,7 +662,7 @@ export const Worlds: FC = () => {
                   )}
                 </Box>
                 {!world.pendingSave && (
-                  <Box marginLeft={2}>
+                  <Box marginLeft={2} flexShrink={0}>
                     <Text dimColor>Modified: {formatDate(world.modified)}</Text>
                   </Box>
                 )}
