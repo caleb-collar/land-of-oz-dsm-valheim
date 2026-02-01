@@ -14,6 +14,17 @@ export type ServerLogEntry = {
   raw: string;
 };
 
+/** Startup phases for detailed status tracking */
+export type StartupPhase =
+  | "idle"
+  | "initializing"
+  | "loading_world"
+  | "generating_world"
+  | "creating_locations"
+  | "starting_server"
+  | "registering_lobby"
+  | "ready";
+
 /** Server events that can be detected from logs */
 export type ParsedEvent =
   | { type: "player_join"; name: string }
@@ -22,7 +33,8 @@ export type ParsedEvent =
   | { type: "world_generated" }
   | { type: "server_ready" }
   | { type: "server_shutdown" }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string }
+  | { type: "startup_phase"; phase: StartupPhase };
 
 /**
  * Parses a raw log line into a structured entry
@@ -88,7 +100,42 @@ export function parseEvent(line: string): ParsedEvent | null {
     return { type: "world_generated" };
   }
 
-  // Server ready (fully started)
+  // === Startup Phase Detection ===
+
+  // DungeonDB Start - very early initialization
+  if (line.includes("DungeonDB Start")) {
+    return { type: "startup_phase", phase: "initializing" };
+  }
+
+  // Load world - loading existing world data
+  if (line.includes("Load world") || line.includes("Loading world")) {
+    return { type: "startup_phase", phase: "loading_world" };
+  }
+
+  // World generation starting
+  if (line.includes("Generating locations") && !line.includes("Done")) {
+    return { type: "startup_phase", phase: "generating_world" };
+  }
+
+  // Location placement phase (part of world generation, can take ~1 min)
+  if (
+    line.includes("Failed to place all") ||
+    line.includes("Placing locations")
+  ) {
+    return { type: "startup_phase", phase: "creating_locations" };
+  }
+
+  // ZDOMan and server subsystems starting
+  if (line.includes("ZDOMan") || line.includes("Zonesystem Start")) {
+    return { type: "startup_phase", phase: "starting_server" };
+  }
+
+  // Registering lobby - final step before ready
+  if (line.includes("Registering lobby")) {
+    return { type: "startup_phase", phase: "registering_lobby" };
+  }
+
+  // Server ready (fully started and joinable)
   if (line.includes("Game server connected")) {
     return { type: "server_ready" };
   }

@@ -31,6 +31,7 @@ export {
   type ServerLogEntry,
   type ServerLogLevel,
   type ServerLogSubscriber,
+  type StartupPhase,
 } from "./logs.js";
 // PID file management
 export {

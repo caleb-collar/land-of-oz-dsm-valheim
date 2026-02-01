@@ -90,8 +90,10 @@ export function useServer() {
         if (state === "crashed") {
           actions.addLog("error", "Server crashed");
           actions.setWorldGenerating(false);
+          actions.setStartupPhase("idle");
         } else if (state === "offline") {
           actions.setWorldGenerating(false);
+          actions.setStartupPhase("idle");
         }
       },
       onLog: (line: string) => {
@@ -119,10 +121,26 @@ export function useServer() {
         actions.addLog("error", `Server error: ${error.message}`);
       },
       onEvent: (event: ParsedEvent) => {
+        // Handle startup phase changes
+        if (event.type === "startup_phase") {
+          actions.setStartupPhase(event.phase);
+          // Also set worldGenerating flag for generating phases
+          if (
+            event.phase === "generating_world" ||
+            event.phase === "creating_locations"
+          ) {
+            actions.setWorldGenerating(true);
+          }
+        }
         // Handle world generation completion
         if (event.type === "world_generated") {
           actions.setWorldGenerating(false);
           actions.addLog("info", "World generation complete");
+        }
+        // Handle server ready - mark as ready phase
+        if (event.type === "server_ready") {
+          actions.setStartupPhase("ready");
+          actions.setWorldGenerating(false);
         }
         // Handle world save for lastSave timestamp
         if (event.type === "world_saved") {
@@ -162,6 +180,7 @@ export function useServer() {
     actions.setServerStatus("starting");
     actions.addLog("info", "Starting Valheim server...");
     actions.resetUptime();
+    actions.setStartupPhase("initializing");
 
     // Check if we're generating a new world
     const worldNotGenerated = !(await worldExists(config.world));
@@ -188,6 +207,7 @@ export function useServer() {
     } catch (error) {
       actions.setServerStatus("offline");
       actions.setWorldGenerating(false);
+      actions.setStartupPhase("idle");
       actions.addLog("error", `Failed to start server: ${error}`);
     }
   }, [status, config, actions, createWatchdogEvents]);

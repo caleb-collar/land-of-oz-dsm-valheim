@@ -4,6 +4,7 @@
 
 import { Box, Text, useInput } from "ink";
 import { type FC, useEffect, useState } from "react";
+import type { StartupPhase } from "../../server/logs.js";
 import {
   getSteamPaths,
   installSteamCmd,
@@ -61,6 +62,32 @@ function formatLastSave(timestamp: Date | null): string {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
+/**
+ * Gets a human-readable description for startup phases
+ */
+function getPhaseDescription(phase: StartupPhase): string {
+  switch (phase) {
+    case "idle":
+      return "";
+    case "initializing":
+      return "Initializing...";
+    case "loading_world":
+      return "Loading world data...";
+    case "generating_world":
+      return "Generating new world...";
+    case "creating_locations":
+      return "Creating locations (may take ~1 min)...";
+    case "starting_server":
+      return "Starting server systems...";
+    case "registering_lobby":
+      return "Registering lobby...";
+    case "ready":
+      return "Ready to join!";
+    default:
+      return "";
+  }
+}
+
 /** Props for Dashboard screen */
 type DashboardProps = Record<string, never>;
 
@@ -76,6 +103,7 @@ export const Dashboard: FC<DashboardProps> = () => {
   const updateAvailable = useStore((s) => s.server.updateAvailable);
   const lastSave = useStore((s) => s.server.lastSave);
   const memoryUsage = useStore((s) => s.server.memoryUsage);
+  const startupPhase = useStore((s) => s.server.startupPhase);
   const config = useStore((s) => s.config);
   const modalOpen = useStore((s) => s.ui.modalOpen);
   const openModal = useStore((s) => s.actions.openModal);
@@ -357,15 +385,42 @@ export const Dashboard: FC<DashboardProps> = () => {
 
   // Render loading state for starting/stopping
   const renderStatusWithLoading = () => {
-    if (status === "starting" || status === "stopping") {
+    if (status === "starting") {
+      const phaseDesc = getPhaseDescription(startupPhase);
+      return (
+        <Box flexDirection="column">
+          <Box>
+            <Spinner />
+            <Text color={statusColor} bold>
+              {" "}
+              STARTING
+            </Text>
+          </Box>
+          {phaseDesc && (
+            <Box marginLeft={2}>
+              <Text dimColor>{phaseDesc}</Text>
+            </Box>
+          )}
+        </Box>
+      );
+    }
+    if (status === "stopping") {
       return (
         <Box>
           <Spinner />
           <Text color={statusColor} bold>
             {" "}
-            {status.toUpperCase()}
+            STOPPING
           </Text>
         </Box>
+      );
+    }
+    // When online, show "ONLINE" with ready status
+    if (status === "online" && startupPhase === "ready") {
+      return (
+        <Text color={statusColor} bold>
+          ● ONLINE (Ready to join)
+        </Text>
       );
     }
     return (
