@@ -7,3 +7,4 @@ export { useLogs, useLogStream } from "./useLogs.js";
 export { useConfig, useConfigSync } from "./useConfig.js";
 export { useTerminalSize } from "./useTerminalSize.js";
 export type { TerminalSize } from "./useTerminalSize.js";
+export { useWorlds } from "./useWorlds.js";

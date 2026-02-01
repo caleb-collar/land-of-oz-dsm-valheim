@@ -10,6 +10,7 @@ import {
   Watchdog,
   type WatchdogEvents,
 } from "../../server/mod.js";
+import { type UpdateCallback, updateValheim } from "../../steamcmd/updater.js";
 import { type ServerStatus, useStore } from "../store.js";
 
 /**
@@ -64,10 +65,14 @@ function buildLaunchConfig(config: {
 export function useServer() {
   const status = useStore((s) => s.server.status);
   const config = useStore((s) => s.config);
+  const rcon = useStore((s) => s.rcon);
   const actions = useStore((s) => s.actions);
 
   // Ref to hold the watchdog instance (persists across renders)
   const watchdogRef = useRef<Watchdog | null>(null);
+
+  // Ref to track if update is in progress
+  const updatingRef = useRef(false);
 
   /**
    * Creates watchdog event handlers connected to the store
@@ -198,6 +203,93 @@ export function useServer() {
     actions.setServerPid(null);
   }, [actions]);
 
+  /**
+   * Restart the server (stop then start)
+   */
+  const restart = useCallback(async () => {
+    if (status !== "online") {
+      actions.addLog("warn", "Server is not online, cannot restart");
+      return;
+    }
+
+    actions.addLog("info", "Restarting server...");
+
+    // Stop the server
+    await stop();
+
+    // Wait a moment for clean shutdown
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Start the server
+    await start();
+  }, [status, actions, stop, start]);
+
+  /**
+   * Update the Valheim server via SteamCMD
+   */
+  const update = useCallback(
+    async (onProgress?: UpdateCallback) => {
+      if (status !== "offline") {
+        actions.addLog("error", "Cannot update while server is running");
+        return;
+      }
+
+      if (updatingRef.current) {
+        actions.addLog("warn", "Update already in progress");
+        return;
+      }
+
+      updatingRef.current = true;
+      actions.addLog("info", "Updating Valheim server...");
+
+      try {
+        await updateValheim((status) => {
+          actions.addLog("info", status.message);
+          onProgress?.(status);
+        });
+        actions.addLog("info", "Server update complete");
+        actions.setUpdateAvailable(false);
+      } catch (error) {
+        actions.addLog("error", `Failed to update server: ${error}`);
+      } finally {
+        updatingRef.current = false;
+      }
+    },
+    [status, actions]
+  );
+
+  /**
+   * Force save the world via RCON (if connected)
+   */
+  const forceSave = useCallback(async () => {
+    if (!rcon.enabled || !rcon.connected) {
+      actions.addLog("warn", "RCON not connected, cannot force save");
+      return;
+    }
+
+    actions.addLog("info", "Sending save command via RCON...");
+
+    try {
+      // Import RconClient dynamically to avoid circular dependencies
+      const { RconClient } = await import("../../rcon/client.js");
+      const client = new RconClient({
+        host: rcon.host,
+        port: rcon.port,
+        password: rcon.password,
+        timeout: rcon.timeout,
+      });
+
+      await client.connect();
+      const response = await client.send("save");
+      await client.disconnect();
+
+      actions.addLog("info", `Save command sent: ${response || "OK"}`);
+      actions.setLastSave(new Date());
+    } catch (error) {
+      actions.addLog("error", `Failed to send save command: ${error}`);
+    }
+  }, [rcon, actions]);
+
   // Uptime counter - increments every second when online
   useEffect(() => {
     if (status !== "online") return;
@@ -227,9 +319,13 @@ export function useServer() {
     start,
     stop,
     kill,
+    restart,
+    update,
+    forceSave,
     isOnline: status === "online",
     isOffline: status === "offline",
     isTransitioning: status === "starting" || status === "stopping",
+    isUpdating: updatingRef.current,
     watchdog: watchdogRef.current,
   };
 }
