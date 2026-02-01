@@ -44,51 +44,61 @@ async function copyFile(src: string, dest: string): Promise<void> {
 }
 
 /**
- * Gets the default Valheim worlds directory for the current platform
- * @returns Absolute path to the worlds directory
+ * Gets the Valheim base directory for the current platform
+ * @returns Absolute path to the Valheim data directory
  */
-export function getDefaultWorldsDir(): string {
+function getValheimBaseDir(): string {
   const platform = getPlatform();
   const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
 
   switch (platform) {
     case "windows":
       // Windows uses LocalLow for Valheim saves
-      return path.join(
-        home,
-        "AppData",
-        "LocalLow",
-        "IronGate",
-        "Valheim",
-        "worlds_local"
-      );
+      return path.join(home, "AppData", "LocalLow", "IronGate", "Valheim");
     case "darwin":
       return path.join(
         home,
         "Library",
         "Application Support",
-        "unity.IronGate.Valheim",
-        "worlds_local"
+        "unity.IronGate.Valheim"
       );
     default:
-      return path.join(
-        home,
-        ".config",
-        "unity3d",
-        "IronGate",
-        "Valheim",
-        "worlds_local"
-      );
+      return path.join(home, ".config", "unity3d", "IronGate", "Valheim");
   }
 }
 
 /**
- * Lists all available worlds in a directory
- * @param worldsDir Optional directory to search (defaults to system worlds dir)
- * @returns Array of world info objects, sorted by modification date (newest first)
+ * Gets the dedicated server worlds directory
+ * Dedicated servers save to "worlds/" not "worlds_local/"
+ * @returns Absolute path to the dedicated server worlds directory
  */
-export async function listWorlds(worldsDir?: string): Promise<WorldInfo[]> {
-  const dir = worldsDir ?? getDefaultWorldsDir();
+export function getDedicatedServerWorldsDir(): string {
+  return path.join(getValheimBaseDir(), "worlds");
+}
+
+/**
+ * Gets the client worlds directory (for local/single-player saves)
+ * @returns Absolute path to the client worlds directory
+ */
+export function getClientWorldsDir(): string {
+  return path.join(getValheimBaseDir(), "worlds_local");
+}
+
+/**
+ * Gets the default Valheim worlds directory for the current platform
+ * Returns the dedicated server worlds dir as primary
+ * @returns Absolute path to the worlds directory
+ */
+export function getDefaultWorldsDir(): string {
+  return getDedicatedServerWorldsDir();
+}
+
+/**
+ * Lists worlds from a single directory
+ * @param dir Directory to search
+ * @returns Array of world info objects
+ */
+async function listWorldsFromDir(dir: string): Promise<WorldInfo[]> {
   const worlds: WorldInfo[] = [];
 
   try {
@@ -120,8 +130,44 @@ export async function listWorlds(worldsDir?: string): Promise<WorldInfo[]> {
     }
   }
 
+  return worlds;
+}
+
+/**
+ * Lists all available worlds, searching both dedicated server and client directories
+ * @param worldsDir Optional specific directory to search (if provided, only searches that dir)
+ * @returns Array of world info objects, sorted by modification date (newest first)
+ */
+export async function listWorlds(worldsDir?: string): Promise<WorldInfo[]> {
+  // If a specific directory is provided, only search there
+  if (worldsDir) {
+    const worlds = await listWorldsFromDir(worldsDir);
+    return worlds.sort((a, b) => b.modified.getTime() - a.modified.getTime());
+  }
+
+  // Otherwise, search both dedicated server and client directories
+  const [serverWorlds, clientWorlds] = await Promise.all([
+    listWorldsFromDir(getDedicatedServerWorldsDir()),
+    listWorldsFromDir(getClientWorldsDir()),
+  ]);
+
+  // Merge and deduplicate by name (prefer server copy if same name exists)
+  const worldMap = new Map<string, WorldInfo>();
+
+  // Add client worlds first (so server worlds override if same name)
+  for (const world of clientWorlds) {
+    worldMap.set(world.name, world);
+  }
+
+  // Add server worlds (override client worlds with same name)
+  for (const world of serverWorlds) {
+    worldMap.set(world.name, world);
+  }
+
+  const allWorlds = Array.from(worldMap.values());
+
   // Sort by modification date, newest first
-  return worlds.sort((a, b) => b.modified.getTime() - a.modified.getTime());
+  return allWorlds.sort((a, b) => b.modified.getTime() - a.modified.getTime());
 }
 
 /**

@@ -38,6 +38,7 @@ export const App: FC = () => {
   const activeScreen = useStore((s) => s.ui.activeScreen);
   const modalOpen = useStore((s) => s.ui.modalOpen);
   const modalContent = useStore((s) => s.ui.modalContent);
+  const editingField = useStore((s) => s.ui.editingField);
   const setScreen = useStore((s) => s.actions.setScreen);
   const openModal = useStore((s) => s.actions.openModal);
   const addLog = useStore((s) => s.actions.addLog);
@@ -53,8 +54,8 @@ export const App: FC = () => {
 
   // Global keyboard handling
   useInput((input, key) => {
-    // Don't handle global keys when modal is open (except ?)
-    if (modalOpen) return;
+    // Don't handle global keys when modal is open or editing a field
+    if (modalOpen || editingField) return;
 
     // Quit - use useApp().exit() for proper fullscreen cleanup
     if (input === "q" || input === "Q" || (key.ctrl && input === "c")) {

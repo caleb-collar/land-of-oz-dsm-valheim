@@ -12,7 +12,7 @@ import { useWorlds } from "../hooks/useWorlds.js";
 import { useStore } from "../store.js";
 import { theme } from "../theme.js";
 
-type Mode = "list" | "import" | "export" | "backup";
+type Mode = "list" | "create" | "import" | "export" | "backup";
 
 /**
  * Formats bytes to human-readable size
@@ -69,16 +69,44 @@ export const Worlds: FC = () => {
   const closeModal = useStore((s) => s.actions.closeModal);
   const addLog = useStore((s) => s.actions.addLog);
   const serverStatus = useStore((s) => s.server.status);
+  const setEditingField = useStore((s) => s.actions.setEditingField);
 
-  const [mode, setMode] = useState<Mode>("list");
+  const [mode, setModeInternal] = useState<Mode>("list");
   const [inputPath, setInputPath] = useState("");
+  const [newWorldName, setNewWorldName] = useState("");
+  const [newWorldSeed, setNewWorldSeed] = useState("");
+  const [createStep, setCreateStep] = useState<"name" | "seed">("name");
   const [loading, setLoading] = useState(false);
   const [operationStatus, setOperationStatus] = useState("");
+  const [prevServerStatus, setPrevServerStatus] = useState(serverStatus);
+
+  // Wrapper to set mode and update editingField for global input prevention
+  const setMode = useCallback(
+    (newMode: Mode) => {
+      setModeInternal(newMode);
+      // Set editingField when in input modes to prevent global shortcuts
+      setEditingField(newMode === "list" ? null : `worlds-${newMode}`);
+    },
+    [setEditingField]
+  );
 
   // Refresh worlds on mount
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // Auto-refresh when server comes online (new world may have been created)
+  useEffect(() => {
+    if (prevServerStatus !== "online" && serverStatus === "online") {
+      // Server just came online, refresh to pick up any new world files
+      const timer = setTimeout(() => {
+        refresh();
+        addLog("info", "Refreshed worlds list after server started");
+      }, 2000); // Small delay to let Valheim create world files
+      return () => clearTimeout(timer);
+    }
+    setPrevServerStatus(serverStatus);
+  }, [serverStatus, prevServerStatus, refresh, addLog]);
 
   // Handle setting active world
   const handleSetActive = useCallback(async () => {
@@ -98,6 +126,54 @@ export const Worlds: FC = () => {
       addLog("error", `Failed to set world: ${err}`);
     }
   }, [getSelectedWorld, serverStatus, setActive, updateServerConfig, addLog]);
+
+  // Handle create new world
+  const handleCreateWorld = useCallback(async () => {
+    if (!newWorldName.trim()) {
+      addLog("error", "Please enter a world name");
+      return;
+    }
+
+    const worldName = newWorldName.trim();
+
+    // Check if world already exists
+    const existingWorld = worlds.find(
+      (w) => w.name.toLowerCase() === worldName.toLowerCase()
+    );
+    if (existingWorld) {
+      addLog("error", `World "${worldName}" already exists`);
+      return;
+    }
+
+    if (serverStatus !== "offline") {
+      addLog("warn", "Stop the server before creating a new world");
+      return;
+    }
+
+    try {
+      // Set the new world as active - Valheim will create it on server start
+      await setActive(worldName);
+      await updateServerConfig({ world: worldName });
+      addLog("info", `Created world configuration: ${worldName}`);
+      addLog("info", "Start the server to generate the world files");
+
+      // Reset and return to list
+      setMode("list");
+      setNewWorldName("");
+      setNewWorldSeed("");
+      setCreateStep("name");
+    } catch (err) {
+      addLog("error", `Failed to create world: ${err}`);
+    }
+  }, [
+    newWorldName,
+    worlds,
+    serverStatus,
+    setActive,
+    updateServerConfig,
+    addLog, // Reset and return to list
+    setMode,
+  ]);
 
   // Handle import
   const handleImport = useCallback(async () => {
@@ -121,7 +197,7 @@ export const Worlds: FC = () => {
       setLoading(false);
       setOperationStatus("");
     }
-  }, [inputPath, importWorld, refresh, addLog]);
+  }, [inputPath, importWorld, refresh, addLog, setMode]);
 
   // Handle export
   const handleExport = useCallback(async () => {
@@ -145,7 +221,7 @@ export const Worlds: FC = () => {
       setLoading(false);
       setOperationStatus("");
     }
-  }, [getSelectedWorld, inputPath, exportWorld, addLog]);
+  }, [getSelectedWorld, inputPath, exportWorld, addLog, setMode]);
 
   // Handle backup
   const handleBackup = useCallback(async () => {
@@ -169,7 +245,7 @@ export const Worlds: FC = () => {
       setLoading(false);
       setOperationStatus("");
     }
-  }, [getSelectedWorld, inputPath, backupWorld, addLog]);
+  }, [getSelectedWorld, inputPath, backupWorld, addLog, setMode]);
 
   // Handle delete confirmation
   const handleDeleteConfirm = useCallback(async () => {
@@ -268,6 +344,17 @@ export const Worlds: FC = () => {
         addLog("info", "Refreshing world list...");
         return;
       }
+
+      // Create new world
+      if (input === "n" || input === "N") {
+        if (serverStatus !== "offline") {
+          addLog("warn", "Stop the server before creating a new world");
+          return;
+        }
+        setMode("create");
+        setCreateStep("name");
+        return;
+      }
     },
     { isActive: mode === "list" }
   );
@@ -276,11 +363,22 @@ export const Worlds: FC = () => {
   const handleInputCancel = useCallback(() => {
     setMode("list");
     setInputPath("");
-  }, []);
+    setNewWorldName("");
+    setNewWorldSeed("");
+    setCreateStep("name");
+  }, [setMode]);
 
   // Handle submit in input modes
   const handleInputSubmit = useCallback(() => {
     switch (mode) {
+      case "create":
+        if (createStep === "name") {
+          // Move to seed step (optional)
+          setCreateStep("seed");
+        } else {
+          handleCreateWorld();
+        }
+        break;
       case "import":
         handleImport();
         break;
@@ -291,7 +389,14 @@ export const Worlds: FC = () => {
         handleBackup();
         break;
     }
-  }, [mode, handleImport, handleExport, handleBackup]);
+  }, [
+    mode,
+    createStep,
+    handleCreateWorld,
+    handleImport,
+    handleExport,
+    handleBackup,
+  ]);
 
   // Render loading state
   if (worldsLoading && worlds.length === 0) {
@@ -324,7 +429,73 @@ export const Worlds: FC = () => {
     );
   }
 
-  // Render input mode
+  // Render create world mode
+  if (mode === "create") {
+    return (
+      <Box flexDirection="column" flexGrow={1} padding={1}>
+        <Box marginBottom={1}>
+          <Text bold color={theme.primary}>
+            ─ Create New World ─
+          </Text>
+        </Box>
+
+        {loading ? (
+          <Spinner label={operationStatus} />
+        ) : createStep === "name" ? (
+          <>
+            <Box marginBottom={1}>
+              <Text>Enter a name for your new world:</Text>
+            </Box>
+            <Box>
+              <TextInput
+                value={newWorldName}
+                onChange={setNewWorldName}
+                onSubmit={handleInputSubmit}
+                onCancel={handleInputCancel}
+                placeholder="MyWorld"
+                focus={true}
+              />
+            </Box>
+            <Box marginTop={1}>
+              <Text dimColor>Enter to continue, Esc to cancel</Text>
+            </Box>
+          </>
+        ) : (
+          <>
+            <Box marginBottom={1}>
+              <Text>World: </Text>
+              <Text color={theme.primary} bold>
+                {newWorldName}
+              </Text>
+            </Box>
+            <Box marginBottom={1}>
+              <Text>Enter a seed (optional, leave empty for random):</Text>
+            </Box>
+            <Box>
+              <TextInput
+                value={newWorldSeed}
+                onChange={setNewWorldSeed}
+                onSubmit={handleInputSubmit}
+                onCancel={handleInputCancel}
+                placeholder="Leave empty for random seed"
+                focus={true}
+              />
+            </Box>
+            <Box marginTop={1}>
+              <Text dimColor>Enter to create world, Esc to cancel</Text>
+            </Box>
+            <Box marginTop={1}>
+              <Text color={theme.warning}>
+                Note: Start the server to generate the world files
+              </Text>
+            </Box>
+          </>
+        )}
+      </Box>
+    );
+  }
+
+  // Render input mode (import/export/backup)
   if (mode !== "list") {
     const modeTitle =
       mode === "import"
@@ -387,15 +558,37 @@ export const Worlds: FC = () => {
       {/* Help */}
       <Box marginBottom={1}>
         <Text dimColor>
-          ↑/↓ Navigate | Enter Set Active | I Import | E Export | B Backup | D
-          Delete | R Refresh
+          ↑/↓ Navigate | Enter Set Active | N New | I Import | E Export | B
+          Backup | D Delete | R Refresh
         </Text>
       </Box>
 
       {/* Worlds List */}
       <Box flexDirection="column" overflow="hidden">
-        {worlds.length === 0 ? (
-          <Text dimColor>No worlds found</Text>
+        {/* Show pending world if configured but not yet generated */}
+        {config.world && !worlds.some((w) => w.name === config.world) && (
+          <Box
+            flexDirection="column"
+            borderStyle={worlds.length === 0 ? "single" : undefined}
+            borderColor={worlds.length === 0 ? theme.primary : undefined}
+            paddingX={worlds.length === 0 ? 1 : 0}
+            marginBottom={1}
+          >
+            <Box>
+              <Text color={theme.primary} bold>
+                {config.world}
+              </Text>
+              <Text color={theme.success}> (Active)</Text>
+              <Text color={theme.warning}> - Not generated</Text>
+            </Box>
+            <Box marginLeft={2}>
+              <Text dimColor>Start the server to generate this world</Text>
+            </Box>
+          </Box>
+        )}
+
+        {worlds.length === 0 && !config.world ? (
+          <Text dimColor>No worlds found. Press N to create one.</Text>
         ) : (
           worlds.map((world) => {
             const isSelected = world.name === selectedWorld;
