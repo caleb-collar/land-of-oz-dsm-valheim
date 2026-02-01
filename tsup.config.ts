@@ -9,13 +9,12 @@ export default defineConfig({
   clean: true,
   minify: false,
   splitting: false,
-  // Bundle all dependencies for standalone distribution
-  noExternal: [/.*/],
+  // Only bundle our own code, keep dependencies external
+  noExternal: [],
   banner: {
     js: "#!/usr/bin/env node",
   },
-  esbuildOptions(options) {
-    // Mark optional dev dependencies as external
-    options.external = ["react-devtools-core"];
+  define: {
+    "process.env.NODE_ENV": '"production"',
   },
 });

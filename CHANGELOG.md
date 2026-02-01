@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-02-01
+
+### Fixed
+- Fixed `react-devtools-core` module not found error when installing package
+- Simplified build configuration to not bundle dependencies, resolving module resolution issues
+- Set `NODE_ENV` to production in bundled output to disable development tools
+
 ## [1.0.9] - 2026-02-01
 
 ### Fixed
