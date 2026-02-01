@@ -2357,6 +2357,518 @@ Created `CHANGELOG.md` with:
 
 ---
 
+## Phase 15: node-steamcmd Package Integration
+
+**Status**: Not Started\
+**Priority**: High\
+**Goal**: Replace custom SteamCMD implementation with the `node-steamcmd` npm package
+
+### Overview
+
+This phase migrates the current custom SteamCMD integration (`src/steamcmd/`) to use the
+`node-steamcmd` npm package from [caleb-collar/node-steamcmd](https://github.com/caleb-collar/node-steamcmd).
+This package provides a modernized Node.js wrapper for SteamCMD with automatic installation,
+progress callbacks, TypeScript definitions, and cross-platform support.
+
+### Prerequisites
+
+- Phase 14 complete (dependencies up to date)
+- `node-steamcmd` package published to npm
+- All current tests passing
+
+### Package Features
+
+The `node-steamcmd` package provides:
+
+| Feature | Description |
+| ------- | ----------- |
+| Auto-install | Downloads and installs SteamCMD automatically for current platform |
+| Platform detection | Supports Windows, Linux, and macOS with appropriate paths |
+| Progress callbacks | `onProgress` callback with phase, percent, bytes downloaded |
+| EventEmitter API | `downloadWithProgress()` and `installWithProgress()` for reactive UIs |
+| Promise support | Modern async/await API with callback fallback |
+| TypeScript definitions | Full `.d.ts` type definitions |
+| Error handling | Custom error classes (`SteamCmdError`, `DownloadError`, `InstallError`) |
+
+### API Reference
+
+```typescript
+import steamcmd from '@caleb-collar/steamcmd';
+
+// Check if SteamCMD is installed
+const installed = await steamcmd.isInstalled();
+
+// Ensure SteamCMD is installed (downloads if needed)
+await steamcmd.ensureInstalled({
+  onProgress: (p) => console.log(`${p.phase}: ${p.percent}%`)
+});
+
+// Install a Steam application
+await steamcmd.install({
+  applicationId: 896660,  // Valheim Dedicated Server
+  path: './server',
+  onProgress: (p) => console.log(`${p.phase}: ${p.percent}%`),
+  onOutput: (data, type) => console.log(`[${type}] ${data}`)
+});
+
+// Update an existing installation
+await steamcmd.update({
+  applicationId: 896660,
+  path: './server',
+  onProgress: (p) => console.log(`${p.phase}: ${p.percent}%`)
+});
+
+// Validate an installation
+await steamcmd.validate({
+  applicationId: 896660,
+  path: './server'
+});
+
+// Get installed version (build ID)
+const version = await steamcmd.getInstalledVersion({
+  applicationId: 896660,
+  path: './server'
+});
+// { appId: 896660, buildId: 12345678, lastUpdated: Date }
+
+// List installed apps in a directory
+const apps = await steamcmd.getInstalledApps({ path: './server' });
+
+// Get installation info
+const info = steamcmd.getInfo();
+// { directory, executable, platform, isSupported }
+
+// Create EventEmitter for real-time progress
+const emitter = steamcmd.createProgressEmitter('install', {
+  applicationId: 896660,
+  path: './server'
+});
+emitter.on('progress', (p) => console.log(`${p.percent}%`));
+emitter.on('output', (data, type) => console.log(`[${type}] ${data}`));
+emitter.on('complete', () => console.log('Done!'));
+emitter.on('error', (err) => console.error(err));
+```
+
+---
+
+### Task 15.1: Dependency Setup
+
+#### 15.1.1 Add Package Dependency
+
+```bash
+npm install @caleb-collar/steamcmd
+```
+
+#### 15.1.2 Update package.json
+
+```json
+{
+  "dependencies": {
+    "@caleb-collar/steamcmd": "^1.0.0-alpha.1"
+  }
+}
+```
+
+---
+
+### Task 15.2: Refactor SteamCMD Module
+
+Replace the current `src/steamcmd/` implementation with the package.
+
+#### 15.2.1 Update `src/steamcmd/paths.ts`
+
+Replace custom path resolution with package:
+
+```typescript
+// Before (custom implementation)
+import path from "node:path";
+import { getLocalDataDir } from "../utils/platform.js";
+
+export function getSteamCmdDir(): string {
+  return path.join(getLocalDataDir(), "steamcmd");
+}
+
+// After (using package)
+import steamcmd from '@caleb-collar/steamcmd';
+
+export function getSteamCmdDir(): string {
+  return steamcmd.getInfo().directory;
+}
+
+export function getSteamCmdExecutable(): string | null {
+  return steamcmd.getInfo().executable;
+}
+
+export async function isSteamCmdInstalled(): Promise<boolean> {
+  return steamcmd.isInstalled();
+}
+```
+
+#### 15.2.2 Update `src/steamcmd/installer.ts`
+
+Replace custom download/install with package:
+
+```typescript
+// Before (custom implementation with manual download)
+export async function installSteamCmd(
+  options?: InstallSteamCmdOptions
+): Promise<void> {
+  // ... 100+ lines of download, extract, verify logic
+}
+
+// After (using package)
+import steamcmd from '@caleb-collar/steamcmd';
+
+export type InstallSteamCmdOptions = {
+  onProgress?: (progress: Progress) => void;
+};
+
+export async function installSteamCmd(
+  options?: InstallSteamCmdOptions
+): Promise<void> {
+  await steamcmd.ensureInstalled({
+    onProgress: options?.onProgress
+  });
+}
+```
+
+#### 15.2.3 Update `src/steamcmd/updater.ts`
+
+Replace Valheim installation with package:
+
+```typescript
+import steamcmd from '@caleb-collar/steamcmd';
+
+export const VALHEIM_APP_ID = 896660;
+
+export type UpdateValheimOptions = {
+  installDir?: string;
+  onProgress?: (progress: Progress) => void;
+  onOutput?: (data: string, type: 'stdout' | 'stderr') => void;
+  validate?: boolean;
+};
+
+export async function updateValheim(options?: UpdateValheimOptions): Promise<void> {
+  await steamcmd.install({
+    applicationId: VALHEIM_APP_ID,
+    path: options?.installDir ?? getValheimServerDir(),
+    onProgress: options?.onProgress,
+    onOutput: options?.onOutput
+  });
+}
+```
+
+#### 15.2.4 Update `src/steamcmd/mod.ts`
+
+Update barrel exports:
+
+```typescript
+// Re-export from package for convenience
+export { SteamCmdError, DownloadError, InstallError } from '@caleb-collar/steamcmd';
+
+// Local exports
+export { installSteamCmd, type InstallSteamCmdOptions } from "./installer.js";
+export { updateValheim, VALHEIM_APP_ID, type UpdateValheimOptions } from "./updater.js";
+export {
+  getSteamCmdDir,
+  getSteamCmdExecutable,
+  isSteamCmdInstalled,
+  getValheimServerDir,
+  getValheimExecutable,
+} from "./paths.js";
+```
+
+---
+
+### Task 15.3: Update CLI Commands
+
+#### 15.3.1 Update Install Command (`src/cli/commands/install.ts`)
+
+Use new progress API:
+
+```typescript
+import steamcmd from '@caleb-collar/steamcmd';
+
+// Leverage EventEmitter for TUI progress
+const emitter = steamcmd.downloadWithProgress();
+emitter.on('progress', (p) => {
+  console.log(`Downloading SteamCMD: ${p.percent}%`);
+});
+emitter.on('complete', () => {
+  console.log('SteamCMD installed!');
+});
+emitter.on('error', (err) => {
+  console.error('Download failed:', err.message);
+});
+```
+
+#### 15.3.2 Update Doctor Command (`src/cli/commands/doctor.ts`)
+
+Use package for SteamCMD checks:
+
+```typescript
+import steamcmd from '@caleb-collar/steamcmd';
+
+// Check SteamCMD
+const info = steamcmd.getInfo();
+if (!info.isSupported) {
+  console.log('❌ Platform not supported');
+} else if (await steamcmd.isInstalled()) {
+  console.log(`✅ SteamCMD installed at ${info.executable}`);
+} else {
+  console.log('⚠️ SteamCMD not installed');
+}
+```
+
+---
+
+### Task 15.4: Update TUI Integration
+
+#### 15.4.1 Update Dashboard Update Action
+
+Use EventEmitter for progress in TUI:
+
+```typescript
+import steamcmd from '@caleb-collar/steamcmd';
+
+const handleUpdate = async () => {
+  setStatus('updating');
+  
+  const emitter = steamcmd.installWithProgress(steamcmd.getInfo().executable!, {
+    applicationId: 896660,
+    path: getValheimServerDir()
+  });
+  
+  emitter.on('progress', (p) => {
+    setProgress(p.percent);
+    setPhase(p.phase);
+  });
+  
+  emitter.on('complete', () => {
+    setStatus('offline');
+    addLog({ level: 'info', message: 'Server updated successfully' });
+  });
+  
+  emitter.on('error', (err) => {
+    setStatus('offline');
+    addLog({ level: 'error', message: `Update failed: ${err.message}` });
+  });
+};
+```
+
+---
+
+### Task 15.5: Test Updates
+
+#### 15.5.1 Update `src/steamcmd/paths.test.ts`
+
+Update tests to use mocked package:
+
+```typescript
+import { describe, it, expect, vi } from 'vitest';
+
+// Mock the package
+vi.mock('@caleb-collar/steamcmd', () => ({
+  default: {
+    getInfo: () => ({
+      directory: '/mock/steamcmd',
+      executable: '/mock/steamcmd/steamcmd.exe',
+      platform: 'win32',
+      isSupported: true
+    }),
+    isInstalled: () => Promise.resolve(true)
+  }
+}));
+
+describe('SteamCMD paths', () => {
+  it('should return SteamCMD directory from package', async () => {
+    const { getSteamCmdDir } = await import('./paths.js');
+    expect(getSteamCmdDir()).toBe('/mock/steamcmd');
+  });
+});
+```
+
+#### 15.5.2 Add Integration Tests
+
+Test package integration with mocks:
+
+```typescript
+describe('SteamCMD installer', () => {
+  it('should call ensureInstalled with progress', async () => {
+    const ensureInstalled = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(steamcmd).ensureInstalled = ensureInstalled;
+    
+    const onProgress = vi.fn();
+    await installSteamCmd({ onProgress });
+    
+    expect(ensureInstalled).toHaveBeenCalledWith({ onProgress });
+  });
+});
+```
+
+---
+
+### Task 15.6: Remove Deprecated Code
+
+After migration is complete and verified:
+
+#### 15.6.1 Files to Simplify
+
+| File | Action |
+| ---- | ------ |
+| `src/steamcmd/paths.ts` | Simplify to wrapper around package |
+| `src/steamcmd/installer.ts` | Reduce to thin wrapper |
+| `src/steamcmd/updater.ts` | Simplify, keep Valheim-specific logic |
+
+#### 15.6.2 Dependencies to Remove (if unused)
+
+Consider removing if no longer needed after migration:
+- Manual HTTP download code
+- Archive extraction code (tar, unzip)
+- Platform-specific path generation (now handled by package)
+
+---
+
+### Package Status (Updated: January 31, 2026)
+
+| Status | Item |
+| ------ | ---- |
+| ✅ Released | v1.0.0-alpha.1 on GitHub |
+| ✅ Published | [@caleb-collar/steamcmd](https://www.npmjs.com/package/@caleb-collar/steamcmd) on npm |
+| ✅ Resolved | ESM support via `steamcmd.mjs` |
+| ✅ Resolved | `getInstalledVersion()` function |
+| ✅ Resolved | TypeScript definitions |
+
+**🎉 All blockers resolved! Phase 15 is ready to begin.**
+
+### Package Features (v1.0.0-alpha.1)
+
+The node-steamcmd package now includes:
+
+| Function | Description |
+| -------- | ----------- |
+| `install()` | Install a Steam application |
+| `update()` | Update an existing installation |
+| `validate()` | Validate an installed application |
+| `isInstalled()` | Check if SteamCMD is installed |
+| `ensureInstalled()` | Download SteamCMD if needed |
+| `getInfo()` | Get SteamCMD paths and status |
+| `getInstalledApps()` | List installed apps in a directory |
+| `getInstalledVersion()` | Get build ID of installed app |
+| `createProgressEmitter()` | EventEmitter for real-time progress |
+| `downloadWithProgress()` | Download with EventEmitter |
+| `installWithProgress()` | Install with EventEmitter |
+
+### Dual Module Support
+
+The package supports both CommonJS and ESM:
+
+```javascript
+// CommonJS
+const steamcmd = require("@caleb-collar/steamcmd");
+
+// ES Modules
+import steamcmd from "@caleb-collar/steamcmd";
+// or with named exports
+import { install, getInfo, SteamCmdError } from "@caleb-collar/steamcmd";
+```
+
+### Known Issues / Blockers
+
+#### Issue 1: Package Not Published to npm ✅ RESOLVED
+
+~~Publish package to npm registry~~
+
+**Status**: Published! Package available at [@caleb-collar/steamcmd](https://www.npmjs.com/package/@caleb-collar/steamcmd)
+- Version: 1.0.0-alpha.1
+- Unpacked size: 62.7 kB
+- Includes TypeScript definitions
+- npm provenance enabled (signed builds)
+
+---
+
+#### Issue 2: ESM Support ✅ RESOLVED
+
+~~Add ESM module support for modern Node.js projects~~
+
+**Status**: Implemented in v1.0.0-alpha.1. The package now has:
+- `src/steamcmd.mjs` - ESM wrapper module
+- Dual CJS/ESM exports in package.json
+- Full named export support
+
+---
+
+#### Issue 3: getInstalledVersion() Function ✅ RESOLVED
+
+~~Add function to get installed app version~~
+
+**Status**: Implemented in v1.0.0-alpha.1 as `getInstalledVersion()`:
+
+```typescript
+const version = await steamcmd.getInstalledVersion({
+  applicationId: 740,
+  path: './server'
+});
+// { appId: 740, buildId: 12345678, lastUpdated: Date }
+```
+
+---
+
+#### Issue 4: TypeScript Source (Optional Enhancement)
+
+**Title**: Consider full TypeScript source conversion
+
+**Description**: The package has excellent `.d.ts` type definitions, but the source is still
+JavaScript. Converting to TypeScript source would provide better type safety during development
+and easier contribution.
+
+**Priority**: Low (current approach works fine)
+
+---
+
+### Files to Modify
+
+| File | Changes |
+| ---- | ------- |
+| `package.json` | Add node-steamcmd dependency |
+| `src/steamcmd/paths.ts` | Use package for paths |
+| `src/steamcmd/installer.ts` | Use package for installation |
+| `src/steamcmd/updater.ts` | Use package for app installation |
+| `src/steamcmd/mod.ts` | Update exports |
+| `src/steamcmd/paths.test.ts` | Update tests with mocks |
+| `src/cli/commands/install.ts` | Use new progress API |
+| `src/cli/commands/doctor.ts` | Use package for checks |
+| `src/tui/screens/Dashboard.tsx` | Use EventEmitter for updates |
+
+---
+
+### Verification Checklist
+
+```bash
+npm run typecheck              # Passes
+npm run lint                   # No errors  
+npm test                       # All tests pass
+npx tsx main.ts install --dry-run   # Shows correct status
+npx tsx main.ts doctor         # SteamCMD checks work
+npx tsx main.ts tui            # Update action works
+```
+
+### Completion Criteria
+
+- [x] `@caleb-collar/steamcmd` package published to npm (v1.0.0-alpha.1)
+- [ ] Package added to dependencies
+- [ ] `src/steamcmd/paths.ts` refactored to use package
+- [ ] `src/steamcmd/installer.ts` refactored to use package
+- [ ] `src/steamcmd/updater.ts` refactored to use package
+- [ ] CLI install command uses new progress API
+- [ ] CLI doctor command uses package
+- [ ] TUI Dashboard update action uses EventEmitter
+- [ ] All tests updated and passing
+- [ ] Type checking passes
+- [ ] Manual testing complete
+
+---
+
 ## Agent Handoff Protocol
 
 When completing a phase, provide:
