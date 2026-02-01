@@ -79,8 +79,8 @@ function showConfig(config: AppConfig): void {
 function getConfigValue(key: string | undefined, config: AppConfig): void {
   if (!key) {
     console.error("Error: No key specified.");
-    console.log("Usage: oz-valheim config get <key>");
-    console.log("Example: oz-valheim config get server.name");
+    console.log("Usage: valheim-dsm config get <key>");
+    console.log("Example: valheim-dsm config get server.name");
     process.exit(1);
   }
 
@@ -108,13 +108,13 @@ async function setConfigValue(
 ): Promise<void> {
   if (!key) {
     console.error("Error: No key specified.");
-    console.log("Usage: oz-valheim config set <key> <value>");
+    console.log("Usage: valheim-dsm config set <key> <value>");
     process.exit(1);
   }
 
   if (value === undefined) {
     console.error("Error: No value specified.");
-    console.log("Usage: oz-valheim config set <key> <value>");
+    console.log("Usage: valheim-dsm config set <key> <value>");
     process.exit(1);
   }
 
@@ -164,7 +164,7 @@ async function resetConfiguration(): Promise<void> {
   try {
     await resetConfig();
     console.log("✓ Configuration reset successfully.");
-    console.log("\nRun 'oz-valheim config list' to see default values.");
+    console.log("\nRun 'valheim-dsm config list' to see default values.");
   } catch (error) {
     console.error(`Error: ${(error as Error).message}`);
     process.exit(1);

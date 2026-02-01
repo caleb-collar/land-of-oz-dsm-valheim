@@ -30,7 +30,7 @@ export async function startCommand(
   const valheimInstalled = await isValheimInstalled();
   if (!valheimInstalled) {
     console.error("\nError: Valheim Dedicated Server is not installed.");
-    console.log("Run 'oz-valheim install' first to install the server.");
+    console.log("Run 'valheim-dsm install' first to install the server.");
     process.exit(1);
   }
 

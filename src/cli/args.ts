@@ -521,7 +521,7 @@ export function getHelpText(command?: string): string {
 Land of OZ - Valheim Dedicated Server Manager
 
 USAGE:
-    oz-valheim [OPTIONS] [COMMAND]
+    valheim-dsm [OPTIONS] [COMMAND]
 
 OPTIONS:
     -h, --help       Show this help message
@@ -541,7 +541,7 @@ COMMANDS:
     tui              Launch the TUI interface (default)
     help [COMMAND]   Show help for a command
 
-Run 'oz-valheim help <command>' for more information on a command.
+Run 'valheim-dsm help <command>' for more information on a command.
 `;
 }
 
@@ -555,7 +555,7 @@ function getCommandHelp(command: string): string {
 Start the Valheim dedicated server
 
 USAGE:
-    oz-valheim start [OPTIONS]
+    valheim-dsm start [OPTIONS]
 
 OPTIONS:
     -n, --name <NAME>      Server name (overrides config)
@@ -568,9 +568,9 @@ OPTIONS:
     -b, --background       Run in background
 
 EXAMPLES:
-    oz-valheim start
-    oz-valheim start --name "My Server" --world "MyWorld"
-    oz-valheim start -p 2457 --public --crossplay
+    valheim-dsm start
+    valheim-dsm start --name "My Server" --world "MyWorld"
+    valheim-dsm start -p 2457 --public --crossplay
 `;
 
     case "stop":
@@ -578,16 +578,16 @@ EXAMPLES:
 Stop the running Valheim server
 
 USAGE:
-    oz-valheim stop [OPTIONS]
+    valheim-dsm stop [OPTIONS]
 
 OPTIONS:
     -f, --force            Force kill without graceful shutdown
     -t, --timeout <MS>     Timeout before force kill (default: 30000)
 
 EXAMPLES:
-    oz-valheim stop
-    oz-valheim stop --force
-    oz-valheim stop --timeout 60000
+    valheim-dsm stop
+    valheim-dsm stop --force
+    valheim-dsm stop --timeout 60000
 `;
 
     case "install":
@@ -595,7 +595,7 @@ EXAMPLES:
 Install or update SteamCMD and Valheim dedicated server
 
 USAGE:
-    oz-valheim install [OPTIONS]
+    valheim-dsm install [OPTIONS]
 
 OPTIONS:
     --dry-run              Show what would be done without installing
@@ -603,9 +603,9 @@ OPTIONS:
     -f, --force            Force reinstall even if already installed
 
 EXAMPLES:
-    oz-valheim install
-    oz-valheim install --dry-run
-    oz-valheim install --force
+    valheim-dsm install
+    valheim-dsm install --dry-run
+    valheim-dsm install --force
 `;
 
     case "config":
@@ -613,7 +613,7 @@ EXAMPLES:
 Manage server configuration
 
 USAGE:
-    oz-valheim config <SUBCOMMAND> [OPTIONS]
+    valheim-dsm config <SUBCOMMAND> [OPTIONS]
 
 SUBCOMMANDS:
     list                   Show all configuration (default)
@@ -632,10 +632,10 @@ KEYS:
     watchdog.maxRestarts   Max restart attempts
 
 EXAMPLES:
-    oz-valheim config list
-    oz-valheim config get server.name
-    oz-valheim config set server.port 2457
-    oz-valheim config reset
+    valheim-dsm config list
+    valheim-dsm config get server.name
+    valheim-dsm config set server.port 2457
+    valheim-dsm config reset
 `;
 
     case "worlds":
@@ -643,7 +643,7 @@ EXAMPLES:
 Manage Valheim world saves
 
 USAGE:
-    oz-valheim worlds <SUBCOMMAND> [OPTIONS]
+    valheim-dsm worlds <SUBCOMMAND> [OPTIONS]
 
 SUBCOMMANDS:
     list                   List available worlds (default)
@@ -657,11 +657,11 @@ OPTIONS:
     -f, --force            Required for delete, skip confirmation
 
 EXAMPLES:
-    oz-valheim worlds list
-    oz-valheim worlds info MyWorld
-    oz-valheim worlds export MyWorld --path ./backup
-    oz-valheim worlds import MyWorld --path ./worlds
-    oz-valheim worlds delete OldWorld --force
+    valheim-dsm worlds list
+    valheim-dsm worlds info MyWorld
+    valheim-dsm worlds export MyWorld --path ./backup
+    valheim-dsm worlds import MyWorld --path ./worlds
+    valheim-dsm worlds delete OldWorld --force
 `;
 
     case "tui":
@@ -669,9 +669,9 @@ EXAMPLES:
 Launch the Terminal User Interface
 
 USAGE:
-    oz-valheim tui
-    oz-valheim --tui
-    oz-valheim          (default when no command)
+    valheim-dsm tui
+    valheim-dsm --tui
+    valheim-dsm          (default when no command)
 
 The TUI provides an interactive interface for managing your
 Valheim server with real-time status, log viewing, and
@@ -689,8 +689,8 @@ KEYBOARD SHORTCUTS:
 Send RCON commands to a running Valheim server
 
 USAGE:
-    oz-valheim rcon <COMMAND> [OPTIONS]
-    oz-valheim rcon --interactive
+    valheim-dsm rcon <COMMAND> [OPTIONS]
+    valheim-dsm rcon --interactive
 
 OPTIONS:
     -H, --host <HOST>      Server hostname (default: localhost)
@@ -710,12 +710,12 @@ COMMANDS:
 
 NOTE:
     RCON requires BepInEx + RCON mod installed on the server.
-    Set password via: oz-valheim config set rcon.password <pass>
+    Set password via: valheim-dsm config set rcon.password <pass>
 
 EXAMPLES:
-    oz-valheim rcon save
-    oz-valheim rcon "kick PlayerName" --password secret
-    oz-valheim rcon --interactive -H 192.168.1.100
+    valheim-dsm rcon save
+    valheim-dsm rcon "kick PlayerName" --password secret
+    valheim-dsm rcon --interactive -H 192.168.1.100
 `;
 
     case "doctor":
@@ -723,7 +723,7 @@ EXAMPLES:
 Diagnose common issues with your Valheim server setup
 
 USAGE:
-    oz-valheim doctor [OPTIONS]
+    valheim-dsm doctor [OPTIONS]
 
 OPTIONS:
     -f, --fix              Attempt to automatically fix issues
@@ -739,12 +739,12 @@ CHECKS:
     - World file integrity
 
 EXAMPLES:
-    oz-valheim doctor
-    oz-valheim doctor --fix
-    oz-valheim doctor --json
+    valheim-dsm doctor
+    valheim-dsm doctor --fix
+    valheim-dsm doctor --json
 `;
 
     default:
-      return `Unknown command: ${command}\n\nRun 'oz-valheim --help' for available commands.`;
+      return `Unknown command: ${command}\n\nRun 'valheim-dsm --help' for available commands.`;
   }
 }

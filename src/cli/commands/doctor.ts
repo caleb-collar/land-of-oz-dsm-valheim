@@ -91,7 +91,7 @@ async function checkSteamCmd(): Promise<CheckResult> {
   return {
     name: "SteamCMD Installation",
     status: "fail",
-    message: "SteamCMD not found. Run 'oz-valheim install' to install.",
+    message: "SteamCMD not found. Run 'valheim-dsm install' to install.",
     fixable: true,
   };
 }
@@ -114,7 +114,7 @@ async function checkValheimServer(): Promise<CheckResult> {
   return {
     name: "Valheim Server Installation",
     status: "fail",
-    message: "Valheim server not found. Run 'oz-valheim install' to install.",
+    message: "Valheim server not found. Run 'valheim-dsm install' to install.",
     fixable: true,
   };
 }
@@ -132,7 +132,7 @@ async function checkConfig(): Promise<CheckResult> {
         name: "Configuration",
         status: "warn",
         message:
-          "No world name configured. Set with 'oz-valheim config set server.world <name>'",
+          "No world name configured. Set with 'valheim-dsm config set server.world <name>'",
       };
     }
 
@@ -358,9 +358,11 @@ export async function doctorCommand(args: DoctorArgs): Promise<void> {
           check.name === "SteamCMD Installation" ||
           check.name === "Valheim Server Installation"
         ) {
-          console.log(`→ Run 'oz-valheim install' to fix: ${check.name}`);
+          console.log(`→ Run 'valheim-dsm install' to fix: ${check.name}`);
         } else if (check.name === "Configuration") {
-          console.log(`→ Run 'oz-valheim config reset' to reset configuration`);
+          console.log(
+            `→ Run 'valheim-dsm config reset' to reset configuration`
+          );
         }
       }
     } else {
@@ -372,7 +374,7 @@ export async function doctorCommand(args: DoctorArgs): Promise<void> {
     );
     if (hasFixable) {
       console.log(
-        "Tip: Run 'oz-valheim doctor --fix' to attempt automatic fixes."
+        "Tip: Run 'valheim-dsm doctor --fix' to attempt automatic fixes."
       );
     }
   }

@@ -238,11 +238,11 @@ land-of-oz-dsm-valheim/
 
 The command-line interface provides direct access to all DSM functionality:
 
-- `oz-valheim start` - Start the server (with optional `--tui` flag)
-- `oz-valheim stop` - Gracefully stop the server
-- `oz-valheim install` - Install/update Valheim via SteamCMD
-- `oz-valheim config` - View/edit configuration
-- `oz-valheim tui` - Launch the full TUI experience
+- `valheim-dsm start` - Start the server (with optional `--tui` flag)
+- `valheim-dsm stop` - Gracefully stop the server
+- `valheim-dsm install` - Install/update Valheim via SteamCMD
+- `valheim-dsm config` - View/edit configuration
+- `valheim-dsm tui` - Launch the full TUI experience
 
 #### 2. TUI (`src/tui/`)
 
@@ -356,11 +356,11 @@ The DSM exposes all Valheim dedicated server settings through the TUI:
 
 ### Platform Support
 
-| Platform | SteamCMD Path                            | Valheim Install                             | Config Storage                             |
-| -------- | ---------------------------------------- | ------------------------------------------- | ------------------------------------------ |
-| Windows  | `%LOCALAPPDATA%\steamcmd`                | `steamapps\common\Valheim dedicated server` | `%APPDATA%\oz-valheim`                     |
-| macOS    | `~/Library/Application Support/steamcmd` | `steamapps/common/Valheim dedicated server` | `~/Library/Application Support/oz-valheim` |
-| Linux    | `~/.local/share/steamcmd`                | `steamapps/common/Valheim dedicated server` | `~/.config/oz-valheim`                     |
+| Platform | SteamCMD Path                            | Valheim Install                             | Config Storage                                |
+| -------- | ---------------------------------------- | ------------------------------------------- | --------------------------------------------- |
+| Windows  | `%LOCALAPPDATA%\steamcmd`                | `steamapps\common\Valheim dedicated server` | `%APPDATA%\valheim-dsm`                       |
+| macOS    | `~/Library/Application Support/steamcmd` | `steamapps/common/Valheim dedicated server` | `~/Library/Application Support/valheim-dsm`   |
+| Linux    | `~/.local/share/steamcmd`                | `steamapps/common/Valheim dedicated server` | `~/.config/valheim-dsm`                       |
 
 ### Development
 

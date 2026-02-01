@@ -83,10 +83,10 @@ async function showDryRunStatus(
       console.log("    • Download and install Valheim Dedicated Server");
     }
     console.log("");
-    console.log("  Run 'oz-valheim install' to perform these actions.");
+    console.log("  Run 'valheim-dsm install' to perform these actions.");
   } else {
     console.log("  ✓ Everything is already installed.");
-    console.log("  Run 'oz-valheim install' to check for updates.");
+    console.log("  Run 'valheim-dsm install' to check for updates.");
   }
 }
 
@@ -158,7 +158,7 @@ async function validateInstallation(
     console.log("  ✓ Installation is valid.");
   } else {
     console.log(
-      "  ✗ Installation has issues. Run 'oz-valheim install' to fix."
+      "  ✗ Installation has issues. Run 'valheim-dsm install' to fix."
     );
     process.exit(1);
   }
@@ -212,7 +212,7 @@ async function performInstallation(
   }
   console.log(`  Server path: ${paths.valheimDir}`);
   console.log("");
-  console.log("Run 'oz-valheim start' to start the server.");
+  console.log("Run 'valheim-dsm start' to start the server.");
 }
 
 /**

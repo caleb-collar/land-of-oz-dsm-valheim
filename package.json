@@ -4,7 +4,7 @@
   "description": "Land of OZ - Valheim Dedicated Server Manager",
   "type": "module",
   "bin": {
-    "oz-valheim": "./dist/main.js"
+    "valheim-dsm": "./dist/main.js"
   },
   "main": "./dist/main.js",
   "files": [

@@ -12,7 +12,7 @@ A clear and concise description of the bug.
 
 ## Steps to Reproduce
 
-1. Run `oz-valheim ...`
+1. Run `valheim-dsm ...`
 2. Navigate to '...'
 3. See error
 
@@ -27,7 +27,7 @@ What actually happened.
 ## Environment
 
 - **OS**: [e.g., Windows 11, Ubuntu 22.04, macOS 14]
-- **oz-valheim version**: [e.g., 0.1.0] (run `oz-valheim --version`)
+- **valheim-dsm version**: [e.g., 1.0.0] (run `valheim-dsm --version`)
 - **Node.js version**: [e.g., 22.x] (run `node --version`)
 - **Terminal**: [e.g., Windows Terminal, iTerm2, GNOME Terminal]
 

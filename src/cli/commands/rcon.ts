@@ -23,14 +23,14 @@ export async function rconCommand(args: RconArgs): Promise<void> {
   if (!password) {
     console.error("Error: RCON password required");
     console.error(
-      "Set via --password flag or 'oz-valheim config set rcon.password <password>'"
+      "Set via --password flag or 'valheim-dsm config set rcon.password <password>'"
     );
     process.exit(1);
   }
 
   if (!args.rconCommand) {
     console.error("Error: No command specified");
-    console.error("Usage: oz-valheim rcon <command> [options]");
+    console.error("Usage: valheim-dsm rcon <command> [options]");
     process.exit(1);
   }
 

@@ -49,13 +49,13 @@ jobs:
 
       - name: Package with pkg
         run: |
-          npx pkg dist/main.js --target node18-${{ matrix.target }} --output oz-valheim-${{ matrix.target }}${{ matrix.ext }}
+          npx pkg dist/main.js --target node18-${{ matrix.target }} --output valheim-dsm-${{ matrix.target }}${{ matrix.ext }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: oz-valheim-${{ matrix.target }}
-          path: oz-valheim-${{ matrix.target }}${{ matrix.ext }}
+          name: valheim-dsm-${{ matrix.target }}
+          path: valheim-dsm-${{ matrix.target }}${{ matrix.ext }}
           retention-days: 1
 
   release:
@@ -111,10 +111,10 @@ jobs:
 
           | Platform | Binary |
           | --- | --- |
-          | Windows (x64) | \`oz-valheim-win-x64.exe\` |
-          | Linux (x64) | \`oz-valheim-linux-x64\` |
-          | macOS (x64) | \`oz-valheim-macos-x64\` |
-          | macOS (ARM64) | \`oz-valheim-macos-arm64\` |
+          | Windows (x64) | \`valheim-dsm-win-x64.exe\` |
+          | Linux (x64) | \`valheim-dsm-linux-x64\` |
+          | macOS (x64) | \`valheim-dsm-macos-x64\` |
+          | macOS (ARM64) | \`valheim-dsm-macos-arm64\` |
 
           ### Verify Download
 
@@ -125,27 +125,27 @@ jobs:
           sha256sum -c checksums.sha256 --ignore-missing
 
           # Windows (PowerShell)
-          (Get-FileHash oz-valheim-win-x64.exe -Algorithm SHA256).Hash
+          (Get-FileHash valheim-dsm-win-x64.exe -Algorithm SHA256).Hash
           \`\`\`
 
           ### Quick Start
 
           \`\`\`bash
           # Make executable (Linux/macOS)
-          chmod +x oz-valheim-*
+          chmod +x valheim-dsm-*
 
           # Run
-          ./oz-valheim --help
+          ./valheim-dsm --help
           \`\`\`
 
           ### Alternative: Run with Node.js
 
           \`\`\`bash
           # Install globally
-          npm install -g oz-valheim
+          npm install -g valheim-oz-dsm
 
           # Run
-          oz-valheim --help
+          valheim-dsm --help
           \`\`\`
           EOF
 

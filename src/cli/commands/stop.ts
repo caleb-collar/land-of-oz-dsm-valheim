@@ -42,7 +42,7 @@ export async function stopCommand(args: StopArgs): Promise<void> {
 
   if (!runningServer) {
     console.log("\nNo server is currently running.");
-    console.log("\nNote: Run 'oz-valheim start' to start a server.");
+    console.log("\nNote: Run 'valheim-dsm start' to start a server.");
     return;
   }
 

@@ -58,7 +58,7 @@ async function listWorldsCommand(): Promise<void> {
         "Worlds are created when you first start the server with a world name."
       );
       console.log(
-        "You can also import existing worlds with 'oz-valheim worlds import'."
+        "You can also import existing worlds with 'valheim-dsm worlds import'."
       );
       return;
     }
@@ -99,7 +99,7 @@ async function listWorldsCommand(): Promise<void> {
 async function worldInfoCommand(name: string | undefined): Promise<void> {
   if (!name) {
     console.error("Error: World name is required.");
-    console.log("Usage: oz-valheim worlds info <name>");
+    console.log("Usage: valheim-dsm worlds info <name>");
     process.exit(1);
   }
 
@@ -108,7 +108,7 @@ async function worldInfoCommand(name: string | undefined): Promise<void> {
 
     if (!world) {
       console.error(`Error: World '${name}' not found.`);
-      console.log("\nUse 'oz-valheim worlds list' to see available worlds.");
+      console.log("\nUse 'valheim-dsm worlds list' to see available worlds.");
       process.exit(1);
     }
 
@@ -151,13 +151,13 @@ async function importWorldCommand(
 ): Promise<void> {
   if (!name) {
     console.error("Error: World name is required.");
-    console.log("Usage: oz-valheim worlds import <name> --path <source>");
+    console.log("Usage: valheim-dsm worlds import <name> --path <source>");
     process.exit(1);
   }
 
   if (!path) {
     console.error("Error: Source path is required.");
-    console.log("Usage: oz-valheim worlds import <name> --path <source>");
+    console.log("Usage: valheim-dsm worlds import <name> --path <source>");
     process.exit(1);
   }
 
@@ -204,13 +204,13 @@ async function exportWorldCommand(
 ): Promise<void> {
   if (!name) {
     console.error("Error: World name is required.");
-    console.log("Usage: oz-valheim worlds export <name> --path <destination>");
+    console.log("Usage: valheim-dsm worlds export <name> --path <destination>");
     process.exit(1);
   }
 
   if (!path) {
     console.error("Error: Destination path is required.");
-    console.log("Usage: oz-valheim worlds export <name> --path <destination>");
+    console.log("Usage: valheim-dsm worlds export <name> --path <destination>");
     process.exit(1);
   }
 
@@ -246,7 +246,7 @@ async function deleteWorldCommand(
 ): Promise<void> {
   if (!name) {
     console.error("Error: World name is required.");
-    console.log("Usage: oz-valheim worlds delete <name> --force");
+    console.log("Usage: valheim-dsm worlds delete <name> --force>");
     process.exit(1);
   }
 
@@ -254,7 +254,7 @@ async function deleteWorldCommand(
     console.error("Error: Deleting a world requires the --force flag.");
     console.log("");
     console.log("This will permanently delete the world and all backups.");
-    console.log(`Run: oz-valheim worlds delete ${name} --force`);
+    console.log(`Run: valheim-dsm worlds delete ${name} --force`);
     process.exit(1);
   }
 
