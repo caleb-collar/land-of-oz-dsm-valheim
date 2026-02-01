@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-02-01
+
+### Changed
+- **BREAKING**: Renamed package from `oz-dsm-valheim` to `valheim-oz-dsm`
+- Added `.gitattributes` for consistent LF line endings across platforms
+- Adjusted coverage thresholds for CI stability
+
+### Added
+- Startup task management utilities
+- First stable release
+
 ## [0.4.0] - 2026-01-31
 
 ### Added
@@ -78,7 +89,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Platform detection for Windows, Linux, macOS
 - Basic TUI framework with Ink
 
-[Unreleased]: https://github.com/land-of-oz/valheim-dsm/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/land-of-oz/valheim-dsm/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/land-of-oz/valheim-dsm/compare/v0.4.0...v1.0.0
 [0.4.0]: https://github.com/land-of-oz/valheim-dsm/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/land-of-oz/valheim-dsm/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/land-of-oz/valheim-dsm/compare/v0.1.0...v0.2.0
