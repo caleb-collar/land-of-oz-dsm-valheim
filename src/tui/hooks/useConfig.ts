@@ -220,6 +220,9 @@ export function useConfig() {
         autoReconnect: stored.rcon.autoReconnect,
       });
 
+      // Load pending worlds (configured but not yet generated)
+      actions.setPendingWorlds(stored.pendingWorlds ?? []);
+
       actions.addLog("info", "Configuration reloaded");
     } catch (error) {
       actions.addLog("error", `Failed to reload config: ${error}`);

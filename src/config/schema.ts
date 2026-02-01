@@ -163,6 +163,8 @@ export const AppConfigSchema = z.object({
   rcon: RconConfigSchema.default(() => RconConfigSchema.parse({})),
   worlds: z.array(WorldSchema).default([]),
   activeWorld: z.string().nullable().default(null),
+  /** World names that have been configured but not yet generated (no files exist) */
+  pendingWorlds: z.array(z.string()).default([]),
   steamcmdAutoInstall: z.boolean().default(true),
   autoUpdate: z.boolean().default(true),
   lastUpdated: z.string().datetime().optional(),

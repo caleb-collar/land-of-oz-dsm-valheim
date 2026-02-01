@@ -49,6 +49,7 @@ export const defaultConfig: AppConfig = {
   },
   worlds: [],
   activeWorld: null,
+  pendingWorlds: [],
   steamcmdAutoInstall: true,
   autoUpdate: true,
 };

@@ -40,9 +40,12 @@ export {
   deleteWorld,
   exportWorld,
   getDefaultWorldsDir,
+  getSourceLabel,
   getWorldInfo,
   importWorld,
+  type ListWorldsOptions,
   listWorlds,
   type WorldInfo,
+  type WorldSource,
   worldExists,
 } from "./worlds.js";

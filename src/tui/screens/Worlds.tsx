@@ -4,7 +4,8 @@
 
 import { Box, Text, useInput } from "ink";
 import { type FC, useCallback, useEffect, useState } from "react";
-import { ConfirmModal } from "../components/Modal.js";
+import { getSourceLabel } from "../../valheim/worlds.js";
+import { DeleteWorldModal } from "../components/Modal.js";
 import { Spinner } from "../components/Spinner.js";
 import { TextInput } from "../components/TextInput.js";
 import { useConfig } from "../hooks/useConfig.js";
@@ -42,6 +43,19 @@ function formatDate(date: Date): string {
 }
 
 /**
+ * Formats backup timestamp (YYYYMMDDHHMMSS) to readable format
+ */
+function formatBackupTimestamp(timestamp: string): string {
+  if (timestamp.length !== 14) return timestamp;
+  const year = timestamp.slice(0, 4);
+  const month = timestamp.slice(4, 6);
+  const day = timestamp.slice(6, 8);
+  const hour = timestamp.slice(8, 10);
+  const min = timestamp.slice(10, 12);
+  return `${year}-${month}-${day} ${hour}:${min}`;
+}
+
+/**
  * Worlds screen for managing Valheim worlds
  */
 export const Worlds: FC = () => {
@@ -59,10 +73,9 @@ export const Worlds: FC = () => {
     deleteWorld,
     backupWorld,
     getSelectedWorld,
+    pendingWorldNames,
+    addPendingWorld,
   } = useWorlds();
-
-  // Get selected world name for display
-  const selectedWorld = worlds[selectedIndex]?.name ?? null;
 
   const modalOpen = useStore((s) => s.ui.modalOpen);
   const openModal = useStore((s) => s.actions.openModal);
@@ -79,9 +92,25 @@ export const Worlds: FC = () => {
   const [createStep, setCreateStep] = useState<"name" | "seed">("name");
   const [loading, setLoading] = useState(false);
   const [operationStatus, setOperationStatus] = useState("");
+  // Track if the "not generated" pending config at the top is selected
+  const [pendingConfigSelected, setPendingConfigSelected] = useState(false);
   const [prevServerStatus, setPrevServerStatus] = useState(serverStatus);
   const [prevWorldGenerating, setPrevWorldGenerating] =
     useState(worldGenerating);
+
+  // Check if there's a configured world that doesn't exist in the worlds list
+  const hasPendingConfig =
+    config.world && !worlds.some((w) => w.name === config.world);
+
+  // Get all pending worlds that are not the active config (show separately in list)
+  const otherPendingWorlds = pendingWorldNames.filter(
+    (name) => name !== config.world && !worlds.some((w) => w.name === name)
+  );
+
+  // Get selected world name for display (account for pending config)
+  const selectedWorld = pendingConfigSelected
+    ? null
+    : (worlds[selectedIndex]?.name ?? null);
 
   // Wrapper to set mode and update editingField for global input prevention
   const setMode = useCallback(
@@ -120,6 +149,13 @@ export const Worlds: FC = () => {
     }
     setPrevWorldGenerating(worldGenerating);
   }, [worldGenerating, prevWorldGenerating, refresh, addLog]);
+
+  // Reset pending config selection when it no longer exists
+  useEffect(() => {
+    if (!hasPendingConfig && pendingConfigSelected) {
+      setPendingConfigSelected(false);
+    }
+  }, [hasPendingConfig, pendingConfigSelected]);
 
   // Handle setting active world
   const handleSetActive = useCallback(async () => {
@@ -167,6 +203,8 @@ export const Worlds: FC = () => {
       // Set the new world as active - Valheim will create it on server start
       await setActive(worldName);
       await updateServerConfig({ world: worldName });
+      // Track as pending until server generates the files
+      addPendingWorld(worldName);
       addLog("info", `Created world configuration: ${worldName}`);
       addLog("info", "Start the server to generate the world files");
 
@@ -184,7 +222,8 @@ export const Worlds: FC = () => {
     serverStatus,
     setActive,
     updateServerConfig,
-    addLog, // Reset and return to list
+    addPendingWorld,
+    addLog,
     setMode,
   ]);
 
@@ -261,37 +300,39 @@ export const Worlds: FC = () => {
   }, [getSelectedWorld, inputPath, backupWorld, addLog, setMode]);
 
   // Handle delete confirmation
-  const handleDeleteConfirm = useCallback(async () => {
-    closeModal();
-    const world = getSelectedWorld();
-    if (!world) return;
+  const handleDeleteConfirm = useCallback(
+    async (includeBackups: boolean) => {
+      closeModal();
+      const world = getSelectedWorld();
+      if (!world) return;
 
-    if (world.name === config.world) {
-      addLog("error", "Cannot delete the active world");
-      return;
-    }
+      if (world.name === config.world) {
+        addLog("error", "Cannot delete the active world");
+        return;
+      }
 
-    setLoading(true);
-    setOperationStatus("Deleting world...");
+      setLoading(true);
+      setOperationStatus(
+        includeBackups ? "Deleting world and backups..." : "Deleting world..."
+      );
 
-    try {
-      await deleteWorld(world.name);
-      addLog("info", `Deleted world: ${world.name}`);
-      await refresh();
-    } catch (err) {
-      addLog("error", `Delete failed: ${err}`);
-    } finally {
-      setLoading(false);
-      setOperationStatus("");
-    }
-  }, [
-    closeModal,
-    getSelectedWorld,
-    config.world,
-    deleteWorld,
-    refresh,
-    addLog,
-  ]);
+      try {
+        await deleteWorld(world.name, includeBackups);
+        const backupMsg =
+          includeBackups && world.backups?.length
+            ? ` and ${world.backups.length} backup${world.backups.length === 1 ? "" : "s"}`
+            : "";
+        addLog("info", `Deleted world: ${world.name}${backupMsg}`);
+        await refresh();
+      } catch (err) {
+        addLog("error", `Delete failed: ${err}`);
+      } finally {
+        setLoading(false);
+        setOperationStatus("");
+      }
+    },
+    [closeModal, getSelectedWorld, config.world, deleteWorld, refresh, addLog]
+  );
 
   // Handle input in list mode
   useInput(
@@ -300,16 +341,38 @@ export const Worlds: FC = () => {
 
       // Navigation
       if (key.upArrow || input === "k") {
-        if (selectedIndex > 0) select(selectedIndex - 1);
+        if (pendingConfigSelected) {
+          // Already at top, do nothing
+          return;
+        }
+        if (selectedIndex > 0) {
+          select(selectedIndex - 1);
+        } else if (selectedIndex === 0 && hasPendingConfig) {
+          // Move to pending config at top
+          setPendingConfigSelected(true);
+        }
         return;
       }
       if (key.downArrow || input === "j") {
+        if (pendingConfigSelected) {
+          // Move from pending config to first world
+          if (worlds.length > 0) {
+            setPendingConfigSelected(false);
+            select(0);
+          }
+          return;
+        }
         if (selectedIndex < worlds.length - 1) select(selectedIndex + 1);
         return;
       }
 
       // Enter to set active
       if (key.return) {
+        if (pendingConfigSelected) {
+          // Already active, just inform user
+          addLog("info", `"${config.world}" is already the active world`);
+          return;
+        }
         handleSetActive();
         return;
       }
@@ -341,8 +404,9 @@ export const Worlds: FC = () => {
         const world = getSelectedWorld();
         if (world && world.name !== config.world) {
           openModal(
-            <ConfirmModal
-              message={`Delete world "${world.name}"? This cannot be undone!`}
+            <DeleteWorldModal
+              worldName={world.name}
+              backupCount={world.backups?.length ?? 0}
               onConfirm={handleDeleteConfirm}
               onCancel={closeModal}
             />
@@ -579,17 +643,28 @@ export const Worlds: FC = () => {
       {/* Worlds List */}
       <Box flexDirection="column" overflow="hidden">
         {/* Show pending world if configured but not yet generated */}
-        {config.world && !worlds.some((w) => w.name === config.world) && (
+        {hasPendingConfig && (
           <Box
             flexDirection="column"
             flexShrink={0}
-            borderStyle={worlds.length === 0 ? "single" : undefined}
-            borderColor={worlds.length === 0 ? theme.primary : undefined}
-            paddingX={worlds.length === 0 ? 1 : 0}
+            borderStyle={
+              pendingConfigSelected || worlds.length === 0
+                ? "single"
+                : undefined
+            }
+            borderColor={
+              pendingConfigSelected || worlds.length === 0
+                ? theme.primary
+                : undefined
+            }
+            paddingX={pendingConfigSelected || worlds.length === 0 ? 1 : 0}
             marginBottom={1}
           >
             <Box flexShrink={0}>
-              <Text color={theme.primary} bold>
+              <Text
+                color={pendingConfigSelected ? theme.primary : undefined}
+                bold
+              >
                 {config.world}
               </Text>
               <Text color={theme.success}> (Active)</Text>
@@ -644,6 +719,13 @@ export const Worlds: FC = () => {
                   {world.pendingSave && (
                     <Text color={theme.warning}> - Pending Save</Text>
                   )}
+                  {world.backups && world.backups.length > 0 && (
+                    <Text color={theme.info}>
+                      {" "}
+                      [{world.backups.length} backup
+                      {world.backups.length === 1 ? "" : "s"}]
+                    </Text>
+                  )}
                 </Box>
                 <Box marginLeft={2} flexShrink={0}>
                   {world.pendingSave ? (
@@ -654,10 +736,7 @@ export const Worlds: FC = () => {
                     <>
                       <Text dimColor>Size: {formatBytes(world.size)}</Text>
                       <Text dimColor> | </Text>
-                      <Text dimColor>
-                        Folder:{" "}
-                        {world.source === "server" ? "worlds" : "worlds_local"}
-                      </Text>
+                      <Text dimColor>{getSourceLabel(world.source)}</Text>
                     </>
                   )}
                 </Box>
@@ -666,10 +745,54 @@ export const Worlds: FC = () => {
                     <Text dimColor>Modified: {formatDate(world.modified)}</Text>
                   </Box>
                 )}
+                {/* Show backup summaries when selected */}
+                {isSelected && world.backups && world.backups.length > 0 && (
+                  <Box marginLeft={2} flexDirection="column" flexShrink={0}>
+                    <Text dimColor>Backups:</Text>
+                    {world.backups.slice(0, 3).map((backup) => (
+                      <Box key={backup.name} marginLeft={2}>
+                        <Text dimColor>
+                          •{" "}
+                          {formatBackupTimestamp(backup.backupTimestamp ?? "")}
+                          {backup.pendingSave
+                            ? " (pending)"
+                            : ` (${formatBytes(backup.size)})`}
+                        </Text>
+                      </Box>
+                    ))}
+                    {world.backups.length > 3 && (
+                      <Box marginLeft={2}>
+                        <Text dimColor>
+                          ... and {world.backups.length - 3} more
+                        </Text>
+                      </Box>
+                    )}
+                  </Box>
+                )}
               </Box>
             );
           })
         )}
+
+        {/* Other pending worlds (configured but not yet generated, and not active) */}
+        {otherPendingWorlds.map((name) => (
+          <Box
+            key={`pending-${name}`}
+            flexDirection="column"
+            flexShrink={0}
+            marginBottom={1}
+          >
+            <Box flexShrink={0}>
+              <Text dimColor>{name}</Text>
+              <Text color={theme.warning}> - Not generated</Text>
+            </Box>
+            <Box marginLeft={2} flexShrink={0}>
+              <Text dimColor>
+                Set as active and start the server to generate
+              </Text>
+            </Box>
+          </Box>
+        ))}
       </Box>
 
       {/* Status bar */}

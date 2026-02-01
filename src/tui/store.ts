@@ -142,6 +142,8 @@ type WorldsState = {
   loading: boolean;
   error: string | null;
   selectedIndex: number;
+  /** World names that have been configured but not yet generated (no files exist) */
+  pendingWorldNames: string[];
 };
 
 /** SteamCMD state slice */
@@ -213,6 +215,9 @@ type Actions = {
   setWorldsLoading: (loading: boolean) => void;
   setWorldsError: (error: string | null) => void;
   setWorldsSelectedIndex: (index: number) => void;
+  addPendingWorld: (name: string) => void;
+  removePendingWorld: (name: string) => void;
+  setPendingWorlds: (names: string[]) => void;
 
   // SteamCMD actions
   setSteamCmdInstalled: (installed: boolean | null) => void;
@@ -334,6 +339,7 @@ export const useStore = create<Store>((set) => ({
     loading: false,
     error: null,
     selectedIndex: 0,
+    pendingWorldNames: [],
   },
 
   // Initial SteamCMD state
@@ -552,6 +558,35 @@ export const useStore = create<Store>((set) => ({
     setWorldsSelectedIndex: (selectedIndex) =>
       set((state) => ({
         worlds: { ...state.worlds, selectedIndex },
+      })),
+
+    addPendingWorld: (name) =>
+      set((state) => {
+        // Don't add duplicates
+        if (state.worlds.pendingWorldNames.includes(name)) {
+          return state;
+        }
+        return {
+          worlds: {
+            ...state.worlds,
+            pendingWorldNames: [...state.worlds.pendingWorldNames, name],
+          },
+        };
+      }),
+
+    removePendingWorld: (name) =>
+      set((state) => ({
+        worlds: {
+          ...state.worlds,
+          pendingWorldNames: state.worlds.pendingWorldNames.filter(
+            (n) => n !== name
+          ),
+        },
+      })),
+
+    setPendingWorlds: (names) =>
+      set((state) => ({
+        worlds: { ...state.worlds, pendingWorldNames: names },
       })),
 
     // SteamCMD actions

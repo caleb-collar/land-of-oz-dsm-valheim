@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useEffect } from "react";
+import { updateConfig } from "../../config/store.js";
 import {
   backupWorld as backupWorldFile,
   deleteWorld as deleteWorldFile,
@@ -21,20 +22,35 @@ export function useWorlds() {
   const loading = useStore((s) => s.worlds.loading);
   const error = useStore((s) => s.worlds.error);
   const selectedIndex = useStore((s) => s.worlds.selectedIndex);
+  const pendingWorldNames = useStore((s) => s.worlds.pendingWorldNames);
   const activeWorld = useStore((s) => s.config.world);
   const actions = useStore((s) => s.actions);
 
   /**
-   * Refresh the worlds list
+   * Refresh the worlds list (with backups consolidated)
+   * Also cleans up pending worlds that now have files
    */
   const refresh = useCallback(async () => {
     actions.setWorldsLoading(true);
     actions.setWorldsError(null);
 
     try {
-      const discoveredWorlds = await listWorlds();
+      const discoveredWorlds = await listWorlds(undefined, {
+        consolidateBackups: true,
+      });
       actions.setWorlds(discoveredWorlds);
       actions.addLog("info", `Found ${discoveredWorlds.length} worlds`);
+
+      // Remove pending worlds that now have files
+      const existingNames = new Set(discoveredWorlds.map((w) => w.name));
+      const stillPending = pendingWorldNames.filter(
+        (name) => !existingNames.has(name)
+      );
+      if (stillPending.length !== pendingWorldNames.length) {
+        actions.setPendingWorlds(stillPending);
+        // Persist the updated list
+        await updateConfig({ pendingWorlds: stillPending });
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load worlds";
@@ -43,7 +59,7 @@ export function useWorlds() {
     } finally {
       actions.setWorldsLoading(false);
     }
-  }, [actions]);
+  }, [actions, pendingWorldNames]);
 
   /**
    * Set the active world for the server
@@ -113,14 +129,25 @@ export function useWorlds() {
   );
 
   /**
-   * Delete a world
+   * Delete a world and optionally its backups
    */
   const deleteWorld = useCallback(
-    async (name: string) => {
+    async (name: string, includeBackups?: boolean) => {
       actions.setWorldsLoading(true);
       actions.setWorldsError(null);
 
       try {
+        // If includeBackups is true, first delete all backup worlds
+        if (includeBackups) {
+          const world = worlds.find((w) => w.name === name);
+          if (world?.backups) {
+            for (const backup of world.backups) {
+              await deleteWorldFile(backup.name);
+              actions.addLog("info", `Deleted backup: ${backup.name}`);
+            }
+          }
+        }
+
         await deleteWorldFile(name);
         actions.addLog("info", `Deleted world: ${name}`);
 
@@ -141,7 +168,7 @@ export function useWorlds() {
         actions.setWorldsLoading(false);
       }
     },
-    [actions, activeWorld, refresh]
+    [actions, activeWorld, refresh, worlds]
   );
 
   /**
@@ -186,12 +213,43 @@ export function useWorlds() {
     return worlds[selectedIndex] ?? null;
   }, [worlds, selectedIndex]);
 
+  /**
+   * Add a pending world (configured but not yet generated)
+   */
+  const addPendingWorld = useCallback(
+    async (name: string) => {
+      // Update store
+      actions.addPendingWorld(name);
+      // Persist to config
+      const newList = pendingWorldNames.includes(name)
+        ? pendingWorldNames
+        : [...pendingWorldNames, name];
+      await updateConfig({ pendingWorlds: newList });
+    },
+    [actions, pendingWorldNames]
+  );
+
+  /**
+   * Remove a pending world
+   */
+  const removePendingWorld = useCallback(
+    async (name: string) => {
+      // Update store
+      actions.removePendingWorld(name);
+      // Persist to config
+      const newList = pendingWorldNames.filter((n) => n !== name);
+      await updateConfig({ pendingWorlds: newList });
+    },
+    [actions, pendingWorldNames]
+  );
+
   return {
     worlds,
     loading,
     error,
     selectedIndex,
     activeWorld,
+    pendingWorldNames,
     refresh,
     setActive,
     importWorld,
@@ -200,6 +258,8 @@ export function useWorlds() {
     backupWorld,
     select,
     getSelectedWorld,
+    addPendingWorld,
+    removePendingWorld,
   };
 }
 
