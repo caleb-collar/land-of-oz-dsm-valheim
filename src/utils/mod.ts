@@ -27,3 +27,9 @@ export {
   getValheimServerDir,
   type Platform,
 } from "./platform.js";
+export {
+  isStartupTaskRegistered,
+  registerStartupTask,
+  type StartupTaskResult,
+  unregisterStartupTask,
+} from "./startup.js";

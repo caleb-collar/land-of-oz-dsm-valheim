@@ -9,6 +9,11 @@ import {
   installSteamCmd,
   isSteamCmdInstalled,
 } from "../../steamcmd/mod.js";
+import {
+  isStartupTaskRegistered,
+  registerStartupTask,
+  unregisterStartupTask,
+} from "../../utils/mod.js";
 import { ConfirmModal } from "../components/Modal.js";
 import { Spinner } from "../components/Spinner.js";
 import { useServer } from "../hooks/useServer.js";
@@ -97,6 +102,10 @@ export const Dashboard: FC<DashboardProps> = () => {
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateProgress, setUpdateProgress] = useState("");
+  const [startupTaskRegistered, setStartupTaskRegistered] = useState<
+    boolean | null
+  >(null);
+  const [startupTaskProcessing, setStartupTaskProcessing] = useState(false);
 
   const statusColor = getStatusColor(status);
 
@@ -116,6 +125,19 @@ export const Dashboard: FC<DashboardProps> = () => {
     };
     checkSteamCmd();
   }, [setSteamCmdInstalled, setSteamCmdPath]);
+
+  // Check startup task registration status on mount
+  useEffect(() => {
+    const checkStartupTask = async () => {
+      try {
+        const registered = await isStartupTaskRegistered();
+        setStartupTaskRegistered(registered);
+      } catch {
+        setStartupTaskRegistered(false);
+      }
+    };
+    checkStartupTask();
+  }, []);
 
   // Handle SteamCMD installation
   const handleInstallSteamCmd = async () => {
@@ -191,10 +213,49 @@ export const Dashboard: FC<DashboardProps> = () => {
     await forceSave();
   };
 
+  // Handle startup task toggle
+  const handleToggleStartupTask = async () => {
+    closeModal();
+    setStartupTaskProcessing(true);
+
+    try {
+      if (startupTaskRegistered) {
+        addLog("info", "Removing startup task...");
+        const result = await unregisterStartupTask();
+        if (result.success) {
+          addLog("info", result.message);
+          setStartupTaskRegistered(false);
+        } else {
+          addLog("error", result.message);
+        }
+      } else {
+        addLog("info", "Registering startup task...");
+        const result = await registerStartupTask();
+        if (result.success) {
+          addLog("info", result.message);
+          setStartupTaskRegistered(true);
+        } else {
+          addLog("error", result.message);
+          if (result.requiresAdmin) {
+            addLog("warn", "Try running as administrator.");
+          }
+        }
+      }
+    } catch (error) {
+      addLog(
+        "error",
+        `Startup task operation failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    } finally {
+      setStartupTaskProcessing(false);
+    }
+  };
+
   // Handle keyboard shortcuts
   useInput((input) => {
-    // Don't handle if modal is open or updating or installing steamcmd
-    if (modalOpen || isUpdating || steamCmdInstalling) return;
+    // Don't handle if modal is open or updating or installing steamcmd or processing startup task
+    if (modalOpen || isUpdating || steamCmdInstalling || startupTaskProcessing)
+      return;
 
     // S = Start
     if (input === "s" || input === "S") {
@@ -278,6 +339,19 @@ export const Dashboard: FC<DashboardProps> = () => {
           />
         );
       }
+    }
+
+    // A = Auto-start (toggle startup task)
+    if (input === "a" || input === "A") {
+      if (startupTaskRegistered === null) return;
+      const action = startupTaskRegistered ? "Remove" : "Enable";
+      openModal(
+        <ConfirmModal
+          message={`${action} auto-start at login? The server manager will ${startupTaskRegistered ? "no longer" : ""} start automatically when you log in.`}
+          onConfirm={handleToggleStartupTask}
+          onCancel={closeModal}
+        />
+      );
     }
   });
 
@@ -461,6 +535,21 @@ export const Dashboard: FC<DashboardProps> = () => {
         </Box>
       </Box>
 
+      {/* Auto-start Status */}
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold>Auto-start</Text>
+        <Box marginLeft={2}>
+          <Text>Status: </Text>
+          {startupTaskRegistered === null ? (
+            <Text dimColor>Checking...</Text>
+          ) : startupTaskRegistered ? (
+            <Text color={theme.success}>● Enabled</Text>
+          ) : (
+            <Text dimColor>○ Disabled</Text>
+          )}
+        </Box>
+      </Box>
+
       {/* Quick Actions */}
       <Box flexDirection="column">
         <Text bold>Quick Actions</Text>
@@ -523,6 +612,26 @@ export const Dashboard: FC<DashboardProps> = () => {
           ) : (
             <Text dimColor>Install SteamCMD to manage server</Text>
           )}
+
+          {/* Auto-start toggle - always available */}
+          <Box marginTop={1}>
+            {startupTaskProcessing ? (
+              <Spinner label="Updating auto-start..." />
+            ) : startupTaskRegistered === null ? (
+              <Text dimColor>Checking auto-start status...</Text>
+            ) : (
+              <Box>
+                <Text
+                  color={startupTaskRegistered ? theme.warning : theme.success}
+                >
+                  [A]{" "}
+                </Text>
+                <Text>
+                  {startupTaskRegistered ? "Disable" : "Enable"} Auto-start
+                </Text>
+              </Box>
+            )}
+          </Box>
         </Box>
       </Box>
     </Box>
