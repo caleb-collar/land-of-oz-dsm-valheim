@@ -2011,6 +2011,519 @@ Manual testing:
 
 ---
 
+## Phase 14: Major Version Upgrades & Repository Maintenance
+
+**Status**: Not Started\
+**Priority**: Medium\
+**Goal**: Upgrade held-back major dependencies and establish ongoing repository
+maintenance automation
+
+### Overview
+
+This phase addresses the major version updates that were intentionally held back
+for stability, and establishes automated maintenance practices using GitHub
+Copilot and CI/CD pipelines.
+
+### Prerequisites
+
+- Phase 13 complete (full TUI functionality)
+- All tests passing (current: 176 tests)
+- Renovate configured for automated dependency updates
+
+---
+
+### Task 14.1: Major Dependency Upgrades
+
+Upgrade all held-back major versions with careful migration and testing.
+
+#### 14.1.1 Upgrade Schedule
+
+Perform upgrades sequentially, testing after each major change:
+
+| Order | Package   | From   | To     | Breaking Changes                         |
+| ----- | --------- | ------ | ------ | ---------------------------------------- |
+| 1     | React     | 18.3.1 | 19.x   | New ref handling, use() hook, Actions    |
+| 2     | Ink       | 5.2.1  | 6.x    | Requires React 19, API changes           |
+| 3     | Zod       | 3.x    | 4.x    | `.default({})` factory functions         |
+| 4     | Biome     | 1.9.4  | 2.x    | New rule defaults, config format         |
+| 5     | vitest    | 3.x    | 4.x    | Test runner API changes                  |
+| 6     | conf      | 13.x   | 15.x   | Storage API changes                      |
+
+#### 14.1.2 React 19 Migration
+
+**Key Changes to Address:**
+
+- [ ] Review `ref` prop handling (now a regular prop)
+- [ ] Update any `forwardRef` usages if present
+- [ ] Review `use()` hook opportunities for Suspense
+- [ ] Check for deprecated lifecycle methods
+- [ ] Test Server Components compatibility (if applicable)
+- [ ] Update `@types/react` to 19.x
+
+**Migration Steps:**
+
+1. Update `package.json`:
+   ```json
+   "react": "^19.0.0",
+   "@types/react": "^19.0.0"
+   ```
+2. Run `npm install`
+3. Run `npm run typecheck` and fix type errors
+4. Run `npm test` and fix failures
+5. Manual TUI testing
+
+#### 14.1.3 Ink 6 Migration
+
+**Key Changes to Address:**
+
+- [ ] Review component API changes
+- [ ] Check for removed/renamed exports
+- [ ] Update any deprecated patterns
+- [ ] Verify fullscreen-ink compatibility
+- [ ] Test terminal rendering
+
+**Migration Steps:**
+
+1. Update `package.json`:
+   ```json
+   "ink": "^6.0.0"
+   ```
+2. Check `fullscreen-ink` compatibility (may need update)
+3. Fix any breaking component changes
+4. Full TUI testing on Windows/Linux/macOS
+
+#### 14.1.4 Zod 4 Migration
+
+**Key Changes to Address:**
+
+- [ ] `.default({})` no longer auto-applies nested defaults
+- [ ] Use factory functions: `.default(() => Schema.parse({}))`
+- [ ] Review schema definitions in `src/config/schema.ts`
+- [ ] Check for removed/renamed methods
+
+**Migration Steps:**
+
+1. Update `package.json`:
+   ```json
+   "zod": "^4.0.0"
+   ```
+2. Update `src/config/schema.ts` default patterns
+3. Run all config-related tests
+4. Verify configuration persistence
+
+#### 14.1.5 Biome 2 Migration
+
+**Key Changes to Address:**
+
+- [ ] Update `biome.json` schema version
+- [ ] Review new default rule changes
+- [ ] Check for removed/renamed rules
+- [ ] Verify CI pipeline compatibility
+
+**Migration Steps:**
+
+1. Update `package.json`:
+   ```json
+   "@biomejs/biome": "^2.0.0"
+   ```
+2. Update `biome.json` schema:
+   ```json
+   "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json"
+   ```
+3. Run `npm run lint` and address new warnings
+4. Run `npm run lint:fix` for auto-fixes
+
+#### 14.1.6 Vitest 4 Migration
+
+**Key Changes to Address:**
+
+- [ ] Review test runner API changes
+- [ ] Check for deprecated test utilities
+- [ ] Verify vitest.config.ts compatibility
+- [ ] Update any custom test helpers
+
+#### 14.1.7 conf 15 Migration
+
+**Key Changes to Address:**
+
+- [ ] Review storage API changes
+- [ ] Check migration path from conf 13
+- [ ] Test configuration persistence
+- [ ] Verify cross-platform compatibility
+
+---
+
+### Task 14.2: GitHub Copilot Repository Maintenance
+
+Configure GitHub Copilot for ongoing repository maintenance tasks.
+
+#### 14.2.1 Copilot Prompt Files
+
+Create standardized prompts in `.github/prompts/` for common tasks:
+
+- [x] `.github/prompts/health-check.prompt.md` - Repository health audit (exists)
+- [ ] `.github/prompts/dependency-update.prompt.md` - Guide dependency updates
+- [ ] `.github/prompts/code-review.prompt.md` - Code review checklist
+- [ ] `.github/prompts/release-prep.prompt.md` - Release preparation steps
+- [ ] `.github/prompts/bug-triage.prompt.md` - Bug report analysis
+
+#### 14.2.2 Copilot Workspace Instructions
+
+Create or update `.github/copilot-instructions.md`:
+
+```markdown
+# Copilot Workspace Instructions
+
+## Project Overview
+This is oz-dsm-valheim, a Valheim dedicated server manager using Node.js, React 19, Ink 6.
+
+## Coding Standards
+- Use `type` over `interface`
+- Use Zod for runtime validation
+- Follow Biome linting rules
+- Export from `mod.ts` barrel files
+
+## Testing Requirements
+- All new features need tests
+- Run `npm run typecheck` before committing
+- Run `npm test` before PR
+
+## Documentation
+- Update README.md for user-facing changes
+- Update AGENTS.md for developer workflow changes
+- Add JSDoc to public functions
+```
+
+#### 14.2.3 Copilot Actions Configuration
+
+Review and configure Copilot Actions for:
+
+- [ ] Automated code review suggestions
+- [ ] Test generation assistance
+- [ ] Documentation generation
+- [ ] Security scanning recommendations
+
+---
+
+### Task 14.3: Enhanced Renovate Configuration
+
+Improve Renovate bot configuration for better dependency management.
+
+#### 14.3.1 Renovate Schedule Updates
+
+Update `renovate.json` for regular dependency checks:
+
+```json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:base", "schedule:weekly"],
+  "timezone": "America/Chicago",
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 2,
+  "schedule": ["before 6am on Monday"],
+  "packageRules": [
+    {
+      "description": "Group all patch updates",
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["patch"],
+      "groupName": "patch dependencies",
+      "groupSlug": "all-patch",
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Group minor updates with auto-merge",
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["minor"],
+      "groupName": "minor dependencies",
+      "groupSlug": "all-minor",
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Major updates require review",
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "breaking-change"]
+    },
+    {
+      "description": "Security updates - high priority",
+      "matchDepTypes": ["dependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "matchPackagePatterns": ["*"],
+      "vulnerabilityAlerts": true,
+      "automerge": true,
+      "schedule": ["at any time"]
+    }
+  ]
+}
+```
+
+#### 14.3.2 Renovate Dashboard
+
+- [ ] Enable Renovate dependency dashboard issue
+- [ ] Configure notifications for security updates
+- [ ] Set up approval workflows for major updates
+
+---
+
+### Task 14.4: Package Publishing Pipeline
+
+Establish npm package publishing infrastructure.
+
+#### 14.4.1 NPM Publishing Workflow
+
+Create `.github/workflows/publish.yml`:
+
+```yaml
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+```
+
+#### 14.4.2 Package.json Publishing Configuration
+
+Update `package.json` for publishing:
+
+```json
+{
+  "name": "oz-dsm-valheim",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
+}
+```
+
+#### 14.4.3 Pre-publish Validation
+
+- [ ] Add `prepublishOnly` script with validation
+- [ ] Verify `files` field includes correct assets
+- [ ] Test local publish with `npm pack --dry-run`
+- [ ] Set up npm provenance for supply chain security
+
+---
+
+### Task 14.5: Security & Maintenance Pipelines
+
+#### 14.5.1 Security Scanning Workflow
+
+Create `.github/workflows/security.yml`:
+
+```yaml
+name: Security Scan
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # Weekly on Monday
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - run: npm ci
+
+      - name: Security Audit
+        run: npm audit --audit-level=moderate
+
+      - name: Check for known vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+```
+
+#### 14.5.2 Stale Issue Management
+
+Create `.github/workflows/stale.yml`:
+
+```yaml
+name: Manage Stale Issues
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@v9
+        with:
+          stale-issue-message: 'This issue has been inactive for 60 days and will be closed in 7 days unless there is activity.'
+          stale-pr-message: 'This PR has been inactive for 30 days and will be closed in 7 days unless there is activity.'
+          stale-issue-label: 'stale'
+          stale-pr-label: 'stale'
+          days-before-stale: 60
+          days-before-close: 7
+          exempt-issue-labels: 'pinned,security,enhancement'
+          exempt-pr-labels: 'pinned,work-in-progress'
+```
+
+#### 14.5.3 Dependency Review
+
+Add to CI workflow:
+
+```yaml
+- name: Dependency Review
+  uses: actions/dependency-review-action@v4
+  if: github.event_name == 'pull_request'
+  with:
+    fail-on-severity: high
+```
+
+---
+
+### Task 14.6: Documentation & Changelog Automation
+
+#### 14.6.1 Automated Changelog
+
+Create `CHANGELOG.md` maintenance:
+
+- [ ] Use conventional commits for auto-changelog
+- [ ] Configure release-please or similar tool
+- [ ] Link changelog entries to PRs/issues
+
+#### 14.6.2 API Documentation
+
+- [ ] Set up TypeDoc or similar for API docs
+- [ ] Generate docs on release
+- [ ] Publish to GitHub Pages
+
+---
+
+### Files to Create
+
+| File                                           | Purpose                        |
+| ---------------------------------------------- | ------------------------------ |
+| `.github/prompts/dependency-update.prompt.md`  | Dependency update guide        |
+| `.github/prompts/code-review.prompt.md`        | Code review checklist          |
+| `.github/prompts/release-prep.prompt.md`       | Release preparation            |
+| `.github/copilot-instructions.md`              | Copilot workspace setup        |
+| `.github/workflows/publish.yml`                | NPM publishing                 |
+| `.github/workflows/security.yml`               | Security scanning              |
+| `.github/workflows/stale.yml`                  | Stale issue management         |
+| `CHANGELOG.md`                                 | Version history                |
+
+### Files to Modify
+
+| File             | Changes                                |
+| ---------------- | -------------------------------------- |
+| `package.json`   | Upgrade dependencies, publish config   |
+| `renovate.json`  | Enhanced automation rules              |
+| `biome.json`     | Update to v2 schema                    |
+| `tsconfig.json`  | React 19 compatibility if needed       |
+
+---
+
+### Verification Checklist
+
+After major upgrades:
+
+```bash
+npm run typecheck              # Passes
+npm run lint                   # No errors  
+npm test                       # All tests pass
+npm run build                  # Bundle builds
+npx tsx main.ts --version      # Shows version
+npx tsx main.ts tui            # TUI works correctly
+```
+
+After pipeline setup:
+
+- [ ] CI workflow passes on PR
+- [ ] Security scan runs weekly
+- [ ] Renovate creates update PRs
+- [ ] Release workflow publishes to npm
+- [ ] Stale bot manages inactive issues
+
+---
+
+### Completion Criteria
+
+- [ ] React 19 upgrade complete and tested
+- [ ] Ink 6 upgrade complete and tested
+- [ ] Zod 4 upgrade complete and tested
+- [ ] Biome 2 upgrade complete and tested
+- [ ] vitest 4 upgrade complete and tested
+- [ ] conf 15 upgrade complete and tested
+- [ ] All 176+ tests pass
+- [ ] TUI fully functional on all platforms
+- [ ] Copilot prompt files created
+- [ ] Renovate enhanced with auto-merge
+- [ ] npm publishing pipeline configured
+- [ ] Security scanning pipeline active
+- [ ] Stale issue management active
+- [ ] CHANGELOG.md established
+- [ ] Version bumped appropriately
+
+---
+
+### Risk Mitigation
+
+1. **Sequential Upgrades**: Upgrade one major package at a time
+2. **Feature Branch**: Use `feature/phase-14-upgrades` branch
+3. **Comprehensive Testing**: Full test suite after each upgrade
+4. **Rollback Plan**: Tag current state before starting upgrades
+5. **Platform Testing**: Verify Windows/Linux/macOS after Ink upgrade
+
+---
+
+### Notes
+
+- React 19 and Ink 6 should be upgraded together (Ink 6 requires React 19)
+- Zod 4 migration pattern was already documented in Phase 8
+- Security scanning may require SNYK_TOKEN secret setup
+- NPM publishing requires NPM_TOKEN secret with publish permissions
+- Consider canary/beta releases before stable npm publish
+
+---
+
 ## Agent Handoff Protocol
 
 When completing a phase, provide:
@@ -2088,16 +2601,32 @@ npm run format         # Format code (biome)
 
 ### Dependencies
 
+**Current (Stable):**
 ```json
 {
   "react": "^18.3.1",
   "ink": "^5.1.0",
   "fullscreen-ink": "^0.0.2",
-  "zustand": "^5.0.4",
-  "zod": "^3.25.56",
+  "zustand": "^5.0.3",
+  "zod": "^3.24.2",
   "conf": "^13.0.1"
 }
 ```
 
-> **Note**: Now running on Node.js with React 18, Ink 5, Zod 3. See Phase 10 for
-> migration details, Phase 11 for cleanup, and Phase 12 for polish and CI validation.
+**Target (Phase 14):**
+```json
+{
+  "react": "^19.0.0",
+  "ink": "^6.0.0",
+  "fullscreen-ink": "^0.1.0",
+  "zustand": "^5.0.3",
+  "zod": "^4.0.0",
+  "conf": "^15.0.0",
+  "@biomejs/biome": "^2.0.0",
+  "vitest": "^4.0.0"
+}
+```
+
+> **Note**: Currently running on Node.js with React 18, Ink 5, Zod 3. See Phase 10
+> for Node.js migration, Phase 11 for Deno cleanup, Phase 12 for polish, Phase 13
+> for TUI enhancements, and Phase 14 for major version upgrades and maintenance.
