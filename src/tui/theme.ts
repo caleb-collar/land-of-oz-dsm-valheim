@@ -31,6 +31,9 @@ export const valheimPalette = {
  * Base color palette for the TUI
  */
 export const theme = {
+  /** Background color for overlays and modals */
+  background: valheimPalette.blackKnight,
+
   /** Main accent color for active items and highlights */
   primary: valheimPalette.mandarin,
 

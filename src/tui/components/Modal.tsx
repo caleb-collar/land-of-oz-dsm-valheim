@@ -36,6 +36,7 @@ export const Modal: FC<ModalProps> = (props: ModalProps) => {
       width={width}
       borderStyle="double"
       borderColor={theme.primary}
+      backgroundColor={theme.background}
       paddingX={2}
       paddingY={1}
     >

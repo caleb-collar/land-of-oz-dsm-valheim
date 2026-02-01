@@ -76,6 +76,7 @@ export const HelpOverlay: FC = () => {
       flexDirection="column"
       borderStyle="double"
       borderColor={valheimPalette.mandarin}
+      backgroundColor={valheimPalette.blackKnight}
       paddingX={2}
       paddingY={1}
       width={50}

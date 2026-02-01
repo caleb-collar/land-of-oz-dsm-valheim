@@ -113,6 +113,7 @@ export const App: FC = () => {
           justifyContent="center"
           width="100%"
           height="100%"
+          backgroundColor={theme.background}
         >
           {modalContent}
         </Box>

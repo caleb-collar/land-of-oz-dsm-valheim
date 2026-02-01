@@ -16,6 +16,7 @@
     "**/coverage": true
   },
   "chat.tools.terminal.autoApprove": {
-    "mv": true
+    "mv": true,
+    "npm version": true
   }
 }
