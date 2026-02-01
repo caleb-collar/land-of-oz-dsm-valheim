@@ -1,12 +1,12 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  release:
+    types: [published]
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   build:
@@ -58,17 +58,12 @@ jobs:
           path: valheim-dsm-${{ matrix.target }}${{ matrix.ext }}
           retention-days: 1
 
-  release:
-    name: Create Release
+  upload-assets:
+    name: Upload Release Assets
     needs: build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -88,84 +83,17 @@ jobs:
           sha256sum * > checksums.sha256
           cat checksums.sha256
 
-      - name: Generate changelog
-        id: changelog
-        run: |
-          # Get previous tag
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-
-          if [ -z "$PREV_TAG" ]; then
-            COMMITS=$(git log --pretty=format:"- %s" HEAD)
-          else
-            COMMITS=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD)
-          fi
-
-          cat << EOF > changelog.md
-          ## What's Changed
-
-          $COMMITS
-
-          ## Installation
-
-          Download the appropriate binary for your platform:
-
-          | Platform | Binary |
-          | --- | --- |
-          | Windows (x64) | \`valheim-dsm-win-x64.exe\` |
-          | Linux (x64) | \`valheim-dsm-linux-x64\` |
-          | macOS (x64) | \`valheim-dsm-macos-x64\` |
-          | macOS (ARM64) | \`valheim-dsm-macos-arm64\` |
-
-          ### Verify Download
-
-          Download \`checksums.sha256\` and verify your binary:
-
-          \`\`\`bash
-          # Linux/macOS
-          sha256sum -c checksums.sha256 --ignore-missing
-
-          # Windows (PowerShell)
-          (Get-FileHash valheim-dsm-win-x64.exe -Algorithm SHA256).Hash
-          \`\`\`
-
-          ### Quick Start
-
-          \`\`\`bash
-          # Make executable (Linux/macOS)
-          chmod +x valheim-dsm-*
-
-          # Run
-          ./valheim-dsm --help
-          \`\`\`
-
-          ### Alternative: Run with Node.js
-
-          \`\`\`bash
-          # Install globally
-          npm install -g valheim-oz-dsm
-
-          # Run
-          valheim-dsm --help
-          \`\`\`
-          EOF
-
-      - name: Create GitHub Release
+      - name: Upload assets to release
         uses: softprops/action-gh-release@v1
         with:
-          body_path: changelog.md
           files: release/*
-          draft: false
-          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-npm:
     name: Publish to npm
-    needs: release
+    needs: upload-assets
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
 
     steps:
       - name: Checkout code
