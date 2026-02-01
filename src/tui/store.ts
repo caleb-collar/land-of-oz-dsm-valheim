@@ -142,6 +142,18 @@ type WorldsState = {
   selectedIndex: number;
 };
 
+/** SteamCMD state slice */
+type SteamCmdState = {
+  /** Whether SteamCMD is installed (null = not yet checked) */
+  installed: boolean | null;
+  /** Whether SteamCMD installation is in progress */
+  installing: boolean;
+  /** Current installation progress message */
+  installProgress: string;
+  /** Installation progress percentage (0-100) */
+  installPercent: number;
+};
+
 /** Store actions */
 type Actions = {
   // Server actions
@@ -196,6 +208,12 @@ type Actions = {
   setWorldsLoading: (loading: boolean) => void;
   setWorldsError: (error: string | null) => void;
   setWorldsSelectedIndex: (index: number) => void;
+
+  // SteamCMD actions
+  setSteamCmdInstalled: (installed: boolean | null) => void;
+  setSteamCmdInstalling: (installing: boolean) => void;
+  setSteamCmdInstallProgress: (message: string, percent: number) => void;
+  resetSteamCmdInstall: () => void;
 };
 
 /** Complete store type */
@@ -209,6 +227,7 @@ export type Store = {
   tuiConfig: TuiState;
   rcon: RconState;
   worlds: WorldsState;
+  steamcmd: SteamCmdState;
   actions: Actions;
 };
 
@@ -308,6 +327,14 @@ export const useStore = create<Store>((set) => ({
     loading: false,
     error: null,
     selectedIndex: 0,
+  },
+
+  // Initial SteamCMD state
+  steamcmd: {
+    installed: null,
+    installing: false,
+    installProgress: "",
+    installPercent: 0,
   },
 
   // Actions
@@ -513,6 +540,36 @@ export const useStore = create<Store>((set) => ({
       set((state) => ({
         worlds: { ...state.worlds, selectedIndex },
       })),
+
+    // SteamCMD actions
+    setSteamCmdInstalled: (installed) =>
+      set((state) => ({
+        steamcmd: { ...state.steamcmd, installed },
+      })),
+
+    setSteamCmdInstalling: (installing) =>
+      set((state) => ({
+        steamcmd: { ...state.steamcmd, installing },
+      })),
+
+    setSteamCmdInstallProgress: (message, percent) =>
+      set((state) => ({
+        steamcmd: {
+          ...state.steamcmd,
+          installProgress: message,
+          installPercent: percent,
+        },
+      })),
+
+    resetSteamCmdInstall: () =>
+      set((state) => ({
+        steamcmd: {
+          ...state.steamcmd,
+          installing: false,
+          installProgress: "",
+          installPercent: 0,
+        },
+      })),
   },
 }));
 
@@ -568,6 +625,11 @@ export const selectRcon = (state: Store) => state.rcon;
  * Selector for worlds state
  */
 export const selectWorlds = (state: Store) => state.worlds;
+
+/**
+ * Selector for SteamCMD state
+ */
+export const selectSteamCmd = (state: Store) => state.steamcmd;
 
 /**
  * Selector for actions

@@ -3,7 +3,8 @@
  */
 
 import { Box, Text, useInput } from "ink";
-import { type FC, useState } from "react";
+import { type FC, useEffect, useState } from "react";
+import { installSteamCmd, isSteamCmdInstalled } from "../../steamcmd/mod.js";
 import { ConfirmModal } from "../components/Modal.js";
 import { Spinner } from "../components/Spinner.js";
 import { useServer } from "../hooks/useServer.js";
@@ -72,12 +73,64 @@ export const Dashboard: FC<DashboardProps> = () => {
   const closeModal = useStore((s) => s.actions.closeModal);
   const addLog = useStore((s) => s.actions.addLog);
 
+  // SteamCMD state
+  const steamCmdInstalled = useStore((s) => s.steamcmd.installed);
+  const steamCmdInstalling = useStore((s) => s.steamcmd.installing);
+  const steamCmdProgress = useStore((s) => s.steamcmd.installProgress);
+  const steamCmdPercent = useStore((s) => s.steamcmd.installPercent);
+  const setSteamCmdInstalled = useStore((s) => s.actions.setSteamCmdInstalled);
+  const setSteamCmdInstalling = useStore(
+    (s) => s.actions.setSteamCmdInstalling
+  );
+  const setSteamCmdInstallProgress = useStore(
+    (s) => s.actions.setSteamCmdInstallProgress
+  );
+  const resetSteamCmdInstall = useStore((s) => s.actions.resetSteamCmdInstall);
+
   const { start, stop, restart, update, forceSave } = useServer();
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateProgress, setUpdateProgress] = useState("");
 
   const statusColor = getStatusColor(status);
+
+  // Check SteamCMD installation status on mount
+  useEffect(() => {
+    const checkSteamCmd = async () => {
+      try {
+        const installed = await isSteamCmdInstalled();
+        setSteamCmdInstalled(installed);
+      } catch {
+        setSteamCmdInstalled(false);
+      }
+    };
+    checkSteamCmd();
+  }, [setSteamCmdInstalled]);
+
+  // Handle SteamCMD installation
+  const handleInstallSteamCmd = async () => {
+    closeModal();
+    setSteamCmdInstalling(true);
+    addLog("info", "Starting SteamCMD installation...");
+
+    try {
+      await installSteamCmd((progress) => {
+        setSteamCmdInstallProgress(progress.message, progress.progress);
+        if (progress.stage === "complete") {
+          addLog("info", "SteamCMD installed successfully!");
+        }
+      });
+      setSteamCmdInstalled(true);
+    } catch (error) {
+      addLog(
+        "error",
+        `SteamCMD installation failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+      setSteamCmdInstalled(false);
+    } finally {
+      resetSteamCmdInstall();
+    }
+  };
 
   // Handle confirmed stop
   const handleStopConfirm = () => {
@@ -128,12 +181,12 @@ export const Dashboard: FC<DashboardProps> = () => {
 
   // Handle keyboard shortcuts
   useInput((input) => {
-    // Don't handle if modal is open or updating
-    if (modalOpen || isUpdating) return;
+    // Don't handle if modal is open or updating or installing steamcmd
+    if (modalOpen || isUpdating || steamCmdInstalling) return;
 
     // S = Start
     if (input === "s" || input === "S") {
-      if (status === "offline") {
+      if (status === "offline" && steamCmdInstalled) {
         start();
         addLog("info", "Starting server...");
       }
@@ -167,11 +220,24 @@ export const Dashboard: FC<DashboardProps> = () => {
 
     // U = Update
     if (input === "u" || input === "U") {
-      if (status === "offline") {
+      if (status === "offline" && steamCmdInstalled) {
         openModal(
           <ConfirmModal
             message="Update server via SteamCMD? This may take a few minutes."
             onConfirm={handleUpdate}
+            onCancel={closeModal}
+          />
+        );
+      }
+    }
+
+    // I = Install SteamCMD
+    if (input === "i" || input === "I") {
+      if (!steamCmdInstalled && !steamCmdInstalling) {
+        openModal(
+          <ConfirmModal
+            message="Install SteamCMD? This is required to download and update Valheim."
+            onConfirm={handleInstallSteamCmd}
             onCancel={closeModal}
           />
         );
@@ -252,6 +318,38 @@ export const Dashboard: FC<DashboardProps> = () => {
     );
   }
 
+  // Render SteamCMD installing state
+  if (steamCmdInstalling) {
+    return (
+      <Box flexDirection="column" flexGrow={1} padding={1}>
+        <Box marginBottom={1}>
+          <Text bold color={theme.primary}>
+            ─ Dashboard ─
+          </Text>
+        </Box>
+        <Box
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          flexGrow={1}
+        >
+          <Spinner label="Installing SteamCMD..." />
+          {steamCmdProgress && (
+            <Box marginTop={1}>
+              <Text dimColor>
+                {steamCmdProgress}
+                {steamCmdPercent > 0 && ` (${steamCmdPercent}%)`}
+              </Text>
+            </Box>
+          )}
+          <Box marginTop={1}>
+            <Text dimColor>Please wait...</Text>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box flexDirection="column" flexGrow={1} padding={1}>
       {/* Title */}
@@ -259,6 +357,23 @@ export const Dashboard: FC<DashboardProps> = () => {
         <Text bold color={theme.primary}>
           ─ Dashboard ─
         </Text>
+      </Box>
+
+      {/* SteamCMD Status Section */}
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold>SteamCMD</Text>
+        <Box marginLeft={2} flexDirection="column">
+          <Box>
+            <Text>Status: </Text>
+            {steamCmdInstalled === null ? (
+              <Text dimColor>Checking...</Text>
+            ) : steamCmdInstalled ? (
+              <Text color={theme.success}>● Installed</Text>
+            ) : (
+              <Text color={theme.warning}>○ Not Installed</Text>
+            )}
+          </Box>
+        </Box>
       </Box>
 
       {/* Server Status Section */}
@@ -332,45 +447,63 @@ export const Dashboard: FC<DashboardProps> = () => {
       <Box flexDirection="column">
         <Text bold>Quick Actions</Text>
         <Box marginLeft={2} marginTop={1} flexDirection="column">
-          {status === "offline" ? (
-            <Box flexDirection="column">
+          {/* SteamCMD Install Option */}
+          {steamCmdInstalled === false && (
+            <Box marginBottom={1}>
               <Box>
-                <Text color={theme.success}>[S] </Text>
-                <Text>Start Server</Text>
-              </Box>
-              <Box>
-                <Text color={theme.info}>[U] </Text>
-                <Text>Update Server</Text>
-                {updateAvailable && <Text color={theme.warning}> ★</Text>}
+                <Text color={theme.info}>[I] </Text>
+                <Text>Install SteamCMD</Text>
+                <Text color={theme.warning}> (required)</Text>
               </Box>
             </Box>
-          ) : status === "online" ? (
-            <Box flexDirection="column">
-              <Box>
-                <Text color={theme.error}>[X] </Text>
-                <Text>Stop Server</Text>
+          )}
+
+          {/* Server Actions - only available when SteamCMD is installed */}
+          {steamCmdInstalled ? (
+            status === "offline" ? (
+              <Box flexDirection="column">
+                <Box>
+                  <Text color={theme.success}>[S] </Text>
+                  <Text>Start Server</Text>
+                </Box>
+                <Box>
+                  <Text color={theme.info}>[U] </Text>
+                  <Text>Update Server</Text>
+                  {updateAvailable && <Text color={theme.warning}> ★</Text>}
+                </Box>
               </Box>
-              <Box>
-                <Text color={theme.warning}>[R] </Text>
-                <Text>Restart Server</Text>
+            ) : status === "online" ? (
+              <Box flexDirection="column">
+                <Box>
+                  <Text color={theme.error}>[X] </Text>
+                  <Text>Stop Server</Text>
+                </Box>
+                <Box>
+                  <Text color={theme.warning}>[R] </Text>
+                  <Text>Restart Server</Text>
+                </Box>
+                <Box>
+                  <Text color={theme.info}>[F] </Text>
+                  <Text>Force Save</Text>
+                </Box>
+                <Box>
+                  <Text color={theme.error}>[K] </Text>
+                  <Text>Kill Process</Text>
+                </Box>
               </Box>
-              <Box>
-                <Text color={theme.info}>[F] </Text>
-                <Text>Force Save</Text>
+            ) : (
+              <Box flexDirection="column">
+                <Spinner label={`Server is ${status}...`} />
+                <Box marginTop={1}>
+                  <Text color={theme.error}>[K] </Text>
+                  <Text dimColor>Force Kill (if stuck)</Text>
+                </Box>
               </Box>
-              <Box>
-                <Text color={theme.error}>[K] </Text>
-                <Text>Kill Process</Text>
-              </Box>
-            </Box>
+            )
+          ) : steamCmdInstalled === null ? (
+            <Text dimColor>Checking SteamCMD status...</Text>
           ) : (
-            <Box flexDirection="column">
-              <Spinner label={`Server is ${status}...`} />
-              <Box marginTop={1}>
-                <Text color={theme.error}>[K] </Text>
-                <Text dimColor>Force Kill (if stuck)</Text>
-              </Box>
-            </Box>
+            <Text dimColor>Install SteamCMD to manage server</Text>
           )}
         </Box>
       </Box>
