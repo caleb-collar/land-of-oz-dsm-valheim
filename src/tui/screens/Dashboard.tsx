@@ -4,7 +4,11 @@
 
 import { Box, Text, useInput } from "ink";
 import { type FC, useEffect, useState } from "react";
-import { installSteamCmd, isSteamCmdInstalled } from "../../steamcmd/mod.js";
+import {
+  getSteamPaths,
+  installSteamCmd,
+  isSteamCmdInstalled,
+} from "../../steamcmd/mod.js";
 import { ConfirmModal } from "../components/Modal.js";
 import { Spinner } from "../components/Spinner.js";
 import { useServer } from "../hooks/useServer.js";
@@ -78,6 +82,7 @@ export const Dashboard: FC<DashboardProps> = () => {
   const steamCmdInstalling = useStore((s) => s.steamcmd.installing);
   const steamCmdProgress = useStore((s) => s.steamcmd.installProgress);
   const steamCmdPercent = useStore((s) => s.steamcmd.installPercent);
+  const steamCmdPath = useStore((s) => s.steamcmd.path);
   const setSteamCmdInstalled = useStore((s) => s.actions.setSteamCmdInstalled);
   const setSteamCmdInstalling = useStore(
     (s) => s.actions.setSteamCmdInstalling
@@ -85,6 +90,7 @@ export const Dashboard: FC<DashboardProps> = () => {
   const setSteamCmdInstallProgress = useStore(
     (s) => s.actions.setSteamCmdInstallProgress
   );
+  const setSteamCmdPath = useStore((s) => s.actions.setSteamCmdPath);
   const resetSteamCmdInstall = useStore((s) => s.actions.resetSteamCmdInstall);
 
   const { start, stop, restart, update, forceSave } = useServer();
@@ -100,12 +106,16 @@ export const Dashboard: FC<DashboardProps> = () => {
       try {
         const installed = await isSteamCmdInstalled();
         setSteamCmdInstalled(installed);
+        if (installed) {
+          const paths = getSteamPaths();
+          setSteamCmdPath(paths.steamcmdDir);
+        }
       } catch {
         setSteamCmdInstalled(false);
       }
     };
     checkSteamCmd();
-  }, [setSteamCmdInstalled]);
+  }, [setSteamCmdInstalled, setSteamCmdPath]);
 
   // Handle SteamCMD installation
   const handleInstallSteamCmd = async () => {
@@ -121,6 +131,8 @@ export const Dashboard: FC<DashboardProps> = () => {
         }
       });
       setSteamCmdInstalled(true);
+      const paths = getSteamPaths();
+      setSteamCmdPath(paths.steamcmdDir);
     } catch (error) {
       addLog(
         "error",
@@ -373,6 +385,12 @@ export const Dashboard: FC<DashboardProps> = () => {
               <Text color={theme.warning}>○ Not Installed</Text>
             )}
           </Box>
+          {steamCmdInstalled && steamCmdPath && (
+            <Box>
+              <Text>Location: </Text>
+              <Text dimColor>{steamCmdPath}</Text>
+            </Box>
+          )}
         </Box>
       </Box>
 

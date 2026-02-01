@@ -152,6 +152,8 @@ type SteamCmdState = {
   installProgress: string;
   /** Installation progress percentage (0-100) */
   installPercent: number;
+  /** SteamCMD installation directory path */
+  path: string | null;
 };
 
 /** Store actions */
@@ -213,6 +215,7 @@ type Actions = {
   setSteamCmdInstalled: (installed: boolean | null) => void;
   setSteamCmdInstalling: (installing: boolean) => void;
   setSteamCmdInstallProgress: (message: string, percent: number) => void;
+  setSteamCmdPath: (path: string | null) => void;
   resetSteamCmdInstall: () => void;
 };
 
@@ -335,6 +338,7 @@ export const useStore = create<Store>((set) => ({
     installing: false,
     installProgress: "",
     installPercent: 0,
+    path: null,
   },
 
   // Actions
@@ -559,6 +563,11 @@ export const useStore = create<Store>((set) => ({
           installProgress: message,
           installPercent: percent,
         },
+      })),
+
+    setSteamCmdPath: (path) =>
+      set((state) => ({
+        steamcmd: { ...state.steamcmd, path },
       })),
 
     resetSteamCmdInstall: () =>

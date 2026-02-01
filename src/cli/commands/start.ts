@@ -4,7 +4,12 @@
  */
 
 import type { AppConfig } from "../../config/mod.js";
-import { type ProcessState, Watchdog } from "../../server/mod.js";
+import {
+  type ProcessState,
+  removePidFile,
+  Watchdog,
+  writePidFile,
+} from "../../server/mod.js";
 import { isValheimInstalled } from "../../steamcmd/mod.js";
 import { getPlatform } from "../../utils/platform.js";
 import type { StartArgs } from "../args.js";
@@ -93,6 +98,18 @@ export async function startCommand(
 
   try {
     await activeWatchdog.start();
+
+    // Write PID file so stop command can find the server
+    const pid = activeWatchdog.serverProcess.pid;
+    if (pid) {
+      await writePidFile({
+        pid,
+        startedAt: new Date().toISOString(),
+        world: serverConfig.world,
+        port: serverConfig.port,
+      });
+    }
+
     console.log("\nServer started. Press Ctrl+C to stop.\n");
 
     // Keep the process running
@@ -129,6 +146,8 @@ function setupShutdownHandlers(): void {
       await activeWatchdog.stop();
       activeWatchdog = null;
     }
+    // Clean up PID file
+    await removePidFile();
     process.exit(0);
   };
 

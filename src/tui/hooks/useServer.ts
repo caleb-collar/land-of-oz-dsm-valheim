@@ -3,14 +3,22 @@
  * Integrates with ValheimProcess and Watchdog for real server management
  */
 
-import { useCallback, useEffect, useRef } from "react";
-import {
-  type ProcessState,
-  type ServerLaunchConfig,
-  Watchdog,
-  type WatchdogEvents,
+import { useCallback, useEffect } from "react";
+import type {
+  ProcessState,
+  ServerLaunchConfig,
+  WatchdogEvents,
 } from "../../server/mod.js";
 import { type UpdateCallback, updateValheim } from "../../steamcmd/updater.js";
+import {
+  getWatchdog,
+  hasActiveServer,
+  isUpdating,
+  killServer,
+  setUpdating,
+  startServer,
+  stopServer,
+} from "../serverManager.js";
 import { type ServerStatus, useStore } from "../store.js";
 
 /**
@@ -60,19 +68,13 @@ function buildLaunchConfig(config: {
 /**
  * Hook for managing server lifecycle
  * Provides start/stop controls and manages uptime counter
- * Integrates with actual ValheimProcess and Watchdog
+ * Uses the global serverManager to persist state across screen changes
  */
 export function useServer() {
   const status = useStore((s) => s.server.status);
   const config = useStore((s) => s.config);
   const rcon = useStore((s) => s.rcon);
   const actions = useStore((s) => s.actions);
-
-  // Ref to hold the watchdog instance (persists across renders)
-  const watchdogRef = useRef<Watchdog | null>(null);
-
-  // Ref to track if update is in progress
-  const updatingRef = useRef(false);
 
   /**
    * Creates watchdog event handlers connected to the store
@@ -136,6 +138,11 @@ export function useServer() {
       return;
     }
 
+    if (hasActiveServer()) {
+      actions.addLog("warn", "Server is already managed by this instance");
+      return;
+    }
+
     actions.setServerStatus("starting");
     actions.addLog("info", "Starting Valheim server...");
     actions.resetUptime();
@@ -144,19 +151,17 @@ export function useServer() {
       const launchConfig = buildLaunchConfig(config);
       const events = createWatchdogEvents();
 
-      // Create watchdog with default config (can be extended to use stored config)
-      watchdogRef.current = new Watchdog(launchConfig, {}, events);
-      await watchdogRef.current.start();
+      // Use global server manager to start and persist the watchdog
+      const watchdog = await startServer(launchConfig, {}, events);
 
       // Get PID if available
-      const pid = watchdogRef.current.serverProcess.pid;
+      const pid = watchdog.serverProcess.pid;
       if (pid) {
         actions.setServerPid(pid);
       }
     } catch (error) {
       actions.setServerStatus("offline");
       actions.addLog("error", `Failed to start server: ${error}`);
-      watchdogRef.current = null;
     }
   }, [status, config, actions, createWatchdogEvents]);
 
@@ -173,10 +178,7 @@ export function useServer() {
     actions.addLog("info", "Stopping Valheim server...");
 
     try {
-      if (watchdogRef.current) {
-        await watchdogRef.current.stop();
-        watchdogRef.current = null;
-      }
+      await stopServer();
       actions.setServerPid(null);
       actions.addLog("info", "Server stopped");
     } catch (error) {
@@ -191,10 +193,7 @@ export function useServer() {
     actions.addLog("warn", "Force killing server...");
 
     try {
-      if (watchdogRef.current) {
-        await watchdogRef.current.kill();
-        watchdogRef.current = null;
-      }
+      await killServer();
     } catch {
       // Ignore errors during force kill
     }
@@ -234,12 +233,12 @@ export function useServer() {
         return;
       }
 
-      if (updatingRef.current) {
+      if (isUpdating()) {
         actions.addLog("warn", "Update already in progress");
         return;
       }
 
-      updatingRef.current = true;
+      setUpdating(true);
       actions.addLog("info", "Updating Valheim server...");
 
       try {
@@ -252,7 +251,7 @@ export function useServer() {
       } catch (error) {
         actions.addLog("error", `Failed to update server: ${error}`);
       } finally {
-        updatingRef.current = false;
+        setUpdating(false);
       }
     },
     [status, actions]
@@ -301,18 +300,9 @@ export function useServer() {
     return () => clearInterval(interval);
   }, [status, actions]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      // Stop the server when the TUI is closed
-      if (watchdogRef.current) {
-        watchdogRef.current.stop().catch(() => {
-          // Force kill if graceful stop fails
-          watchdogRef.current?.kill().catch(() => {});
-        });
-      }
-    };
-  }, []);
+  // NOTE: We intentionally do NOT cleanup on unmount here!
+  // The server should keep running when navigating between screens.
+  // Cleanup happens only when the entire TUI exits (handled in App.tsx)
 
   return {
     status,
@@ -325,7 +315,7 @@ export function useServer() {
     isOnline: status === "online",
     isOffline: status === "offline",
     isTransitioning: status === "starting" || status === "stopping",
-    isUpdating: updatingRef.current,
-    watchdog: watchdogRef.current,
+    isUpdating: isUpdating(),
+    watchdog: getWatchdog(),
   };
 }

@@ -32,6 +32,17 @@ export {
   type ServerLogLevel,
   type ServerLogSubscriber,
 } from "./logs.js";
+// PID file management
+export {
+  getPidFilePath,
+  getRunningServer,
+  isProcessRunning,
+  killProcess,
+  type PidFileData,
+  readPidFile,
+  removePidFile,
+  writePidFile,
+} from "./pidfile.js";
 // Process management
 export {
   type ProcessEvents,

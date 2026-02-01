@@ -17,6 +17,7 @@ import { Console } from "./screens/Console.js";
 import { Dashboard } from "./screens/Dashboard.js";
 import { Settings } from "./screens/Settings.js";
 import { Worlds } from "./screens/Worlds.js";
+import { cleanupOnExit } from "./serverManager.js";
 import { type Screen, useStore } from "./store.js";
 import { theme } from "./theme.js";
 
@@ -58,7 +59,10 @@ export const App: FC = () => {
     // Quit - use useApp().exit() for proper fullscreen cleanup
     if (input === "q" || input === "Q" || (key.ctrl && input === "c")) {
       addLog("info", "Shutting down...");
-      exit();
+      // Cleanup server before exiting
+      cleanupOnExit()
+        .catch(() => {})
+        .finally(() => exit());
       return;
     }
 

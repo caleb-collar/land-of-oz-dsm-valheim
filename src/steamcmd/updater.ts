@@ -3,6 +3,7 @@
  * Uses @caleb-collar/steamcmd package for installation
  */
 
+import fs from "node:fs/promises";
 import steamcmd from "@caleb-collar/steamcmd";
 import { getSteamPaths } from "./paths.js";
 
@@ -58,6 +59,24 @@ export async function installValheim(
   const report = (status: UpdateStatus) => {
     onProgress?.(status);
   };
+
+  // Ensure SteamCMD is installed first
+  const isInstalled = await steamcmd.isInstalled();
+  if (!isInstalled) {
+    report({
+      stage: "error",
+      progress: 0,
+      message: "SteamCMD is not installed. Please install it first.",
+    });
+    throw new Error("SteamCMD is not installed");
+  }
+
+  // Ensure the steamcmd directory exists
+  try {
+    await fs.mkdir(steamcmdDir, { recursive: true });
+  } catch {
+    // Directory likely exists, continue
+  }
 
   report({
     stage: "downloading",
@@ -118,10 +137,22 @@ export async function installValheim(
       message: "Valheim installed successfully",
     });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Provide more helpful error messages for common exit codes
+    let helpfulMessage = `Installation failed: ${errorMessage}`;
+    if (errorMessage.includes("code 7")) {
+      helpfulMessage =
+        "Installation failed: SteamCMD download error (exit code 7). This may be due to network issues, Steam server problems, or disk space. Try again in a few minutes.";
+    } else if (errorMessage.includes("code 5")) {
+      helpfulMessage =
+        "Installation failed: SteamCMD package error (exit code 5). The SteamCMD installation may be corrupted. Try reinstalling SteamCMD.";
+    }
+
     report({
       stage: "error",
       progress: 0,
-      message: `Installation failed: ${error instanceof Error ? error.message : String(error)}`,
+      message: helpfulMessage,
     });
     throw error;
   }
