@@ -63,6 +63,14 @@ describe("buildServerArgs", () => {
     expect(args[passIdx + 1]).toBe("testpass123");
   });
 
+  it("excludes password when empty", () => {
+    const config = getDefaultConfig();
+    config.password = "";
+    const args = buildServerArgs(config);
+
+    expect(args.includes("-password")).toBe(false);
+  });
+
   it("includes public flag as 0", () => {
     const config = getDefaultConfig();
     config.public = false;

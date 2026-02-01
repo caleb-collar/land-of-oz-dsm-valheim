@@ -21,7 +21,11 @@ export function buildServerArgs(config: ServerConfig): string[] {
   args.push("-name", config.name);
   args.push("-port", String(config.port));
   args.push("-world", config.world);
-  args.push("-password", config.password);
+
+  // Only include password if set (omit for no password)
+  if (config.password) {
+    args.push("-password", config.password);
+  }
 
   // Boolean as 0/1
   args.push("-public", config.public ? "1" : "0");
