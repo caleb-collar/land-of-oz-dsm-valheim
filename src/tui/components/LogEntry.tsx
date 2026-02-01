@@ -32,16 +32,21 @@ function getLevelColor(level: LogLevel): string {
 
 /**
  * Single log entry with timestamp, level, and message
+ * Truncates long messages to prevent layout issues
  */
 export const LogEntry: FC<LogEntryProps> = (props: LogEntryProps) => {
   const { entry } = props;
   const levelColor = getLevelColor(entry.level);
 
   return (
-    <Box>
-      <Text dimColor>[{formatTime(entry.timestamp)}]</Text>
-      <Text color={levelColor}>[{entry.level.toUpperCase().padEnd(5)}]</Text>
-      <Text>{entry.message}</Text>
+    <Box flexShrink={0}>
+      <Text dimColor wrap="truncate">
+        [{formatTime(entry.timestamp)}]
+      </Text>
+      <Text color={levelColor} wrap="truncate">
+        [{entry.level.toUpperCase().padEnd(5)}]
+      </Text>
+      <Text wrap="truncate-end">{entry.message}</Text>
     </Box>
   );
 };

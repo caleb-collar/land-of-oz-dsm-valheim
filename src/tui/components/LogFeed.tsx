@@ -31,6 +31,7 @@ export const LogFeed: FC<LogFeedProps> = () => {
       borderColor={theme.muted}
       height={VISIBLE_ENTRIES + 2}
       paddingX={1}
+      overflow="hidden"
     >
       <Box justifyContent="space-between">
         <Text bold dimColor>
@@ -42,7 +43,7 @@ export const LogFeed: FC<LogFeedProps> = () => {
           </Text>
         )}
       </Box>
-      <Box flexDirection="column" marginTop={0}>
+      <Box flexDirection="column" marginTop={0} overflow="hidden">
         {visible.length === 0 ? (
           <Text dimColor>No log entries yet...</Text>
         ) : (

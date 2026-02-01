@@ -100,6 +100,7 @@ export const Console: FC = () => {
         borderColor={theme.muted}
         height={visibleCount + 2}
         paddingX={1}
+        overflow="hidden"
       >
         {visibleEntries.length === 0 ? (
           <Text dimColor>
