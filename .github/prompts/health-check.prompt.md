@@ -13,11 +13,11 @@ Before making any changes:
    conventions
 2. Review `.agent-docs/` for detailed implementation specifications
 3. Understand this is a **Node.js 22.x** project using:
-   - **Ink 5.x** (React 18 for terminals) for the TUI
+   - **Ink 6.x** (React 19 for terminals) for the TUI
    - **Zustand 5.x** for state management
-   - **Zod 3.x** for runtime validation
-   - **Biome** for linting and formatting
-   - **Vitest** for testing
+   - **Zod 4.x** for runtime validation
+   - **Biome 2.x** for linting and formatting
+   - **Vitest 3.x** for testing
    - **tsx** for TypeScript execution
 
 ## Health Check Phases
@@ -37,7 +37,7 @@ Execute each phase in order, fixing issues as you find them.
    - Review both `dependencies` and `devDependencies`
 
 2. **Verify dependency compatibility:**
-   - React 18 compatibility with Ink 5
+   - React 19 compatibility with Ink 6
    - All peer dependencies satisfied
    - No conflicting version requirements
 
@@ -68,7 +68,7 @@ practices.
 
 #### tsconfig.json Checks:
 
-- [ ] `jsx: "react-jsx"` for React 18 JSX transform
+- [ ] `jsx: "react-jsx"` for React 19 JSX transform
 - [ ] `module: "NodeNext"` and `moduleResolution: "NodeNext"`
 - [ ] `strict: true` for type safety
 - [ ] Path aliases work correctly

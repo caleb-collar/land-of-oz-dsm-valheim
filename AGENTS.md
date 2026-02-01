@@ -8,14 +8,16 @@ for terminals) with ASCII Motion animations.
 
 ## Quick Reference
 
-| Aspect         | Details                          |
-| -------------- | -------------------------------- |
-| Runtime        | Node.js 22.x (TypeScript)        |
-| TUI            | Ink 5.x (React) with Yoga layout |
-| State          | Zustand                          |
-| Config Storage | conf (JSON)                      |
-| Animation      | ASCII Motion MCP tooling         |
-| Entry Point    | `main.ts`                        |
+| Aspect         | Details                           |
+| -------------- | --------------------------------- |
+| Runtime        | Node.js 22.x (TypeScript)         |
+| TUI            | Ink 6.x (React 19) with Yoga      |
+| State          | Zustand 5.x                       |
+| Validation     | Zod 4.x                           |
+| Config Storage | conf 13.x (JSON)                  |
+| Linting        | Biome 2.x                         |
+| Animation      | ASCII Motion MCP tooling          |
+| Entry Point    | `main.ts`                         |
 
 ## Valheim Color Palette
 
@@ -143,8 +145,8 @@ Key tools to search for:
 
 ```json
 {
-  "name": "oz-valheim",
-  "version": "0.1.0",
+  "name": "oz-dsm-valheim",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "tsx watch main.ts",
@@ -156,16 +158,16 @@ Key tools to search for:
   },
   "dependencies": {
     "conf": "^13.0.1",
-    "fullscreen-ink": "^0.0.2",
-    "ink": "^5.1.0",
-    "react": "^18.3.1",
-    "zod": "^3.24.2",
+    "fullscreen-ink": "^0.1.0",
+    "ink": "^6.6.0",
+    "react": "^19.2.4",
+    "zod": "^4.3.6",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.3.13",
     "@types/node": "^22.13.1",
-    "@types/react": "^18.3.18",
+    "@types/react": "^19.2.10",
     "tsx": "^4.19.2",
     "tsup": "^8.3.6",
     "typescript": "^5.7.3",
