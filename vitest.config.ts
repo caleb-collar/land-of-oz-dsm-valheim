@@ -8,9 +8,16 @@ export default defineConfig({
     exclude: ["node_modules", "dist", "node-demo"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "json", "html", "lcov"],
+      reporter: ["text", "json", "html", "lcov", "json-summary"],
       include: ["src/**/*.ts"],
       exclude: ["src/**/*.test.ts", "src/**/mod.ts"],
+      thresholds: {
+        // Baseline thresholds - increase as more tests are added
+        statements: 24,
+        branches: 60,
+        functions: 60,
+        lines: 24,
+      },
     },
   },
 });
