@@ -15,6 +15,10 @@ export type WorldInfo = {
   fwlPath: string;
   size: number;
   modified: Date;
+  /** Source folder identifier: 'server' for worlds/, 'client' for worlds_local/ */
+  source: "server" | "client";
+  /** True if the world only has .fwl but no .db file yet (needs server to save) */
+  pendingSave: boolean;
 };
 
 /**
@@ -95,25 +99,36 @@ export function getDefaultWorldsDir(): string {
 
 /**
  * Lists worlds from a single directory
+ * Finds worlds with both .db and .fwl files, as well as pending worlds with only .fwl
  * @param dir Directory to search
+ * @param source Source identifier for the directory
  * @returns Array of world info objects
  */
-async function listWorldsFromDir(dir: string): Promise<WorldInfo[]> {
+async function listWorldsFromDir(
+  dir: string,
+  source: "server" | "client"
+): Promise<WorldInfo[]> {
   const worlds: WorldInfo[] = [];
+  const foundNames = new Set<string>();
 
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true });
 
+    // First pass: find complete worlds with .db files
     for (const entry of entries) {
       if (entry.isFile() && entry.name.endsWith(".db")) {
+        // Skip backup files
+        if (entry.name.includes(".db.")) continue;
+
         const name = entry.name.replace(".db", "");
         const dbPath = path.join(dir, entry.name);
         const fwlPath = path.join(dir, `${name}.fwl`);
 
-        // Check if .fwl exists - both files are required for a valid world
+        // Check if .fwl exists - both files are required for a complete world
         if (!(await exists(fwlPath))) continue;
 
         const dbStat = await fs.stat(dbPath);
+        foundNames.add(name);
 
         worlds.push({
           name,
@@ -121,6 +136,35 @@ async function listWorldsFromDir(dir: string): Promise<WorldInfo[]> {
           fwlPath,
           size: dbStat.size,
           modified: dbStat.mtime ?? new Date(),
+          source,
+          pendingSave: false,
+        });
+      }
+    }
+
+    // Second pass: find pending worlds with only .fwl files
+    for (const entry of entries) {
+      if (entry.isFile() && entry.name.endsWith(".fwl")) {
+        // Skip backup files
+        if (entry.name.includes(".fwl.")) continue;
+
+        const name = entry.name.replace(".fwl", "");
+
+        // Skip if we already found this world with a .db file
+        if (foundNames.has(name)) continue;
+
+        const fwlPath = path.join(dir, entry.name);
+        const dbPath = path.join(dir, `${name}.db`);
+        const fwlStat = await fs.stat(fwlPath);
+
+        worlds.push({
+          name,
+          dbPath, // Path where .db would be (doesn't exist yet)
+          fwlPath,
+          size: 0, // No save data yet
+          modified: fwlStat.mtime ?? new Date(),
+          source,
+          pendingSave: true,
         });
       }
     }
@@ -141,14 +185,14 @@ async function listWorldsFromDir(dir: string): Promise<WorldInfo[]> {
 export async function listWorlds(worldsDir?: string): Promise<WorldInfo[]> {
   // If a specific directory is provided, only search there
   if (worldsDir) {
-    const worlds = await listWorldsFromDir(worldsDir);
+    const worlds = await listWorldsFromDir(worldsDir, "server");
     return worlds.sort((a, b) => b.modified.getTime() - a.modified.getTime());
   }
 
   // Otherwise, search both dedicated server and client directories
   const [serverWorlds, clientWorlds] = await Promise.all([
-    listWorldsFromDir(getDedicatedServerWorldsDir()),
-    listWorldsFromDir(getClientWorldsDir()),
+    listWorldsFromDir(getDedicatedServerWorldsDir(), "server"),
+    listWorldsFromDir(getClientWorldsDir(), "client"),
   ]);
 
   // Merge and deduplicate by name (prefer server copy if same name exists)
@@ -194,12 +238,18 @@ export async function importWorld(
 
   const stat = await fs.stat(targetDb);
 
+  // Determine source based on target directory
+  const serverDir = getDedicatedServerWorldsDir();
+  const source: "server" | "client" = dir === serverDir ? "server" : "client";
+
   return {
     name,
     dbPath: targetDb,
     fwlPath: targetFwl,
     size: stat.size,
     modified: stat.mtime ?? new Date(),
+    source,
+    pendingSave: false,
   };
 }
 
@@ -281,20 +331,37 @@ export async function getWorldInfo(
 }
 
 /**
- * Checks if a world exists
+ * Checks if a world exists in any of the world directories
+ * A world is considered to exist if it has at least a .fwl file
+ * (the .db file is created on first save)
  * @param worldName Name of the world to check
- * @param worldsDir Optional directory (defaults to system worlds dir)
- * @returns True if the world exists
+ * @param worldsDir Optional specific directory (defaults to checking all world dirs)
+ * @returns True if the world exists (has at least .fwl file)
  */
 export async function worldExists(
   worldName: string,
   worldsDir?: string
 ): Promise<boolean> {
-  const dir = worldsDir ?? getDefaultWorldsDir();
-  const dbPath = path.join(dir, `${worldName}.db`);
-  const fwlPath = path.join(dir, `${worldName}.fwl`);
+  // If a specific directory is provided, only check there
+  if (worldsDir) {
+    const fwlPath = path.join(worldsDir, `${worldName}.fwl`);
+    // World exists if at least .fwl exists (pending save counts as existing)
+    return await exists(fwlPath);
+  }
 
-  return (await exists(dbPath)) && (await exists(fwlPath));
+  // Check both dedicated server and client directories
+  const serverDir = getDedicatedServerWorldsDir();
+  const clientDir = getClientWorldsDir();
+
+  const serverFwlPath = path.join(serverDir, `${worldName}.fwl`);
+  const clientFwlPath = path.join(clientDir, `${worldName}.fwl`);
+
+  // Check if .fwl exists in either directory
+  const serverExists = await exists(serverFwlPath);
+  if (serverExists) return true;
+
+  const clientExists = await exists(clientFwlPath);
+  return clientExists;
 }
 
 /**

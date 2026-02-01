@@ -66,6 +66,8 @@ type ServerState = {
   updateAvailable: boolean;
   lastSave: Date | null;
   memoryUsage: number | null;
+  /** True when a new world is being generated (can take over a minute) */
+  worldGenerating: boolean;
 };
 
 /** Logs state slice */
@@ -170,6 +172,7 @@ type Actions = {
   setUpdateAvailable: (available: boolean) => void;
   setLastSave: (date: Date | null) => void;
   setMemoryUsage: (bytes: number | null) => void;
+  setWorldGenerating: (generating: boolean) => void;
 
   // Logs actions
   addLog: (level: LogLevel, message: string) => void;
@@ -256,6 +259,7 @@ export const useStore = create<Store>((set) => ({
     updateAvailable: false,
     lastSave: null,
     memoryUsage: null,
+    worldGenerating: false,
   },
 
   // Initial logs state
@@ -405,6 +409,11 @@ export const useStore = create<Store>((set) => ({
     setMemoryUsage: (memoryUsage) =>
       set((state) => ({
         server: { ...state.server, memoryUsage },
+      })),
+
+    setWorldGenerating: (worldGenerating) =>
+      set((state) => ({
+        server: { ...state.server, worldGenerating },
       })),
 
     // Logs actions

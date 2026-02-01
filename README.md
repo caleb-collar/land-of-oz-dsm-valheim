@@ -126,7 +126,7 @@ via Ink. Motion is created using ASCII Motion.
 > ASCII header anchors the top of the screen, followed by a responsive layout
 > that separates active management from passive monitoring. Where possible, the
 > system uses Ink to display data (realtime active react components). There is a
-> real-time log feed with color-coded event markers. ![oz-dsm-valheim](image-1.png)
+> real-time log feed with color-coded event markers. ![tui](image-2.png)
 
 ---
 

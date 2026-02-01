@@ -19,6 +19,7 @@ export type ParsedEvent =
   | { type: "player_join"; name: string }
   | { type: "player_leave"; name: string }
   | { type: "world_saved" }
+  | { type: "world_generated" }
   | { type: "server_ready" }
   | { type: "server_shutdown" }
   | { type: "error"; message: string };
@@ -79,6 +80,12 @@ export function parseEvent(line: string): ParsedEvent | null {
   // World saved
   if (line.includes("World saved")) {
     return { type: "world_saved" };
+  }
+
+  // World generated (new world files created)
+  // Triggered by "Done generating locations" log message
+  if (line.includes("Done generating locations")) {
+    return { type: "world_generated" };
   }
 
   // Server ready (fully started)

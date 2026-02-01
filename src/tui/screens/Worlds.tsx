@@ -69,6 +69,7 @@ export const Worlds: FC = () => {
   const closeModal = useStore((s) => s.actions.closeModal);
   const addLog = useStore((s) => s.actions.addLog);
   const serverStatus = useStore((s) => s.server.status);
+  const worldGenerating = useStore((s) => s.server.worldGenerating);
   const setEditingField = useStore((s) => s.actions.setEditingField);
 
   const [mode, setModeInternal] = useState<Mode>("list");
@@ -79,6 +80,8 @@ export const Worlds: FC = () => {
   const [loading, setLoading] = useState(false);
   const [operationStatus, setOperationStatus] = useState("");
   const [prevServerStatus, setPrevServerStatus] = useState(serverStatus);
+  const [prevWorldGenerating, setPrevWorldGenerating] =
+    useState(worldGenerating);
 
   // Wrapper to set mode and update editingField for global input prevention
   const setMode = useCallback(
@@ -107,6 +110,16 @@ export const Worlds: FC = () => {
     }
     setPrevServerStatus(serverStatus);
   }, [serverStatus, prevServerStatus, refresh, addLog]);
+
+  // Auto-refresh when world generation completes
+  useEffect(() => {
+    if (prevWorldGenerating && !worldGenerating) {
+      // World generation just completed, refresh worlds list
+      refresh();
+      addLog("info", "Refreshed worlds list after world generation completed");
+    }
+    setPrevWorldGenerating(worldGenerating);
+  }, [worldGenerating, prevWorldGenerating, refresh, addLog]);
 
   // Handle setting active world
   const handleSetActive = useCallback(async () => {
@@ -579,10 +592,28 @@ export const Worlds: FC = () => {
                 {config.world}
               </Text>
               <Text color={theme.success}> (Active)</Text>
-              <Text color={theme.warning}> - Not generated</Text>
+              {worldGenerating ? (
+                <Box marginLeft={1}>
+                  <Spinner />
+                  <Text color={theme.warning}> Generating...</Text>
+                </Box>
+              ) : serverStatus === "starting" ? (
+                <Box marginLeft={1}>
+                  <Spinner />
+                  <Text color={theme.info}> Server starting...</Text>
+                </Box>
+              ) : (
+                <Text color={theme.warning}> - Not generated</Text>
+              )}
             </Box>
             <Box marginLeft={2}>
-              <Text dimColor>Start the server to generate this world</Text>
+              {worldGenerating ? (
+                <Text dimColor>
+                  New world is being generated (this may take ~1 minute)
+                </Text>
+              ) : (
+                <Text dimColor>Start the server to generate this world</Text>
+              )}
             </Box>
           </Box>
         )}
@@ -608,13 +639,31 @@ export const Worlds: FC = () => {
                     {world.name}
                   </Text>
                   {isActive && <Text color={theme.success}> (Active)</Text>}
+                  {world.pendingSave && (
+                    <Text color={theme.warning}> - Pending Save</Text>
+                  )}
                 </Box>
                 <Box marginLeft={2}>
-                  <Text dimColor>Size: {formatBytes(world.size)}</Text>
+                  {world.pendingSave ? (
+                    <Text dimColor>
+                      World generated but not yet saved to disk
+                    </Text>
+                  ) : (
+                    <>
+                      <Text dimColor>Size: {formatBytes(world.size)}</Text>
+                      <Text dimColor> | </Text>
+                      <Text dimColor>
+                        Folder:{" "}
+                        {world.source === "server" ? "worlds" : "worlds_local"}
+                      </Text>
+                    </>
+                  )}
                 </Box>
-                <Box marginLeft={2}>
-                  <Text dimColor>Modified: {formatDate(world.modified)}</Text>
-                </Box>
+                {!world.pendingSave && (
+                  <Box marginLeft={2}>
+                    <Text dimColor>Modified: {formatDate(world.modified)}</Text>
+                  </Box>
+                )}
               </Box>
             );
           })

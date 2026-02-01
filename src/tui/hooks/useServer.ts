@@ -5,11 +5,13 @@
 
 import { useCallback, useEffect } from "react";
 import type {
+  ParsedEvent,
   ProcessState,
   ServerLaunchConfig,
   WatchdogEvents,
 } from "../../server/mod.js";
 import { type UpdateCallback, updateValheim } from "../../steamcmd/updater.js";
+import { worldExists } from "../../valheim/worlds.js";
 import {
   getWatchdog,
   hasActiveServer,
@@ -87,6 +89,9 @@ export function useServer() {
 
         if (state === "crashed") {
           actions.addLog("error", "Server crashed");
+          actions.setWorldGenerating(false);
+        } else if (state === "offline") {
+          actions.setWorldGenerating(false);
         }
       },
       onLog: (line: string) => {
@@ -112,6 +117,17 @@ export function useServer() {
       },
       onError: (error: Error) => {
         actions.addLog("error", `Server error: ${error.message}`);
+      },
+      onEvent: (event: ParsedEvent) => {
+        // Handle world generation completion
+        if (event.type === "world_generated") {
+          actions.setWorldGenerating(false);
+          actions.addLog("info", "World generation complete");
+        }
+        // Handle world save for lastSave timestamp
+        if (event.type === "world_saved") {
+          actions.setLastSave(new Date());
+        }
       },
       onWatchdogRestart: (attempt: number, maxAttempts: number) => {
         actions.addLog(
@@ -147,6 +163,16 @@ export function useServer() {
     actions.addLog("info", "Starting Valheim server...");
     actions.resetUptime();
 
+    // Check if we're generating a new world
+    const worldNotGenerated = !(await worldExists(config.world));
+    if (worldNotGenerated) {
+      actions.setWorldGenerating(true);
+      actions.addLog(
+        "info",
+        `World "${config.world}" not found - will generate new world (this may take ~1 minute)`
+      );
+    }
+
     try {
       const launchConfig = buildLaunchConfig(config);
       const events = createWatchdogEvents();
@@ -161,6 +187,7 @@ export function useServer() {
       }
     } catch (error) {
       actions.setServerStatus("offline");
+      actions.setWorldGenerating(false);
       actions.addLog("error", `Failed to start server: ${error}`);
     }
   }, [status, config, actions, createWatchdogEvents]);

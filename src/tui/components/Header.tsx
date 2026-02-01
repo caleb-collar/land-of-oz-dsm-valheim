@@ -6,10 +6,13 @@
 
 import { Box, Text } from "ink";
 import React, { type FC, useEffect, useMemo, useRef, useState } from "react";
+import packageJson from "../../../package.json" with { type: "json" };
 import { useTerminalSize } from "../hooks/useTerminalSize.js";
 import { useStore } from "../store.js";
 import { getStatusColor, theme, valheimPalette } from "../theme.js";
 import { FlamesAscii } from "./FlamesAscii.js";
+
+const VERSION = packageJson.version;
 
 // Final ASCII art text
 const FINAL_VALHEIM = `██╗   ██╗ █████╗ ██╗     ██╗  ██╗███████╗██╗███╗   ███╗
@@ -415,7 +418,7 @@ export const Header: FC = () => {
       return (
         <Box justifyContent="space-between">
           <Text color={statusColor}>● {capitalize(status).toUpperCase()}</Text>
-          <Text dimColor>v0.1.0</Text>
+          <Text dimColor>v{VERSION}</Text>
         </Box>
       );
     }
@@ -433,7 +436,7 @@ export const Header: FC = () => {
             <Text dimColor> | Players: {players.length}</Text>
           )}
         </Box>
-        <Text dimColor>Valheim DSM v0.1.0</Text>
+        <Text dimColor>Valheim OZ DSM v{VERSION}</Text>
       </Box>
     );
   };
