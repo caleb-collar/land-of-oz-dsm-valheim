@@ -5,20 +5,22 @@
 
 ## About
 
-- This software is a dedicated server manager (DSM) for Valheim.
-- The Valheim DSM is part of the Land of Oz series of software.
-- This software is to provide an easy to use container and virtualization free
-  dedicate server hosting experience.
+**TL;DR:** A terminal-based Valheim server manager that doesn't need Docker, VMs, or a PhD in sysadmin.
+
+This is a dedicated server manager for Valheim that runs directly on your machine—no containers, no virtualization, just TypeScript and Node.js. Born from the "Land of Oz" series of server management tools, this project aims to make hosting a Valheim server as painless as possible.
+
+Whether you're running a private server for friends or managing a public realm, this tool handles the boring stuff (SteamCMD updates, crash recovery, config management) so you can focus on the Viking stuff (building, exploring, dying to Deathsquitos).
+
+[CONTRIBUTING.md](CONTRIBUTING.md) if you want to help make it better.
 
 ## Details
 
-- The software is written in TypeScript using Node.js as the runtime
-- The DSM program is a rich featured management tool with a Yoga powered TUI.
-  - The TUI uses Ink which is a React flavored TUI framework
-  - The motion in the TUI is accelerated by the ASCII Motion app.
-    - Any AI agent working in this repo has access to the ASCII Motion MCP
-      server tooling for generating beautiful and efficient animated ascii based
-      art.
+- **Runtime:** Node.js 22.x with TypeScript 
+- **TUI Framework:** Ink 6.x—React, but for your terminal 
+- **Layout Engine:** Yoga flexbox—the same layout engine that powers React Native
+- **Animations:** (ASCII Motion)[https://ascii-motion.app/]—why settle for static ASCII art when you can have *animated* ASCII art?
+- **State Management:** Zustand
+
 
 ## Quick Start
 
@@ -148,7 +150,7 @@ aesthetic. It prioritizes real-time observability while keeping management tools
 front and center. Below is a generalized mockup of the DSM TUI built using React
 via Ink. Motion is created using ASCII Motion.
 
-> The Valheim DSM: Land of Oz interface utilizes a structured three-zone TUI
+> The Valheim DSM interface utilizes a structured three-zone TUI
 > architecture designed for maximum administrative visibility. A bold animated
 > ASCII header anchors the top of the screen, followed by a responsive layout
 > that separates active management from passive monitoring. Where possible, the
