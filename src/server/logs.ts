@@ -82,12 +82,19 @@ export function parseEvent(line: string): ParsedEvent | null {
     }
   }
 
-  // Player leave is harder to detect reliably
-  // Socket closes include IP but not player name
-  if (line.includes("Closing socket")) {
-    // We can't get player name from this, would need IP->player mapping
-    return null;
+  // Player leave detection - improved patterns
+  // "Destroying abandoned non persistent zdo" appears when player leaves
+  if (line.includes("Destroying abandoned non persistent zdo")) {
+    // Extract player name if available from context
+    // This is a heuristic - may need refinement
+    const playerMatch = line.match(/owner (\S+)/);
+    if (playerMatch?.[1]) {
+      return { type: "player_leave", name: playerMatch[1] };
+    }
   }
+
+  // Alternative: "Closing socket" with IP (less reliable)
+  // We'll need RCON to get accurate player lists
 
   // World saved
   if (line.includes("World saved")) {

@@ -9,6 +9,10 @@
 
 export { RconClient } from "./client.js";
 export {
+  type RconManagerState,
+  rconManager,
+} from "./manager.js";
+export {
   createAuthPacket,
   createCommandPacket,
   decodePacket,
@@ -26,4 +30,6 @@ export {
   type RconPacket,
   type RconState,
   ValheimCommands,
+  ValheimEvents,
+  ValheimGlobalKeys,
 } from "./types.js";

@@ -5,6 +5,7 @@
  */
 
 import { useCallback, useEffect, useRef } from "react";
+import { rconManager } from "../../rcon/mod.js";
 import type {
   ParsedEvent,
   ProcessState,
@@ -416,6 +417,72 @@ export function useServer() {
 
     return () => clearInterval(interval);
   }, [status, actions]);
+
+  // Initialize RCON when config changes or server comes online
+  useEffect(() => {
+    if (!rcon.enabled) {
+      // RCON disabled, disconnect if connected
+      if (rconManager.isConnected()) {
+        rconManager.disconnect();
+        actions.setRconConnected(false);
+      }
+      return;
+    }
+
+    // Initialize RCON manager with config
+    rconManager.initialize(
+      {
+        host: "localhost",
+        port: rcon.port,
+        password: rcon.password,
+        timeout: rcon.timeout,
+        enabled: rcon.enabled,
+        autoReconnect: rcon.autoReconnect,
+      },
+      {
+        onConnectionStateChange: (state) => {
+          const connected = state === "connected";
+          actions.setRconConnected(connected);
+
+          if (connected) {
+            actions.addLog("info", "RCON connected");
+          } else if (state === "error") {
+            actions.addLog("warn", "RCON connection error");
+          } else if (state === "disconnected") {
+            actions.addLog("info", "RCON disconnected");
+          }
+        },
+        onPlayerListUpdate: (players) => {
+          // Sync player list from RCON
+          actions.setPlayers(players);
+        },
+        pollInterval: 10000, // Poll every 10 seconds
+      }
+    );
+
+    // Cleanup on unmount
+    return () => {
+      rconManager.disconnect();
+    };
+  }, [rcon, actions]);
+
+  // Auto-connect RCON when server comes online
+  useEffect(() => {
+    if (status === "online" && rcon.enabled && !rconManager.isConnected()) {
+      // Wait a moment for server to fully start before connecting
+      const timer = setTimeout(() => {
+        rconManager.connect().catch((error) => {
+          actions.addLog("warn", `RCON connection failed: ${error}`);
+        });
+      }, 3000); // 3 second delay
+
+      return () => clearTimeout(timer);
+    }
+
+    if (status === "offline" && rconManager.isConnected()) {
+      rconManager.disconnect();
+    }
+  }, [status, rcon.enabled, actions]);
 
   // NOTE: We intentionally do NOT cleanup on unmount here!
   // The server should keep running when navigating between screens.

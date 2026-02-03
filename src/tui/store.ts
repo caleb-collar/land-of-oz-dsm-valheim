@@ -188,6 +188,7 @@ type Actions = {
   setServerPid: (pid: number | null) => void;
   addPlayer: (name: string) => void;
   removePlayer: (name: string) => void;
+  setPlayers: (players: string[]) => void;
   incrementUptime: () => void;
   resetUptime: () => void;
   setWorld: (world: string | null) => void;
@@ -357,13 +358,13 @@ export const useStore = create<Store>((set) => ({
 
   // Initial RCON state
   rcon: {
-    enabled: false,
+    enabled: true,
     connected: false,
     port: 25575,
-    password: "",
+    password: "valheim-rcon",
     host: "localhost",
     timeout: 5000,
-    autoReconnect: false,
+    autoReconnect: true,
   },
 
   // Initial worlds state
@@ -424,6 +425,11 @@ export const useStore = create<Store>((set) => ({
           ...state.server,
           players: state.server.players.filter((p) => p !== name),
         },
+      })),
+
+    setPlayers: (players) =>
+      set((state) => ({
+        server: { ...state.server, players },
       })),
 
     incrementUptime: () =>

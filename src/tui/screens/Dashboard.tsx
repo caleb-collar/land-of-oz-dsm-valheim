@@ -19,8 +19,13 @@ import {
   registerStartupTask,
   unregisterStartupTask,
 } from "../../utils/mod.js";
+import { EventManager } from "../components/EventManager.js";
+import { GlobalKeysManager } from "../components/GlobalKeysManager.js";
 import { ConfirmModal } from "../components/Modal.js";
+import { PlayerManager } from "../components/PlayerManager.js";
+import { ServerInfoModal } from "../components/ServerInfoModal.js";
 import { Spinner } from "../components/Spinner.js";
+import { TimeControl } from "../components/TimeControl.js";
 import { useServer } from "../hooks/useServer.js";
 import { useStore } from "../store.js";
 import { getStatusColor, theme } from "../theme.js";
@@ -109,6 +114,8 @@ export const Dashboard: FC<DashboardProps> = () => {
   const memoryUsage = useStore((s) => s.server.memoryUsage);
   const startupPhase = useStore((s) => s.server.startupPhase);
   const config = useStore((s) => s.config);
+  const rconConfig = useStore((s) => s.rcon);
+  const rconConnected = useStore((s) => s.rcon.connected);
   const modalOpen = useStore((s) => s.ui.modalOpen);
   const openModal = useStore((s) => s.actions.openModal);
   const closeModal = useStore((s) => s.actions.closeModal);
@@ -584,6 +591,50 @@ export const Dashboard: FC<DashboardProps> = () => {
         />
       );
     }
+
+    // RCON Features (require RCON connection)
+    if (rconConnected && status === "online") {
+      // P = Player Management
+      if (input === "p" || input === "P") {
+        openModal(<PlayerManager onClose={closeModal} />);
+      }
+
+      // N = Server Info
+      if (input === "n" || input === "N") {
+        openModal(<ServerInfoModal onClose={closeModal} />);
+      }
+
+      // E = Event Manager
+      if (input === "e" || input === "E") {
+        openModal(<EventManager onClose={closeModal} />);
+      }
+
+      // T = Time Control
+      if (input === "t" || input === "T") {
+        openModal(<TimeControl onClose={closeModal} />);
+      }
+
+      // G = Global Keys
+      if (input === "g" || input === "G") {
+        openModal(<GlobalKeysManager onClose={closeModal} />);
+      }
+
+      // D = Remove Drops
+      if (input === "d" || input === "D") {
+        openModal(
+          <ConfirmModal
+            message="Remove all dropped items from the world? This cannot be undone."
+            onConfirm={async () => {
+              closeModal();
+              const { rconManager } = await import("../../rcon/mod.js");
+              const response = await rconManager.removeDrops();
+              addLog("info", `Remove drops: ${response || "Done"}`);
+            }}
+            onCancel={closeModal}
+          />
+        );
+      }
+    }
   });
 
   // Render loading state for starting/stopping
@@ -851,6 +902,41 @@ export const Dashboard: FC<DashboardProps> = () => {
         </Box>
       </Box>
 
+      {/* RCON Status Section */}
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold>RCON Status</Text>
+        <Box marginLeft={2} flexDirection="column">
+          <Box flexShrink={0}>
+            <Text>RCON: </Text>
+            {rconConfig.enabled ? (
+              rconConnected ? (
+                <Text color={theme.success}>● Connected</Text>
+              ) : status === "online" ? (
+                <Text color={theme.warning}>○ Connecting...</Text>
+              ) : (
+                <Text dimColor>○ Waiting for server...</Text>
+              )
+            ) : (
+              <Text dimColor>○ Disabled</Text>
+            )}
+          </Box>
+          {rconConfig.enabled && (
+            <>
+              <Box flexShrink={0}>
+                <Text>Port: </Text>
+                <Text dimColor>{rconConfig.port}</Text>
+              </Box>
+              <Box flexShrink={0}>
+                <Text>Auto-reconnect: </Text>
+                <Text dimColor>
+                  {rconConfig.autoReconnect ? "Enabled" : "Disabled"}
+                </Text>
+              </Box>
+            </>
+          )}
+        </Box>
+      </Box>
+
       <Box flexDirection="column" marginBottom={1}>
         <Text bold>Players ({players.length})</Text>
         <Box marginLeft={2} flexDirection="column">
@@ -958,6 +1044,41 @@ export const Dashboard: FC<DashboardProps> = () => {
                   <Text color={theme.error}>[K] </Text>
                   <Text>Kill Process</Text>
                 </Box>
+
+                {/* RCON Actions - only show if RCON connected */}
+                {rconConnected && (
+                  <>
+                    <Box marginTop={1} flexShrink={0}>
+                      <Text bold color={theme.primary}>
+                        RCON Admin:
+                      </Text>
+                    </Box>
+                    <Box flexShrink={0}>
+                      <Text color={theme.primary}>[P] </Text>
+                      <Text>Player Manager</Text>
+                    </Box>
+                    <Box flexShrink={0}>
+                      <Text color={theme.info}>[N] </Text>
+                      <Text>Server Info</Text>
+                    </Box>
+                    <Box flexShrink={0}>
+                      <Text color={theme.warning}>[E] </Text>
+                      <Text>Event Manager</Text>
+                    </Box>
+                    <Box flexShrink={0}>
+                      <Text color={theme.info}>[T] </Text>
+                      <Text>Time Control</Text>
+                    </Box>
+                    <Box flexShrink={0}>
+                      <Text color={theme.primary}>[G] </Text>
+                      <Text>Boss Progress</Text>
+                    </Box>
+                    <Box flexShrink={0}>
+                      <Text color={theme.error}>[D] </Text>
+                      <Text>Remove Drops</Text>
+                    </Box>
+                  </>
+                )}
               </Box>
             ) : (
               <Box flexDirection="column">
