@@ -272,7 +272,7 @@ For detailed implementation guidance, see `.agent-docs/`:
 
 ## Common Pitfalls
 
-1. **Ink requires React 18**: Use `react@18` for compatibility with Ink 5
+1. **Ink requires React 19**: Use `react@19` for compatibility with Ink 6
 2. **JSX config**: Ensure `jsx: "react-jsx"` in tsconfig.json
 3. **Windows paths**: Use `node:path` join, not string concatenation
 4. **Process cleanup**: Always handle SIGINT/SIGTERM for graceful shutdown

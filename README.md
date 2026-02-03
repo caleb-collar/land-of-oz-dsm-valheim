@@ -164,11 +164,12 @@ via Ink. Motion is created using ASCII Motion.
 | Layer            | Technology       | Purpose                                          |
 | ---------------- | ---------------- | ------------------------------------------------ |
 | Runtime          | Node.js 22.x     | TypeScript-first with tsx execution              |
-| TUI Framework    | Ink 5.x          | React-based terminal UI with Yoga flexbox layout |
-| State Management | Zustand          | Lightweight, React-compatible global state       |
+| TUI Framework    | Ink 6.x          | React-based terminal UI with Yoga flexbox layout |
+| UI Library       | React 19.x       | Component-based rendering to terminal            |
+| State Management | Zustand 5.x      | Lightweight, React-compatible global state       |
 | Animation        | ASCII Motion MCP | Animated ASCII art for headers and transitions   |
 | Process Control  | child_process    | Cross-platform subprocess management             |
-| Configuration    | conf             | Persistent settings with JSON storage            |
+| Configuration    | conf 13.x        | Persistent settings with JSON storage            |
 
 ### Directory Structure
 
@@ -238,7 +239,7 @@ land-of-oz-dsm-valheim/
 │   ├── config/
 │   │   ├── mod.ts            # Configuration module exports
 │   │   ├── schema.ts         # Zod schemas for validation
-│   │   ├── store.ts          # Deno KV persistence layer
+│   │   ├── store.ts          # conf package persistence layer (JSON)
 │   │   └── defaults.ts       # Default configuration values
 │   │
 │   ├── valheim/
@@ -302,9 +303,9 @@ Handles all Steam-related operations:
 
 Persistent settings management:
 
-- **Deno KV**: Local key-value storage for settings
-- **Zod Validation**: Type-safe schema enforcement
-- **Migration Support**: Handle config version upgrades
+- **conf Package**: Cross-platform JSON-based configuration storage
+- **Zod Validation**: Type-safe schema enforcement with runtime validation
+- **Migration Support**: Handle config version upgrades gracefully
 
 #### 6. Valheim Integration (`src/valheim/`)
 
@@ -316,48 +317,78 @@ Game-specific functionality:
 
 ### State Flow
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Zustand Store                           │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐ │
-│  │ server   │  │ config   │  │ logs     │  │ ui               │ │
-│  │ .status  │  │ .settings│  │ .entries │  │ .activeScreen    │ │
-│  │ .pid     │  │ .world   │  │ .filter  │  │ .modalOpen       │ │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-         │                │               │
-         ▼                ▼               ▼
-   ┌──────────┐    ┌──────────┐    ┌──────────┐
-   │ Process  │    │ Deno KV  │    │ TUI      │
-   │ Manager  │    │ Store    │    │ Renderer │
-   └──────────┘    └──────────┘    └──────────┘
-```
+```mermaid
+graph TB
+    subgraph "User Interaction Layer"
+        TUI["TUI Components (Ink/React)"]
+        CLI["CLI Commands"]
+    end
 
-### TUI Layout Zones
+    subgraph "State Management (Zustand)"
+        Store["Global Store"]
+        ServerState["server: {status, pid, players}"]
+        ConfigState["config: {settings, world}"]
+        LogState["logs: {entries, filter}"]
+        UIState["ui: {activeScreen, modal}"]
+        Store --> ServerState
+        Store --> ConfigState
+        Store --> LogState
+        Store --> UIState
+    end
 
-```
-┌────────────────────────────────────────────────────────────────────┐
-│                    ╔═══╗ ╔═══╗ ╔═══╗                                │
-│  ZONE 1: HEADER    ║ L ║ ║ O ║ ║ Z ║  Animated ASCII Title          │
-│                    ╚═══╝ ╚═══╝ ╚═══╝  (ASCII Motion powered)        │
-├────────────────────────────────────────────────────────────────────┤
-│                                                                    │
-│  ZONE 2: MAIN CONTENT                                              │
-│  ┌──────────────────────┐  ┌─────────────────────────────────────┐ │
-│  │ [1] Dashboard        │  │ Server: ● ONLINE                   │ │
-│  │ [2] Settings         │  │ Players: 3/10                      │ │
-│  │ [3] Worlds           │  │ World: MyWorld                     │ │
-│  │ [4] Console          │  │ Uptime: 4h 23m                     │ │
-│  │ [Q] Quit             │  │                                    │ │
-│  └──────────────────────┘  └─────────────────────────────────────┘ │
-│                                                                    │
-├────────────────────────────────────────────────────────────────────┤
-│  ZONE 3: LOG FEED                                                  │
-│  [INFO]  Player "Viking01" connected                               │
-│  [INFO]  Player "Viking02" connected                               │
-│  [WARN]  High memory usage detected                                 │
-│  [INFO]  World saved successfully                                  │
-└────────────────────────────────────────────────────────────────────┘
+    subgraph "Process Management"
+        PM["Server Process Manager"]
+        WD["Watchdog (Auto-restart)"]
+        LS["Log Stream Parser"]
+        PM --> WD
+        PM --> LS
+    end
+
+    subgraph "Persistence Layer"
+        Conf["conf (JSON Storage)"]
+        Worlds["World Files (.db/.fwl)"]
+    end
+
+    subgraph "External Systems"
+        Steam["SteamCMD"]
+        Valheim["Valheim Server Process"]
+        RCON["RCON Client (Optional)"]
+    end
+
+    TUI -->|User Input| Store
+    CLI -->|Commands| Store
+    
+    Store -->|Read/Write| Conf
+    Store -->|Start/Stop| PM
+    Store -->|Send Commands| RCON
+    
+    PM -->|Spawn| Valheim
+    PM -->|stdout/stderr| LS
+    LS -->|Parsed Logs| LogState
+    
+    Valheim -->|Events| WD
+    WD -->|Restart on Crash| PM
+    
+    ConfigState -->|Load| Conf
+    Conf -->|Load Worlds| Worlds
+    
+    CLI -->|Install/Update| Steam
+    Steam -->|Download| Valheim
+    
+    Store -->|React Updates| TUI
+    RCON -.->|Commands| Valheim
+
+    classDef userLayer fill:#F37A47,stroke:#B63C21,color:#fff
+    classDef stateLayer fill:#018DA6,stroke:#01657C,color:#fff
+    classDef processLayer fill:#FCF983,stroke:#000,color:#000
+    classDef persistLayer fill:#691E11,stroke:#B63C21,color:#fff
+    classDef externalLayer fill:#001018,stroke:#01657C,color:#fff
+    
+    class TUI,CLI userLayer
+    class Store,ServerState,ConfigState,LogState,UIState stateLayer
+    class PM,WD,LS processLayer
+    class Conf,Worlds persistLayer
+    class Steam,Valheim,RCON externalLayer
 ```
 
 ### Valheim Server Settings
@@ -383,12 +414,12 @@ The DSM exposes all Valheim dedicated server settings through the TUI:
 
 ### Platform Support
 
-| Platform      | SteamCMD Path                            | Valheim Install                             | Config Storage                                | Notes |
-| ------------- | ---------------------------------------- | ------------------------------------------- | --------------------------------------------- | ----- |
-| Windows       | `%LOCALAPPDATA%\steamcmd`                | `steamapps\common\Valheim dedicated server` | `%APPDATA%\valheim-dsm`                       | Fully supported |
-| macOS         | `~/Library/Application Support/steamcmd` | `steamapps/common/Valheim dedicated server` | `~/Library/Application Support/valheim-dsm`   | Fully supported |
-| Linux (Ubuntu)| `~/.local/share/steamcmd`                | `steamapps/common/Valheim dedicated server` | `~/.config/valheim-dsm`                       | **Requires 32-bit libs** (see Installation) |
-| Linux (Other) | `~/.local/share/steamcmd`                | `steamapps/common/Valheim dedicated server` | `~/.config/valheim-dsm`                       | Fully supported |
+| Platform      | SteamCMD Path                            | Valheim Install                             | Config Storage                              | Notes |
+| ------------- | ---------------------------------------- | ------------------------------------------- | ------------------------------------------- | ----- |
+| Windows       | `%LOCALAPPDATA%\steamcmd`                | `steamapps\common\Valheim dedicated server` | `%APPDATA%\oz-valheim`                      | Fully supported |
+| macOS         | `~/Library/Application Support/steamcmd` | `steamapps/common/Valheim dedicated server` | `~/Library/Application Support/oz-valheim`  | Fully supported |
+| Linux (Ubuntu)| `~/.local/share/steamcmd`                | `steamapps/common/Valheim dedicated server` | `~/.config/oz-valheim`                      | **Requires 32-bit libs** (see Installation) |
+| Linux (Other) | `~/.local/share/steamcmd`                | `steamapps/common/Valheim dedicated server` | `~/.config/oz-valheim`                      | Fully supported |
 
 ### Development
 
