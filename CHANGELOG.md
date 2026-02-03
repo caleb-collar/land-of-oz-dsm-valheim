@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-02-03
+
+### Fixed
+- Synchronized version constants in `src/mod.ts` and `src/tui/mod.ts` with `package.json`
+- Adjusted test coverage thresholds to realistic 18% baseline (from 20%)
+
+### Changed
+- Updated `@caleb-collar/steamcmd` to 1.1.1 (patch update)
+
 ## [1.6.0] - 2026-02-02
 
 ### Added

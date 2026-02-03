@@ -8,7 +8,7 @@ import React from "react";
 import { App } from "./App.js";
 
 // Version
-export const TUI_VERSION = "1.5.1";
+export const TUI_VERSION = "1.6.1";
 
 // Core exports
 export { App } from "./App.js";

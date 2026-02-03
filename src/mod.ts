@@ -58,5 +58,5 @@ export {
 } from "./valheim/mod.js";
 
 // Version info
-export const VERSION = "1.5.4";
+export const VERSION = "1.6.1";
 export const APP_NAME = "Land of OZ - Valheim DSM";
