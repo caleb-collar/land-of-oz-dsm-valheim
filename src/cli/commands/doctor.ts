@@ -4,9 +4,11 @@
  * Uses @caleb-collar/steamcmd package for SteamCMD checks
  */
 
+import { exec } from "node:child_process";
 import fs from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
+import { promisify } from "node:util";
 import steamcmd from "@caleb-collar/steamcmd";
 import { type AppConfig, loadConfig } from "../../config/mod.js";
 import {
@@ -17,6 +19,8 @@ import {
 } from "../../steamcmd/mod.js";
 import { getPlatform, getValheimSaveDir } from "../../utils/platform.js";
 import type { DoctorArgs } from "../args.js";
+
+const execAsync = promisify(exec);
 
 /** Result of a single check */
 export type CheckResult = {
@@ -257,6 +261,88 @@ async function checkPermissions(): Promise<CheckResult> {
 }
 
 /**
+ * Check for Ubuntu/Debian 32-bit library dependencies
+ * SteamCMD requires 32-bit libraries on 64-bit Linux systems
+ */
+async function checkLinux32BitLibs(): Promise<CheckResult> {
+  const platform = getPlatform();
+
+  // Only check on Linux
+  if (platform !== "linux") {
+    return {
+      name: "32-bit Libraries (Linux)",
+      status: "pass",
+      message: "Not applicable on this platform",
+    };
+  }
+
+  try {
+    // Check if dpkg exists (Debian/Ubuntu-based systems)
+    const { stdout: dpkgCheck } = await execAsync("which dpkg 2>/dev/null");
+    if (!dpkgCheck.trim()) {
+      // Not a Debian/Ubuntu system, skip this check
+      return {
+        name: "32-bit Libraries (Linux)",
+        status: "pass",
+        message: "Non-Debian system detected, assuming dependencies are met",
+      };
+    }
+
+    // Check if i386 architecture is enabled
+    const { stdout: archCheck } = await execAsync(
+      "dpkg --print-foreign-architectures 2>/dev/null"
+    );
+    const hasI386 = archCheck.includes("i386");
+
+    if (!hasI386) {
+      return {
+        name: "32-bit Libraries (Linux)",
+        status: "fail",
+        message:
+          "i386 architecture not enabled. Run: sudo dpkg --add-architecture i386 && sudo apt update",
+        fixable: false,
+      };
+    }
+
+    // Check for required packages
+    const requiredPackages = ["lib32gcc-s1", "lib32stdc++6", "libc6:i386"];
+    const missingPackages: string[] = [];
+
+    for (const pkg of requiredPackages) {
+      try {
+        const { stdout } = await execAsync(`dpkg -s ${pkg} 2>/dev/null`);
+        if (!stdout.includes("Status: install ok installed")) {
+          missingPackages.push(pkg);
+        }
+      } catch {
+        missingPackages.push(pkg);
+      }
+    }
+
+    if (missingPackages.length > 0) {
+      return {
+        name: "32-bit Libraries (Linux)",
+        status: "fail",
+        message: `Missing packages: ${missingPackages.join(", ")}. Install with: sudo apt install ${missingPackages.join(" ")}`,
+        fixable: false,
+      };
+    }
+
+    return {
+      name: "32-bit Libraries (Linux)",
+      status: "pass",
+      message: "All required 32-bit libraries are installed",
+    };
+  } catch (error) {
+    return {
+      name: "32-bit Libraries (Linux)",
+      status: "warn",
+      message: `Could not verify 32-bit libraries: ${error}`,
+    };
+  }
+}
+
+/**
  * Run all diagnostic checks
  */
 async function runAllChecks(): Promise<DiagnosticReport> {
@@ -269,6 +355,7 @@ async function runAllChecks(): Promise<DiagnosticReport> {
   checks.push(await checkSaveDirectory());
   checks.push(await checkPorts());
   checks.push(await checkPermissions());
+  checks.push(await checkLinux32BitLibs());
 
   // Calculate summary
   const summary = {

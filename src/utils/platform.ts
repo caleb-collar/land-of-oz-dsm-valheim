@@ -9,6 +9,9 @@ import process from "node:process";
 /** Supported operating systems */
 export type Platform = "windows" | "darwin" | "linux";
 
+/** SteamCMD platform types */
+export type SteamPlatform = "windows" | "macos" | "linux";
+
 /**
  * Detects the current operating system
  * @returns The current platform identifier
@@ -18,6 +21,16 @@ export function getPlatform(): Platform {
   if (os === "win32") return "windows";
   if (os === "darwin") return "darwin";
   return "linux";
+}
+
+/**
+ * Maps our platform type to SteamCMD platform type
+ * @returns SteamCMD-compatible platform identifier
+ */
+export function getSteamPlatform(): SteamPlatform {
+  const platform = getPlatform();
+  if (platform === "darwin") return "macos";
+  return platform; // "windows" and "linux" are the same
 }
 
 /**

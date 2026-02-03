@@ -32,52 +32,79 @@ cd land-of-oz-dsm-valheim
 # Install dependencies
 npm install
 
+# Build the project
+npm run build
+
 # Run the TUI (recommended)
-npx tsx main.ts
+npm start
 
 # Or use CLI commands directly
-npx tsx main.ts --help
+npm start -- --help
 ```
+
+#### Ubuntu/Debian Prerequisites
+
+SteamCMD requires 32-bit libraries on Ubuntu/Debian systems:
+
+```bash
+# Ubuntu/Debian (64-bit)
+sudo dpkg --add-architecture i386
+sudo apt update
+sudo apt install lib32gcc-s1 lib32stdc++6 libc6:i386 libcurl4:i386
+
+# Or use the all-in-one package
+sudo apt install steamcmd
+```
+
+After installing prerequisites, run `npm start -- install` to set up SteamCMD and Valheim server.
 
 ### Common Usage Examples
 
 ```bash
-# Launch the interactive TUI
-npx tsx main.ts tui
+# Launch the interactive TUI (builds first)
+npm start
+
+# Or run the TUI directly after building
+npm run build && node dist/main.js
+
+# For development with live reload
+npm run dev
 
 # Install SteamCMD and Valheim server
-npx tsx main.ts install
+npm start -- install
 
 # Check your setup for issues
-npx tsx main.ts doctor
+npm start -- doctor
 
 # Start the server
-npx tsx main.ts start --name "My Viking Server" --world "MyWorld"
+npm start -- start --name "My Viking Server" --world "MyWorld"
 
 # Start in background mode
-npx tsx main.ts start --background
+npm start -- start --background
 
 # Stop the server gracefully
-npx tsx main.ts stop
+npm start -- stop
 
 # Force stop if unresponsive
-npx tsx main.ts stop --force
+npm start -- stop --force
 
 # View/edit configuration
-npx tsx main.ts config list
-npx tsx main.ts config set server.port 2457
-npx tsx main.ts config get server.name
+npm start -- config list
+npm start -- config set server.port 2457
+npm start -- config get server.name
 
 # Manage worlds
-npx tsx main.ts worlds list
-npx tsx main.ts worlds info MyWorld
-npx tsx main.ts worlds export MyWorld --path ./backup
+npm start -- worlds list
+npm start -- worlds info MyWorld
+npm start -- worlds export MyWorld --path ./backup
 
 # Send RCON commands (requires BepInEx mod)
-npx tsx main.ts rcon save
-npx tsx main.ts rcon "kick PlayerName"
-npx tsx main.ts rcon --interactive
+npm start -- rcon save
+npm start -- rcon "kick PlayerName"
+npm start -- rcon --interactive
 ```
+
+> **Note:** On Node.js v23+, we use the built version instead of `tsx` for better compatibility. Use `npm run dev` for development with live reload.
 
 ### TUI Keyboard Shortcuts
 
@@ -356,11 +383,12 @@ The DSM exposes all Valheim dedicated server settings through the TUI:
 
 ### Platform Support
 
-| Platform | SteamCMD Path                            | Valheim Install                             | Config Storage                                |
-| -------- | ---------------------------------------- | ------------------------------------------- | --------------------------------------------- |
-| Windows  | `%LOCALAPPDATA%\steamcmd`                | `steamapps\common\Valheim dedicated server` | `%APPDATA%\valheim-dsm`                       |
-| macOS    | `~/Library/Application Support/steamcmd` | `steamapps/common/Valheim dedicated server` | `~/Library/Application Support/valheim-dsm`   |
-| Linux    | `~/.local/share/steamcmd`                | `steamapps/common/Valheim dedicated server` | `~/.config/valheim-dsm`                       |
+| Platform      | SteamCMD Path                            | Valheim Install                             | Config Storage                                | Notes |
+| ------------- | ---------------------------------------- | ------------------------------------------- | --------------------------------------------- | ----- |
+| Windows       | `%LOCALAPPDATA%\steamcmd`                | `steamapps\common\Valheim dedicated server` | `%APPDATA%\valheim-dsm`                       | Fully supported |
+| macOS         | `~/Library/Application Support/steamcmd` | `steamapps/common/Valheim dedicated server` | `~/Library/Application Support/valheim-dsm`   | Fully supported |
+| Linux (Ubuntu)| `~/.local/share/steamcmd`                | `steamapps/common/Valheim dedicated server` | `~/.config/valheim-dsm`                       | **Requires 32-bit libs** (see Installation) |
+| Linux (Other) | `~/.local/share/steamcmd`                | `steamapps/common/Valheim dedicated server` | `~/.config/valheim-dsm`                       | Fully supported |
 
 ### Development
 
@@ -368,7 +396,7 @@ The DSM exposes all Valheim dedicated server settings through the TUI:
 # Install dependencies
 npm install
 
-# Run in development mode (with watch)
+# Run in development mode (with live reload)
 npm run dev
 
 # Run tests
@@ -386,6 +414,9 @@ npm run build
 
 # Run built version
 node dist/main.js --help
+
+# Or use npm start (builds automatically)
+npm start -- --help
 ```
 
 > **Note:** The project uses Biome for linting and formatting.
@@ -399,7 +430,7 @@ node dist/main.js --help
 
 ## Troubleshooting
 
-Run `npx tsx main.ts doctor` to automatically diagnose common issues.
+Run `npm start -- doctor` to automatically diagnose common issues.
 
 ### Common Issues
 
@@ -409,7 +440,30 @@ Run `npx tsx main.ts doctor` to automatically diagnose common issues.
 Error: SteamCMD not found
 ```
 
-**Solution:** Run `npx tsx main.ts install` to automatically download and install SteamCMD.
+**Solution:** Run `npm start -- install` to automatically download and install SteamCMD.
+
+**Ubuntu/Debian:** If you get library errors, install 32-bit dependencies first:
+```bash
+sudo dpkg --add-architecture i386
+sudo apt update
+sudo apt install lib32gcc-s1 lib32stdc++6 libc6:i386 libcurl4:i386
+```
+
+#### SteamCMD installation crashes with "Cannot read properties of undefined (reading 'x')"
+
+This was caused by a TypeScript/CommonJS interop bug in `@caleb-collar/steamcmd@1.1.0`. The package incorrectly tries to access `tar.default.x`, but the tar v7 package doesn't export a default (it exports the API directly).
+
+**Solution (Fixed in v1.5.3):** 
+1. Update to v1.5.3 or later
+2. Run `npm install` - this will automatically apply the patch that fixes the tar import
+3. The patch changes `tar_1.default.x` to `tar_1.x` in the steamcmd package
+4. Patches are stored in `patches/@caleb-collar+steamcmd+1.1.0.patch` and auto-applied via `patch-package`
+
+**Manual fix (if needed):**
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
 
 #### Valheim server not starting
 

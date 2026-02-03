@@ -1,0 +1,13 @@
+diff --git a/node_modules/@caleb-collar/steamcmd/dist/download.js b/node_modules/@caleb-collar/steamcmd/dist/download.js
+index 4bd0c08..66b0018 100644
+--- a/node_modules/@caleb-collar/steamcmd/dist/download.js
++++ b/node_modules/@caleb-collar/steamcmd/dist/download.js
+@@ -145,7 +145,7 @@ function download(options, callback) {
+         });
+         if (platformValue === 'darwin' || platformValue === 'linux') {
+             res
+-                .pipe(tar_1.default.x({ cwd: destDir }))
++                .pipe(tar_1.x({ cwd: destDir }))
+                 .on('error', (err) => {
+                 callback(new DownloadError(`Failed to extract tar archive: ${err.message}`, 'EXTRACT_ERROR'));
+             })

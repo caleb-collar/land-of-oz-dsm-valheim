@@ -4,6 +4,7 @@
  */
 
 import steamcmd from "@caleb-collar/steamcmd";
+import { getSteamPlatform } from "../utils/platform.js";
 import { getSteamPaths } from "./paths.js";
 
 /** Valheim Dedicated Server Steam App ID */
@@ -75,10 +76,14 @@ export async function installValheim(
   });
 
   try {
+    // Get the platform-specific platform identifier for SteamCMD
+    const platform = getSteamPlatform();
+
     // Don't pass a custom path - let SteamCMD install to its default
     // steamapps/common/Valheim dedicated server directory
     await steamcmd.install({
       applicationId: VALHEIM_APP_ID,
+      platform, // Explicitly set platform to ensure correct server binaries are downloaded
       onProgress: (p) => {
         const stage = mapPhaseToStage(p.phase);
         const progress = p.percent ?? 0;

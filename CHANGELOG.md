@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.4] - 2026-02-02
+
+### Fixed
+- **Fixed Valheim server installation failure on Linux** with "missing files" and verification errors
+  - Root cause: SteamCMD wasn't explicitly told which platform to download server binaries for
+  - On Linux, without the platform parameter, SteamCMD may download wrong binaries or fail verification
+  - Solution: Added `getSteamPlatform()` utility function to map platform types and pass `platform` parameter to `steamcmd.install()`
+  - Now explicitly passes platform type ('linux', 'windows', or 'macos') to ensure correct server binaries are downloaded
+
+## [1.5.3] - 2026-02-02
+
+### Added
+- Ubuntu/Debian-specific installation instructions in README
+- Doctor command now checks for required 32-bit libraries on Ubuntu/Debian systems
+- Enhanced troubleshooting section with Ubuntu-specific SteamCMD library requirements
+- **Patch for `@caleb-collar/steamcmd` package** to fix tar extraction on Linux/macOS using `patch-package`
+
+### Changed
+- Enhanced Platform Support table with Ubuntu-specific notes
+- Improved Linux platform support documentation
+- Updated `npm start` script to build and run instead of using tsx (fixes Node.js v23 compatibility)
+- Added `npm start:dev` script for development with tsx
+- Added `postinstall` script to automatically apply package patches
+
+### Fixed
+- **Fixed critical crash** when installing SteamCMD with error "Cannot read properties of undefined (reading 'x')"
+  - Root cause: `@caleb-collar/steamcmd@1.1.0` incorrectly accesses `tar.default.x` but tar v7 doesn't export a default
+  - Solution: Created patch to change `tar_1.default.x` to `tar_1.x` in download.js
+  - Patch automatically applied via `patch-package` on npm install
+- Fixed tsx module resolution issue on Node.js v23.2.0 by using built version for production runs
+
 ## [1.5.2] - 2026-02-01
 
 ### Fixed
@@ -151,7 +182,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Platform detection for Windows, Linux, macOS
 - Basic TUI framework with Ink
 
-[Unreleased]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.1...HEAD
+[Unreleased]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.3...HEAD
+[1.5.3]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.2...v1.5.3
+[1.5.2]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.1...v1.5.2
 [1.5.1]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.4.3...v1.5.0
 [1.4.3]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.0.9...v1.4.3

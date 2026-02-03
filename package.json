@@ -1,6 +1,6 @@
 {
   "name": "valheim-oz-dsm",
-  "version": "1.5.2",
+  "version": "1.5.4",
   "description": "Land of OZ - Valheim Dedicated Server Manager",
   "type": "module",
   "bin": {
@@ -9,6 +9,7 @@
   "main": "./dist/main.js",
   "files": [
     "dist",
+    "patches",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
@@ -19,7 +20,8 @@
   },
   "scripts": {
     "dev": "tsx watch main.ts",
-    "start": "tsx main.ts",
+    "start": "npm run build && node dist/main.js",
+    "start:dev": "tsx main.ts",
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -28,6 +30,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
+    "postinstall": "patch-package",
     "prepare": "tsx scripts/install-hooks.ts",
     "prepublishOnly": "npm run typecheck && npm run lint && npm test && npm run build"
   },
@@ -45,6 +48,7 @@
     "@types/node": "^22.13.1",
     "@types/react": "^19.2.10",
     "@vitest/coverage-v8": "^3.2.4",
+    "patch-package": "^8.0.1",
     "tsup": "^8.3.6",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
