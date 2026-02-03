@@ -11,6 +11,7 @@ import {
   getPlatform,
   getSteamCmdDir,
   getSteamCmdExecutable,
+  getSteamPlatform,
   getValheimExecutable,
   getValheimSaveDir,
   getValheimServerDir,
@@ -22,6 +23,25 @@ describe("platform utilities", () => {
     const platform = getPlatform();
     const validPlatforms: Platform[] = ["windows", "darwin", "linux"];
     expect(validPlatforms.includes(platform)).toBe(true);
+  });
+
+  it("getSteamPlatform returns valid steam platform", () => {
+    const steamPlatform = getSteamPlatform();
+    const validSteamPlatforms = ["windows", "macos", "linux"];
+    expect(validSteamPlatforms.includes(steamPlatform)).toBe(true);
+  });
+
+  it("getSteamPlatform maps darwin to macos", () => {
+    const ourPlatform = getPlatform();
+    const steamPlatform = getSteamPlatform();
+
+    // If we're on darwin, it should map to macos for Steam
+    if (ourPlatform === "darwin") {
+      expect(steamPlatform).toBe("macos");
+    } else {
+      // Otherwise they should match
+      expect(steamPlatform).toBe(ourPlatform);
+    }
   });
 
   it("getHomeDir returns non-empty string", () => {
