@@ -418,14 +418,25 @@ export function useServer() {
     return () => clearInterval(interval);
   }, [status, actions]);
 
+  // Extract stable RCON config values (excluding 'connected' to avoid infinite loops)
+  const rconEnabled = rcon.enabled;
+  const rconPort = rcon.port;
+  const rconPassword = rcon.password;
+  const rconTimeout = rcon.timeout;
+  const rconAutoReconnect = rcon.autoReconnect;
+
+  // Track if RCON has been initialized to avoid redundant cleanup
+  const rconInitialized = useRef(false);
+
   // Initialize RCON when config changes or server comes online
   useEffect(() => {
-    if (!rcon.enabled) {
+    if (!rconEnabled) {
       // RCON disabled, disconnect if connected
       if (rconManager.isConnected()) {
         rconManager.disconnect();
         actions.setRconConnected(false);
       }
+      rconInitialized.current = false;
       return;
     }
 
@@ -433,11 +444,11 @@ export function useServer() {
     rconManager.initialize(
       {
         host: "localhost",
-        port: rcon.port,
-        password: rcon.password,
-        timeout: rcon.timeout,
-        enabled: rcon.enabled,
-        autoReconnect: rcon.autoReconnect,
+        port: rconPort,
+        password: rconPassword,
+        timeout: rconTimeout,
+        enabled: rconEnabled,
+        autoReconnect: rconAutoReconnect,
       },
       {
         onConnectionStateChange: (state) => {
@@ -459,16 +470,29 @@ export function useServer() {
         pollInterval: 10000, // Poll every 10 seconds
       }
     );
+    rconInitialized.current = true;
 
-    // Cleanup on unmount
+    // Cleanup on unmount only (not on re-renders)
     return () => {
-      rconManager.disconnect();
+      // Only disconnect if this is a true unmount, not just a config update
+      // The next effect run will re-initialize if needed
+      if (rconInitialized.current) {
+        rconManager.disconnect();
+        rconInitialized.current = false;
+      }
     };
-  }, [rcon, actions]);
+  }, [
+    rconEnabled,
+    rconPort,
+    rconPassword,
+    rconTimeout,
+    rconAutoReconnect,
+    actions,
+  ]);
 
   // Auto-connect RCON when server comes online
   useEffect(() => {
-    if (status === "online" && rcon.enabled && !rconManager.isConnected()) {
+    if (status === "online" && rconEnabled && !rconManager.isConnected()) {
       // Wait a moment for server to fully start before connecting
       const timer = setTimeout(() => {
         rconManager.connect().catch((error) => {
@@ -482,7 +506,7 @@ export function useServer() {
     if (status === "offline" && rconManager.isConnected()) {
       rconManager.disconnect();
     }
-  }, [status, rcon.enabled, actions]);
+  }, [status, rconEnabled, actions]);
 
   // NOTE: We intentionally do NOT cleanup on unmount here!
   // The server should keep running when navigating between screens.
