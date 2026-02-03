@@ -1,6 +1,6 @@
 /**
  * Stop command handler
- * Stops the running Valheim server
+ * Stops the running Valheim server (works with detached servers)
  */
 
 import {
@@ -9,6 +9,7 @@ import {
   killProcess,
   removePidFile,
 } from "../../server/mod.js";
+import { getPlatform } from "../../utils/platform.js";
 import type { StopArgs } from "../args.js";
 import { clearActiveWatchdog, getActiveWatchdog } from "./start.js";
 
@@ -17,12 +18,12 @@ import { clearActiveWatchdog, getActiveWatchdog } from "./start.js";
  * @param args Parsed stop command arguments
  */
 export async function stopCommand(args: StopArgs): Promise<void> {
+  const timeout = args.timeout ?? 30000;
+
   // First check if we have a watchdog in this process
   const watchdog = getActiveWatchdog();
 
   if (watchdog) {
-    const timeout = args.timeout ?? 30000;
-
     if (args.force) {
       console.log("\nForce stopping server...");
       await watchdog.kill();
@@ -37,7 +38,7 @@ export async function stopCommand(args: StopArgs): Promise<void> {
     return;
   }
 
-  // No watchdog in this process, check PID file for external process
+  // No watchdog in this process, check PID file for detached server
   const runningServer = await getRunningServer();
 
   if (!runningServer) {
@@ -46,13 +47,17 @@ export async function stopCommand(args: StopArgs): Promise<void> {
     return;
   }
 
-  const { pid, world, port, startedAt } = runningServer;
+  const { pid, world, port, startedAt, detached, logFile } = runningServer;
 
   console.log(`\nFound running server:`);
   console.log(`  PID: ${pid}`);
   console.log(`  World: ${world}`);
   console.log(`  Port: ${port}`);
   console.log(`  Started: ${new Date(startedAt).toLocaleString()}`);
+  console.log(`  Mode: ${detached ? "Detached" : "Attached"}`);
+  if (logFile) {
+    console.log(`  Log: ${logFile}`);
+  }
 
   // Verify process is still running
   if (!isProcessRunning(pid)) {
@@ -61,28 +66,48 @@ export async function stopCommand(args: StopArgs): Promise<void> {
     return;
   }
 
+  const platform = getPlatform();
+
   // Kill the process
   if (args.force) {
     console.log("\nForce killing server...");
-    killProcess(pid, true);
+    // On Windows, there's no SIGKILL - use SIGTERM
+    killProcess(pid, platform !== "windows");
   } else {
     console.log("\nSending stop signal...");
     killProcess(pid, false);
 
     // Wait for process to exit
-    const timeout = args.timeout ?? 30000;
     const startTime = Date.now();
+    let dots = 0;
 
     while (isProcessRunning(pid) && Date.now() - startTime < timeout) {
       await new Promise((resolve) => setTimeout(resolve, 500));
       process.stdout.write(".");
+      dots++;
     }
-    console.log();
+    if (dots > 0) console.log();
 
     // Check if it's still running
     if (isProcessRunning(pid)) {
       console.log("Server did not stop gracefully, force killing...");
-      killProcess(pid, true);
+      killProcess(pid, platform !== "windows");
+
+      // Wait a bit more for force kill
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      if (isProcessRunning(pid)) {
+        console.error(
+          "Failed to stop server. Process may require manual termination."
+        );
+        console.log(`  PID: ${pid}`);
+        if (platform === "windows") {
+          console.log(`  Try: taskkill /F /PID ${pid}`);
+        } else {
+          console.log(`  Try: kill -9 ${pid}`);
+        }
+        return;
+      }
     }
   }
 

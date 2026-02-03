@@ -1,11 +1,12 @@
 /**
  * PID file management for tracking server processes across terminals
  * Allows the stop command to find and stop servers started in other processes
+ * Supports detached server mode where the server runs independently of the TUI
  */
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import { getConfigDir } from "../utils/platform.js";
+import { getAppConfigDir, getConfigDir } from "../utils/platform.js";
 
 /** PID file data structure */
 export type PidFileData = {
@@ -13,7 +14,30 @@ export type PidFileData = {
   startedAt: string;
   world: string;
   port: number;
+  /** Path to the server log file (for detached mode) */
+  logFile?: string;
+  /** Whether the server was started in detached mode */
+  detached?: boolean;
+  /** Server name */
+  serverName?: string;
 };
+
+/**
+ * Gets the path to the server logs directory
+ */
+export function getServerLogsDir(): string {
+  return path.join(getAppConfigDir(), "logs");
+}
+
+/**
+ * Gets the path to the current server log file
+ * @param timestamp Optional timestamp for the log file name
+ */
+export function getServerLogFile(timestamp?: Date): string {
+  const ts = timestamp ?? new Date();
+  const dateStr = ts.toISOString().split("T")[0]; // YYYY-MM-DD
+  return path.join(getServerLogsDir(), `valheim-server-${dateStr}.log`);
+}
 
 /**
  * Gets the path to the PID file
@@ -115,4 +139,39 @@ export async function getRunningServer(): Promise<PidFileData | null> {
   }
 
   return data;
+}
+
+/**
+ * Ensures the server logs directory exists
+ */
+export async function ensureLogsDir(): Promise<void> {
+  const logsDir = getServerLogsDir();
+  await fs.mkdir(logsDir, { recursive: true });
+}
+
+/**
+ * Cleans up old log files, keeping only the most recent ones
+ * @param keepCount Number of log files to keep (default: 7)
+ */
+export async function cleanupOldLogs(keepCount = 7): Promise<void> {
+  const logsDir = getServerLogsDir();
+
+  try {
+    const files = await fs.readdir(logsDir);
+    const logFiles = files
+      .filter((f) => f.startsWith("valheim-server-") && f.endsWith(".log"))
+      .sort()
+      .reverse();
+
+    // Delete old files beyond keepCount
+    for (const file of logFiles.slice(keepCount)) {
+      try {
+        await fs.unlink(path.join(logsDir, file));
+      } catch {
+        // Ignore errors deleting old logs
+      }
+    }
+  } catch {
+    // Directory may not exist yet, that's fine
+  }
 }

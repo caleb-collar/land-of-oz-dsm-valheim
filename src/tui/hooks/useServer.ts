@@ -1,9 +1,10 @@
 /**
  * useServer hook - Server control and status
  * Integrates with ValheimProcess and Watchdog for real server management
+ * Supports detached mode where the server runs independently of the TUI
  */
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type {
   ParsedEvent,
   ProcessState,
@@ -13,8 +14,13 @@ import type {
 import { type UpdateCallback, updateValheim } from "../../steamcmd/updater.js";
 import { worldExists } from "../../valheim/worlds.js";
 import {
+  attachToServer,
+  checkRunningServer,
+  detachFromServer,
+  getLogFilePath,
   getWatchdog,
   hasActiveServer,
+  isAttachedToServer,
   isUpdating,
   killServer,
   setUpdating,
@@ -71,12 +77,14 @@ function buildLaunchConfig(config: {
  * Hook for managing server lifecycle
  * Provides start/stop controls and manages uptime counter
  * Uses the global serverManager to persist state across screen changes
+ * Automatically attaches to running servers on startup
  */
 export function useServer() {
   const status = useStore((s) => s.server.status);
   const config = useStore((s) => s.config);
   const rcon = useStore((s) => s.rcon);
   const actions = useStore((s) => s.actions);
+  const hasCheckedForRunning = useRef(false);
 
   /**
    * Creates watchdog event handlers connected to the store
@@ -162,6 +170,49 @@ export function useServer() {
     }),
     [actions]
   );
+
+  /**
+   * Check for and attach to a running server on startup
+   */
+  const checkAndAttach = useCallback(async () => {
+    if (hasActiveServer()) {
+      return; // Already managing a server
+    }
+
+    const running = await checkRunningServer();
+    if (!running) {
+      return; // No server running
+    }
+
+    actions.addLog(
+      "info",
+      `Found running server (PID: ${running.pid}, World: ${running.world})`
+    );
+    actions.addLog("info", "Attaching to running server...");
+
+    try {
+      const events = createWatchdogEvents();
+      await attachToServer(running, events);
+
+      actions.setServerPid(running.pid);
+      actions.setWorld(running.world);
+      actions.setServerStatus("online");
+      actions.setStartupPhase("ready");
+      actions.addLog("info", "Successfully attached to running server");
+    } catch (error) {
+      actions.addLog("error", `Failed to attach to running server: ${error}`);
+    }
+  }, [actions, createWatchdogEvents]);
+
+  // Check for running server on first mount
+  useEffect(() => {
+    if (hasCheckedForRunning.current) return;
+    hasCheckedForRunning.current = true;
+
+    checkAndAttach().catch((error) => {
+      actions.addLog("error", `Error checking for running server: ${error}`);
+    });
+  }, [checkAndAttach, actions]);
 
   /**
    * Start the Valheim server
@@ -336,6 +387,25 @@ export function useServer() {
     }
   }, [rcon, actions]);
 
+  /**
+   * Detach from a running server without stopping it
+   * Server will continue running after TUI exits
+   */
+  const detach = useCallback(async () => {
+    if (!hasActiveServer()) {
+      actions.addLog("warn", "No server to detach from");
+      return;
+    }
+
+    try {
+      await detachFromServer();
+      actions.addLog("info", "Detached from server - it will continue running");
+      // Don't change status - server is still running, we just disconnected
+    } catch (error) {
+      actions.addLog("error", `Failed to detach: ${error}`);
+    }
+  }, [actions]);
+
   // Uptime counter - increments every second when online
   useEffect(() => {
     if (status !== "online") return;
@@ -359,10 +429,14 @@ export function useServer() {
     restart,
     update,
     forceSave,
+    detach,
+    checkAndAttach,
     isOnline: status === "online",
     isOffline: status === "offline",
     isTransitioning: status === "starting" || status === "stopping",
     isUpdating: isUpdating(),
+    isAttached: isAttachedToServer(),
+    logFilePath: getLogFilePath(),
     watchdog: getWatchdog(),
   };
 }

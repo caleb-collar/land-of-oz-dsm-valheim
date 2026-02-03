@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-02-02
+
+### Added
+- **Detached server mode** - Server now runs as an independent process that survives TUI/terminal exit
+  - Server continues running even when you close the TUI or terminal
+  - TUI automatically reconnects to running servers on startup
+  - No more crashes from memory leaks in the TUI process
+- Log file output for servers at `~/.config/oz-valheim/logs/valheim-server-YYYY-MM-DD.log`
+- `LogTailer` class for efficiently tailing log files in detached mode
+- Attach/detach functionality - TUI can connect to already-running servers
+- Enhanced PID file with log file path, detached mode flag, and server name
+- Automatic cleanup of old log files (keeps last 7 days)
+
+### Changed
+- Server process is now spawned with `detached: true` and stdout/stderr redirected to log files
+- CLI `start` command now starts server in detached mode and exits after server is online
+- CLI `stop` command works correctly with detached servers
+- TUI exit no longer stops the server - it just disconnects
+
+### Fixed
+- **Potential memory leak on Windows** caused by piping all server stdout/stderr through Node.js process
+  - Server output now goes directly to log file instead of being buffered in memory
+  - TUI reads logs via efficient file tailing instead of continuous pipe buffering
+- Server crashes no longer terminate the TUI
+
 ## [1.5.4] - 2026-02-02
 
 ### Fixed

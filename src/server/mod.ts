@@ -33,10 +33,20 @@ export {
   type ServerLogSubscriber,
   type StartupPhase,
 } from "./logs.js";
+// Log tailing for detached mode
+export {
+  type LogEventCallback,
+  type LogLineCallback,
+  LogTailer,
+} from "./logTail.js";
 // PID file management
 export {
+  cleanupOldLogs,
+  ensureLogsDir,
   getPidFilePath,
   getRunningServer,
+  getServerLogFile,
+  getServerLogsDir,
   isProcessRunning,
   killProcess,
   type PidFileData,
