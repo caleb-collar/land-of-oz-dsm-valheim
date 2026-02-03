@@ -14,7 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adjusted test coverage thresholds to realistic 18% baseline (from 20%)
 
 ### Changed
-- Updated `@caleb-collar/steamcmd` to 1.1.1 (patch update)
+- Updated `@caleb-collar/steamcmd` to 1.1.1 (includes tar import fix, patch no longer needed)
+
+### Removed
+- Removed `patch-package` dependency (no longer needed with steamcmd 1.1.1)
+- Removed obsolete `patches/@caleb-collar+steamcmd+1.1.0.patch`
 
 ## [1.6.0] - 2026-02-02
 

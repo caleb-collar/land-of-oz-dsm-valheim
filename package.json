@@ -9,7 +9,6 @@
   "main": "./dist/main.js",
   "files": [
     "dist",
-    "patches",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
@@ -30,12 +29,11 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
-    "postinstall": "patch-package",
     "prepare": "tsx scripts/install-hooks.ts",
     "prepublishOnly": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
-    "@caleb-collar/steamcmd": "^1.1.0",
+    "@caleb-collar/steamcmd": "^1.1.1",
     "conf": "^13.0.1",
     "fullscreen-ink": "^0.1.0",
     "ink": "^6.6.0",
@@ -48,7 +46,6 @@
     "@types/node": "^22.13.1",
     "@types/react": "^19.2.10",
     "@vitest/coverage-v8": "^3.2.4",
-    "patch-package": "^8.0.1",
     "tsup": "^8.3.6",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
