@@ -41,8 +41,8 @@ export const defaultConfig: AppConfig = {
     refreshRate: 1000,
   },
   rcon: {
-    enabled: false,
-    port: 25575,
+    enabled: true,
+    port: 2458,
     password: "",
     timeout: 5000,
     autoReconnect: true,

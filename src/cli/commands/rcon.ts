@@ -15,7 +15,7 @@ async function resolveRconConfig(args: RconArgs) {
   const config = await loadConfig();
   return {
     host: args.host ?? "localhost",
-    port: args.port ?? config.rcon.port ?? 25575,
+    port: args.port ?? config.rcon.port ?? 2458,
     password: args.password ?? config.rcon.password ?? "",
     timeout: args.timeout ?? config.rcon.timeout ?? 5000,
   };

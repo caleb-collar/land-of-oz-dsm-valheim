@@ -423,12 +423,12 @@ export const useStore = create<Store>((set) => ({
     refreshRate: 1000,
   },
 
-  // Initial RCON state
+  // Initial RCON state (aligned with config/schema.ts defaults)
   rcon: {
     enabled: true,
     connected: false,
-    port: 25575,
-    password: "valheim-rcon",
+    port: 2458,
+    password: "",
     host: "localhost",
     timeout: 5000,
     autoReconnect: true,

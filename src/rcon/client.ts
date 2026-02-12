@@ -23,7 +23,7 @@ const DEFAULT_TIMEOUT = 5000;
  *
  * Usage:
  * ```ts
- * const client = new RconClient({ host: "localhost", port: 25575, password: "secret" });
+ * const client = new RconClient({ host: "localhost", port: 2458, password: "secret" });
  * await client.connect();
  * const response = await client.send("save");
  * await client.disconnect();

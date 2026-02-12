@@ -694,7 +694,7 @@ USAGE:
 
 OPTIONS:
     -H, --host <HOST>      Server hostname (default: localhost)
-    -p, --port <PORT>      RCON port (default: 25575)
+    -p, --port <PORT>      RCON port (default: 2458)
     -P, --password <PASS>  RCON password (or set via config)
     -t, --timeout <MS>     Command timeout (default: 5000)
     -i, --interactive      Start interactive RCON session

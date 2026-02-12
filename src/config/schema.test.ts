@@ -351,9 +351,9 @@ describe("AppConfigSchema", () => {
     expect(result.bepinex.customPluginPaths).toEqual([]);
   });
 
-  it("defaults rcon.enabled to false", () => {
+  it("defaults rcon.enabled to true", () => {
     const result = AppConfigSchema.parse({});
-    expect(result.rcon.enabled).toBe(false);
+    expect(result.rcon.enabled).toBe(true);
   });
 });
 
