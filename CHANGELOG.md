@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.2]
+
+### Fixed
+- **BepInEx not detected on Dashboard** — `bepinex.installed` stayed `null` because the detection logic only ran on the Plugins screen. Dashboard now checks BepInEx status when `valheimPath` is available, enabling correct RCON availability display and plugin status.
+
 ## [1.13.1]
 
 ### Fixed

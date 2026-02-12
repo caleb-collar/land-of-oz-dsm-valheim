@@ -4,6 +4,13 @@
 
 import { Box, Text, useInput } from "ink";
 import { type FC, useEffect, useState } from "react";
+import {
+  getBepInExPath,
+  getBepInExVersion,
+  getInstalledPlugins,
+  isBepInExInstalled,
+  SUPPORTED_PLUGINS,
+} from "../../bepinex/mod.js";
 import type { StartupPhase } from "../../server/logs.js";
 import {
   getInstalledVersion,
@@ -156,6 +163,12 @@ export const Dashboard: FC<DashboardProps> = () => {
   const setValheimBuildId = useStore((s) => s.actions.setValheimBuildId);
   const resetValheimInstall = useStore((s) => s.actions.resetValheimInstall);
 
+  // BepInEx state
+  const setBepInExInstalled = useStore((s) => s.actions.setBepInExInstalled);
+  const setBepInExVersion = useStore((s) => s.actions.setBepInExVersion);
+  const setBepInExPath = useStore((s) => s.actions.setBepInExPath);
+  const setPlugins = useStore((s) => s.actions.setPlugins);
+
   const { start, stop, restart, update, forceSave } = useServer();
   const {
     available: rconAvailable,
@@ -302,6 +315,51 @@ export const Dashboard: FC<DashboardProps> = () => {
     setValheimBuildId,
     resetValheimInstall,
     addLog,
+  ]);
+
+  // Check BepInEx status when Valheim path is available
+  useEffect(() => {
+    if (!valheimPath) return;
+
+    const checkBepInEx = async () => {
+      try {
+        const installed = await isBepInExInstalled(valheimPath);
+        setBepInExInstalled(installed);
+
+        if (installed) {
+          const version = await getBepInExVersion(valheimPath);
+          setBepInExVersion(version);
+          setBepInExPath(getBepInExPath(valheimPath));
+
+          // Also refresh plugin states
+          const installedPlugins = await getInstalledPlugins(valheimPath);
+          const pluginStates = SUPPORTED_PLUGINS.map((def) => {
+            const inst = installedPlugins.find((i) => i.id === def.id);
+            return {
+              id: def.id,
+              name: def.name,
+              enabled: inst?.enabled ?? false,
+              installed: inst?.version !== null,
+              installing: false,
+            };
+          });
+          setPlugins(pluginStates);
+        } else {
+          setBepInExVersion(null);
+          setBepInExPath(null);
+        }
+      } catch {
+        setBepInExInstalled(false);
+      }
+    };
+
+    checkBepInEx();
+  }, [
+    valheimPath,
+    setBepInExInstalled,
+    setBepInExVersion,
+    setBepInExPath,
+    setPlugins,
   ]);
 
   // Check startup task registration status on mount

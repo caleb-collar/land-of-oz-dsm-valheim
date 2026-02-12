@@ -31,6 +31,8 @@
       "approve": true,
       "matchCommandLine": true
     },
-    "gh": true
+    "gh": true,
+    "git tag": true,
+    "git push": true
   }
 }
