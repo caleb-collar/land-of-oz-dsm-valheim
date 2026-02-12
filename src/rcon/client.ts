@@ -172,24 +172,34 @@ export class RconClient {
   private handleData(data: Buffer): void {
     this.responseBuffer = Buffer.concat([this.responseBuffer, data]);
 
-    while (hasCompletePacket(this.responseBuffer)) {
-      const packet = decodePacket(this.responseBuffer);
-      const totalPacketLen = 4 + packet.size;
-      this.responseBuffer = this.responseBuffer.subarray(totalPacketLen);
+    try {
+      while (hasCompletePacket(this.responseBuffer)) {
+        const packet = decodePacket(this.responseBuffer);
+        const totalPacketLen = 4 + packet.size;
+        this.responseBuffer = this.responseBuffer.subarray(totalPacketLen);
 
-      this.handlePacket(packet.id, packet.type, packet.body);
+        this.handlePacket(packet.id, packet.type, packet.body);
+      }
+    } catch {
+      // Malformed packet data — likely connected to a non-RCON service.
+      // Clean up and surface as a protocol error.
+      this.cleanup();
     }
   }
 
   /** Handle a decoded packet */
   private handlePacket(id: number, type: number, body: string): void {
-    // Auth response check — id === -1 means auth failed
+    // Auth response check — id === -1 means auth failed.
+    // NOTE: The BepInEx.rcon plugin's PacketBuilder casts requestId to
+    // (byte)(-1) which produces 255 (0xFF) as unsigned. When read back
+    // as Int32LE in a zeroed buffer this is 0x000000FF = 255, NOT -1.
+    // We check for both values for compatibility.
     if (type === SERVERDATA_AUTH_RESPONSE) {
-      if (id === -1) {
-        const pending = this.pendingResponses.get(this.requestId - 1);
+      if (id === -1 || id === 255) {
+        const pending = this.pendingResponses.get(this.requestId);
         if (pending) {
           clearTimeout(pending.timer);
-          this.pendingResponses.delete(this.requestId - 1);
+          this.pendingResponses.delete(this.requestId);
           pending.reject(
             new RconError("AUTH_FAILED", "Authentication failed: bad password")
           );

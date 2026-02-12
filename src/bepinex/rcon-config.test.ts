@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  BEPINEX_RCON_DEFAULT_PASSWORD,
   BEPINEX_RCON_DEFAULT_PORT,
   parseRconConfig,
   RCON_CONFIG_FILE,
@@ -47,20 +48,23 @@ describe("rcon-config", () => {
     it("has correct default port", () => {
       expect(BEPINEX_RCON_DEFAULT_PORT).toBe(2458);
     });
+    it("has correct default password", () => {
+      expect(BEPINEX_RCON_DEFAULT_PASSWORD).toBe("ChangeMe");
+    });
   });
 
   describe("parseRconConfig", () => {
     it("parses a complete config", () => {
       const content = [
-        "[General]",
+        "[rcon]",
         "",
-        "# Enable RCON server",
+        "## Enable RCON Communication",
         "enabled = true",
         "",
-        "# RCON port",
+        "## Port to use for RCON Communication",
         "port = 2458",
         "",
-        "# RCON password",
+        "## Password to use for RCON Communication",
         "password = mysecret",
       ].join("\n");
 
@@ -83,12 +87,12 @@ describe("rcon-config", () => {
     });
 
     it("uses defaults for missing fields", () => {
-      const content = "[General]\n";
+      const content = "[rcon]\n";
       const result = parseRconConfig(content);
       expect(result).toEqual({
         enabled: true,
         port: BEPINEX_RCON_DEFAULT_PORT,
-        password: "",
+        password: BEPINEX_RCON_DEFAULT_PASSWORD,
       });
     });
 
@@ -97,7 +101,7 @@ describe("rcon-config", () => {
       expect(result).toEqual({
         enabled: true,
         port: BEPINEX_RCON_DEFAULT_PORT,
-        password: "",
+        password: BEPINEX_RCON_DEFAULT_PASSWORD,
       });
     });
 
@@ -110,9 +114,11 @@ describe("rcon-config", () => {
     it("ignores comments and section headers", () => {
       const content = [
         "# This is a comment",
-        "[General]",
+        "## BepInEx double hash comment",
+        "[rcon]",
         "port = 5000",
         "# Another comment",
+        "# Setting type: String",
         "password = secret",
       ].join("\n");
 
@@ -180,7 +186,7 @@ describe("rcon-config", () => {
       const config = { enabled: true, port: 2458, password: "secret" };
       const result = serializeRconConfig(config);
 
-      expect(result).toContain("[General]");
+      expect(result).toContain("[rcon]");
       expect(result).toContain("enabled = true");
       expect(result).toContain("port = 2458");
       expect(result).toContain("password = secret");
@@ -216,7 +222,7 @@ describe("rcon-config", () => {
 
     it("reads and parses existing config", async () => {
       vi.mocked(fs.readFile).mockResolvedValueOnce(
-        "[General]\nport = 2460\npassword = test"
+        "[rcon]\nport = 2460\npassword = test"
       );
 
       const result = await readRconPluginConfig("/mock/valheim");

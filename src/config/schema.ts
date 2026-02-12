@@ -156,7 +156,7 @@ export const RconConfigSchema = z.object({
     .min(1024, "Port must be >= 1024")
     .max(65535, "Port must be <= 65535")
     .default(2458),
-  password: z.string().default(""),
+  password: z.string().default("ChangeMe"),
   timeout: z.number().int().min(1000).max(60000).default(5000),
   autoReconnect: z.boolean().default(true),
 });

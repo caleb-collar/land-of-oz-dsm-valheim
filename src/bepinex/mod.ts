@@ -44,6 +44,7 @@ export {
 } from "./plugins.js";
 // RCON plugin config sync
 export {
+  BEPINEX_RCON_DEFAULT_PASSWORD,
   BEPINEX_RCON_DEFAULT_PORT,
   parseRconConfig,
   RCON_CONFIG_FILE,

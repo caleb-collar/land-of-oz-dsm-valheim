@@ -43,7 +43,7 @@ export const defaultConfig: AppConfig = {
   rcon: {
     enabled: true,
     port: 2458,
-    password: "",
+    password: "ChangeMe",
     timeout: 5000,
     autoReconnect: true,
   },
