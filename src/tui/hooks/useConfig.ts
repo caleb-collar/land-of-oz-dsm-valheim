@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useEffect } from "react";
+import { writeRconPluginConfig } from "../../bepinex/rcon-config.js";
 import {
   loadConfig,
   updateConfig as persistConfig,
@@ -142,21 +143,30 @@ export function useConfig() {
   );
 
   /**
-   * Update RCON configuration
+   * Update RCON configuration (app config + BepInEx plugin config)
    */
   const updateRconConfig = useCallback(
     async (partial: Partial<Omit<typeof rcon, "connected">>) => {
       // Update store immediately
       actions.updateRcon(partial);
 
-      // Persist to disk
+      // Persist to app config
       try {
-        await persistConfig({
-          rcon: {
-            ...(await loadConfig()).rcon,
-            ...partial,
-          },
-        });
+        const current = await loadConfig();
+        const merged = { ...current.rcon, ...partial };
+        await persistConfig({ rcon: merged });
+
+        // Also write to BepInEx.rcon plugin config so the RCON server
+        // picks up the same port/password on next server restart
+        try {
+          await writeRconPluginConfig({
+            enabled: merged.enabled,
+            port: merged.port,
+            password: merged.password,
+          });
+        } catch {
+          // Non-fatal: BepInEx may not be installed
+        }
       } catch (error) {
         actions.addLog("error", `Failed to save RCON config: ${error}`);
       }
@@ -247,7 +257,10 @@ export function useConfig() {
 }
 
 /**
- * Hook to sync store config with persistent config on mount
+ * Hook to sync store config with persistent config on mount.
+ * Also reads the BepInEx.rcon plugin config (if it exists) and merges
+ * port/password from there — the plugin config is the source of truth for
+ * what the RCON server is actually listening on.
  */
 export function useConfigSync() {
   const actions = useStore((s) => s.actions);
@@ -296,12 +309,31 @@ export function useConfigSync() {
           refreshRate: stored.tui.refreshRate,
         });
 
-        // Load RCON config
+        // Start with app's stored RCON config
+        let rconPort = stored.rcon.port;
+        let rconPassword = stored.rcon.password;
+
+        // Try to read the BepInEx.rcon plugin config — it's the source of
+        // truth for what port/password the RCON server is actually using
+        try {
+          const { readRconPluginConfig } = await import(
+            "../../bepinex/rcon-config.js"
+          );
+          const pluginCfg = await readRconPluginConfig();
+          if (pluginCfg) {
+            rconPort = pluginCfg.port;
+            rconPassword = pluginCfg.password;
+          }
+        } catch {
+          // Non-fatal: BepInEx may not be installed
+        }
+
+        // Load RCON config (merged with plugin values if available)
         actions.loadRconFromStore({
           enabled: stored.rcon.enabled,
           host: "localhost",
-          port: stored.rcon.port,
-          password: stored.rcon.password,
+          port: rconPort,
+          password: rconPassword,
           timeout: stored.rcon.timeout,
           autoReconnect: stored.rcon.autoReconnect,
         });
