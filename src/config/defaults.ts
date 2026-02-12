@@ -41,11 +41,16 @@ export const defaultConfig: AppConfig = {
     refreshRate: 1000,
   },
   rcon: {
-    enabled: true,
+    enabled: false,
     port: 25575,
-    password: "valheim-rcon",
+    password: "",
     timeout: 5000,
     autoReconnect: true,
+  },
+  bepinex: {
+    autoInstall: false,
+    enabledPlugins: [],
+    customPluginPaths: [],
   },
   worlds: [],
   activeWorld: null,

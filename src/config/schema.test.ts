@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   AppConfigSchema,
+  BepInExConfigSchema,
   CombatModifierSchema,
   DeathPenaltySchema,
   ModifiersSchema,
@@ -339,5 +340,55 @@ describe("AppConfigSchema", () => {
 
     const result = AppConfigSchema.safeParse(config);
     expect(result.success).toBe(false);
+  });
+
+  it("includes bepinex config with defaults", () => {
+    const result = AppConfigSchema.parse({});
+
+    expect(result.bepinex).toBeDefined();
+    expect(result.bepinex.autoInstall).toBe(false);
+    expect(result.bepinex.enabledPlugins).toEqual([]);
+    expect(result.bepinex.customPluginPaths).toEqual([]);
+  });
+
+  it("defaults rcon.enabled to false", () => {
+    const result = AppConfigSchema.parse({});
+    expect(result.rcon.enabled).toBe(false);
+  });
+});
+
+describe("BepInExConfigSchema", () => {
+  it("provides defaults", () => {
+    const result = BepInExConfigSchema.parse({});
+
+    expect(result.autoInstall).toBe(false);
+    expect(result.enabledPlugins).toEqual([]);
+    expect(result.customPluginPaths).toEqual([]);
+  });
+
+  it("accepts valid config", () => {
+    const config = {
+      autoInstall: true,
+      enabledPlugins: ["bepinex-rcon", "server-devcommands"],
+      customPluginPaths: ["/custom/path"],
+    };
+
+    const result = BepInExConfigSchema.safeParse(config);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.autoInstall).toBe(true);
+      expect(result.data.enabledPlugins).toHaveLength(2);
+      expect(result.data.customPluginPaths).toHaveLength(1);
+    }
+  });
+
+  it("accepts partial config with defaults", () => {
+    const config = { autoInstall: true };
+    const result = BepInExConfigSchema.safeParse(config);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.autoInstall).toBe(true);
+      expect(result.data.enabledPlugins).toEqual([]);
+    }
   });
 });

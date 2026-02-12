@@ -6,6 +6,8 @@ export { defaultConfig } from "./defaults.js";
 export {
   type AppConfig,
   AppConfigSchema,
+  type BepInExConfig,
+  BepInExConfigSchema,
   type CombatModifier,
   CombatModifierSchema,
   type DeathPenalty,

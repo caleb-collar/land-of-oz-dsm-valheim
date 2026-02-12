@@ -140,16 +140,23 @@ export const TuiConfigSchema = z.object({
   refreshRate: z.number().int().min(100).max(5000).default(1000),
 });
 
+// BepInEx mod framework configuration
+export const BepInExConfigSchema = z.object({
+  autoInstall: z.boolean().default(false),
+  enabledPlugins: z.array(z.string()).default([]),
+  customPluginPaths: z.array(z.string()).default([]),
+});
+
 // RCON (Remote Console) configuration
 export const RconConfigSchema = z.object({
-  enabled: z.boolean().default(true),
+  enabled: z.boolean().default(false),
   port: z
     .number()
     .int()
     .min(1024, "Port must be >= 1024")
     .max(65535, "Port must be <= 65535")
     .default(25575),
-  password: z.string().default("valheim-rcon"),
+  password: z.string().default(""),
   timeout: z.number().int().min(1000).max(60000).default(5000),
   autoReconnect: z.boolean().default(true),
 });
@@ -161,6 +168,7 @@ export const AppConfigSchema = z.object({
   watchdog: WatchdogConfigSchema.default(() => WatchdogConfigSchema.parse({})),
   tui: TuiConfigSchema.default(() => TuiConfigSchema.parse({})),
   rcon: RconConfigSchema.default(() => RconConfigSchema.parse({})),
+  bepinex: BepInExConfigSchema.default(() => BepInExConfigSchema.parse({})),
   worlds: z.array(WorldSchema).default([]),
   activeWorld: z.string().nullable().default(null),
   /** World names that have been configured but not yet generated (no files exist) */
@@ -182,4 +190,5 @@ export type ServerConfig = z.infer<typeof ServerConfigSchema>;
 export type WatchdogConfig = z.infer<typeof WatchdogConfigSchema>;
 export type TuiConfig = z.infer<typeof TuiConfigSchema>;
 export type RconConfig = z.infer<typeof RconConfigSchema>;
+export type BepInExConfig = z.infer<typeof BepInExConfigSchema>;
 export type AppConfig = z.infer<typeof AppConfigSchema>;
