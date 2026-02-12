@@ -7,10 +7,23 @@
 import { exec } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { getLocalDataDir, getPlatform } from "./platform.js";
 
 const execAsync = promisify(exec);
+
+/**
+ * Resolves the project root directory from the module location.
+ * Uses `import.meta.url` so the path is stable regardless of where
+ * the CLI is invoked from (unlike `process.cwd()`).
+ */
+function getProjectRoot(): string {
+  // This file lives at src/utils/startup.ts (or dist/utils/startup.js)
+  const thisFile = fileURLToPath(import.meta.url);
+  // Go up: utils/ -> src/ (or dist/) -> project root
+  return path.resolve(path.dirname(thisFile), "..", "..");
+}
 
 /** Task name used for all platforms */
 const TASK_NAME = "oz-valheim-dsm";
@@ -93,12 +106,13 @@ async function isWindowsTaskRegistered(): Promise<boolean> {
 
 async function registerWindowsTask(): Promise<StartupTaskResult> {
   try {
+    const projectRoot = getProjectRoot();
     // Get the path to the node executable and main script
     const nodeExe = process.execPath;
-    const mainScript = path.resolve(process.cwd(), "main.ts");
+    const mainScript = path.resolve(projectRoot, "main.ts");
 
     // Check if we're running from a built distribution
-    const distMain = path.resolve(process.cwd(), "dist", "main.js");
+    const distMain = path.resolve(projectRoot, "dist", "main.js");
     let command: string;
     let args: string;
 
@@ -200,10 +214,11 @@ async function isMacLaunchdRegistered(): Promise<boolean> {
 
 async function registerMacLaunchd(): Promise<StartupTaskResult> {
   try {
+    const projectRoot = getProjectRoot();
     const plistPath = getMacPlistPath();
     const nodeExe = process.execPath;
-    const mainScript = path.resolve(process.cwd(), "main.ts");
-    const distMain = path.resolve(process.cwd(), "dist", "main.js");
+    const mainScript = path.resolve(projectRoot, "main.ts");
+    const distMain = path.resolve(projectRoot, "dist", "main.js");
 
     let programArgs: string[];
 
@@ -231,7 +246,7 @@ async function registerMacLaunchd(): Promise<StartupTaskResult> {
     <key>KeepAlive</key>
     <false/>
     <key>WorkingDirectory</key>
-    <string>${process.cwd()}</string>
+    <string>${projectRoot}</string>
     <key>StandardOutPath</key>
     <string>${path.join(getLocalDataDir(), TASK_NAME, "stdout.log")}</string>
     <key>StandardErrorPath</key>
@@ -312,10 +327,11 @@ async function isLinuxSystemdRegistered(): Promise<boolean> {
 
 async function registerLinuxSystemd(): Promise<StartupTaskResult> {
   try {
+    const projectRoot = getProjectRoot();
     const servicePath = getLinuxServicePath();
     const nodeExe = process.execPath;
-    const mainScript = path.resolve(process.cwd(), "main.ts");
-    const distMain = path.resolve(process.cwd(), "dist", "main.js");
+    const mainScript = path.resolve(projectRoot, "main.ts");
+    const distMain = path.resolve(projectRoot, "dist", "main.js");
 
     let execStart: string;
 
@@ -334,7 +350,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStart=${execStart}
-WorkingDirectory=${process.cwd()}
+WorkingDirectory=${projectRoot}
 Restart=on-failure
 RestartSec=10
 

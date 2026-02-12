@@ -68,6 +68,20 @@ describe("config store", () => {
     expect(config.server.name).toBe("Land of OZ Valheim");
   });
 
+  it("updateConfig deep-merges nested sections", async () => {
+    // Set some initial custom values
+    await updateServerConfig({ name: "Custom Name", port: 2460 });
+
+    // Now update only port via updateConfig — name must survive
+    await updateConfig({ server: { port: 9999 } as never });
+
+    const config = await loadConfig();
+    expect(config.server.port).toBe(9999);
+    expect(config.server.name).toBe("Custom Name");
+    // Defaults for other server fields still intact
+    expect(config.server.world).toBe("Dedicated");
+  });
+
   it("updateServerConfig updates server section only", async () => {
     await updateServerConfig({
       name: "Updated Server",

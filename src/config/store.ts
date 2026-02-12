@@ -44,7 +44,9 @@ export async function saveConfig(config: AppConfig): Promise<void> {
 }
 
 /**
- * Updates the configuration with partial values
+ * Updates the configuration with partial values.
+ * Deep-merges known nested sections (server, watchdog, tui, rcon, bepinex)
+ * so that partial nested updates don't overwrite sibling keys.
  * @param partial Partial configuration to merge
  * @returns The updated configuration
  */
@@ -52,7 +54,18 @@ export async function updateConfig(
   partial: Partial<AppConfig>
 ): Promise<AppConfig> {
   const current = await loadConfig();
-  const updated = { ...current, ...partial };
+
+  // Deep-merge each known nested section individually
+  const updated: AppConfig = {
+    ...current,
+    ...partial,
+    server: { ...current.server, ...(partial.server ?? {}) },
+    watchdog: { ...current.watchdog, ...(partial.watchdog ?? {}) },
+    tui: { ...current.tui, ...(partial.tui ?? {}) },
+    rcon: { ...current.rcon, ...(partial.rcon ?? {}) },
+    bepinex: { ...current.bepinex, ...(partial.bepinex ?? {}) },
+  };
+
   await saveConfig(updated);
   return updated;
 }

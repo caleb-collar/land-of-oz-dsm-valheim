@@ -225,9 +225,10 @@ export class Watchdog {
     this.events.onWatchdogRestart(this.restartCount, this.config.maxRestarts);
 
     // Schedule restart
-    this.restartTimer = setTimeout(async () => {
+    this.restartTimer = setTimeout(() => {
       this.restartTimer = null;
-      try {
+
+      const doRestart = async () => {
         // Create new process instance with same config
         const processEvents: ProcessEvents = {
           onStateChange: (state) => {
@@ -243,11 +244,15 @@ export class Watchdog {
 
         this.process = new ValheimProcess(this.serverConfig, processEvents);
         await this.process.start();
-      } catch (error) {
+      };
+
+      doRestart().catch((error: unknown) => {
         this.events.onError(
-          new Error(`Restart failed: ${(error as Error).message}`)
+          new Error(
+            `Restart failed: ${error instanceof Error ? error.message : String(error)}`
+          )
         );
-      }
+      });
     }, delay);
   }
 }

@@ -9,6 +9,10 @@ import {
   updateServerConfig,
   updateWatchdogConfig,
 } from "../../config/mod.js";
+import {
+  ServerConfigSchema,
+  WatchdogConfigSchema,
+} from "../../config/schema.js";
 import { getAppConfigDir } from "../../utils/mod.js";
 import type { ConfigArgs } from "../args.js";
 
@@ -129,14 +133,35 @@ async function setConfigValue(
 
   try {
     const parsedValue = parseValue(value);
+    const partial = { [field]: parsedValue };
 
+    // Validate the partial update against the appropriate schema
+    // before persisting, so invalid values are caught immediately.
     switch (section) {
-      case "server":
-        await updateServerConfig({ [field]: parsedValue });
+      case "server": {
+        const result = ServerConfigSchema.partial().safeParse(partial);
+        if (!result.success) {
+          const issue = result.error.issues[0];
+          console.error(
+            `Error: Invalid value for ${key}: ${issue?.message ?? "validation failed"}`
+          );
+          process.exit(1);
+        }
+        await updateServerConfig(result.data);
         break;
-      case "watchdog":
-        await updateWatchdogConfig({ [field]: parsedValue });
+      }
+      case "watchdog": {
+        const result = WatchdogConfigSchema.partial().safeParse(partial);
+        if (!result.success) {
+          const issue = result.error.issues[0];
+          console.error(
+            `Error: Invalid value for ${key}: ${issue?.message ?? "validation failed"}`
+          );
+          process.exit(1);
+        }
+        await updateWatchdogConfig(result.data);
         break;
+      }
       case "tui":
         // Would need updateTuiConfig
         console.error("Error: TUI settings cannot be changed via CLI yet.");
