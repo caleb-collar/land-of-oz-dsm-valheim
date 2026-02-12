@@ -16,15 +16,35 @@ import {
   isBepInExInstalled,
 } from "./paths.js";
 
+/** BepInEx version constants */
+export const BEPINEX_VERSIONS = {
+  /** Thunderstore BepInExPack_Valheim version */
+  thunderstore: "5.4.2335",
+  /** GitHub BepInEx release version */
+  github: "5.4.23.5",
+} as const;
+
 /** BepInEx download URLs */
 export const BEPINEX_URLS = {
   /** Valheim-specific BepInEx pack (recommended) */
-  valheimPack:
-    "https://valheim.thunderstore.io/package/download/denikson/BepInExPack_Valheim/5.4.2202/",
-  /** Fallback: Generic BepInEx x64 */
-  generic:
-    "https://github.com/BepInEx/BepInEx/releases/download/v5.4.21/BepInEx_x64_5.4.21.0.zip",
+  valheimPack: `https://thunderstore.io/package/download/denikson/BepInExPack_Valheim/${BEPINEX_VERSIONS.thunderstore}/`,
+  /** Fallback: Generic BepInEx from GitHub Releases (platform-specific) */
+  generic: {
+    win32: `https://github.com/BepInEx/BepInEx/releases/download/v${BEPINEX_VERSIONS.github}/BepInEx_win_x64_${BEPINEX_VERSIONS.github}.zip`,
+    linux: `https://github.com/BepInEx/BepInEx/releases/download/v${BEPINEX_VERSIONS.github}/BepInEx_linux_x64_${BEPINEX_VERSIONS.github}.zip`,
+    darwin: `https://github.com/BepInEx/BepInEx/releases/download/v${BEPINEX_VERSIONS.github}/BepInEx_macos_universal_${BEPINEX_VERSIONS.github}.zip`,
+  },
 } as const;
+
+/**
+ * Returns the platform-specific generic BepInEx download URL
+ */
+function getGenericBepInExUrl(): string {
+  const platform = process.platform;
+  if (platform === "win32") return BEPINEX_URLS.generic.win32;
+  if (platform === "darwin") return BEPINEX_URLS.generic.darwin;
+  return BEPINEX_URLS.generic.linux;
+}
 
 /** Installation progress callback */
 export type BepInExInstallProgress = {
@@ -155,8 +175,17 @@ export async function installBepInEx(
   const zipPath = path.join(tempDir, "bepinex.zip");
 
   try {
-    // Download BepInEx
-    await downloadFile(BEPINEX_URLS.valheimPack, zipPath, onProgress);
+    // Download BepInEx - try Thunderstore first, fall back to GitHub
+    try {
+      await downloadFile(BEPINEX_URLS.valheimPack, zipPath, onProgress);
+    } catch (primaryError) {
+      onProgress?.({
+        stage: "downloading",
+        message: `Thunderstore failed (${primaryError instanceof Error ? primaryError.message : String(primaryError)}), trying GitHub...`,
+        progress: 5,
+      });
+      await downloadFile(getGenericBepInExUrl(), zipPath, onProgress);
+    }
 
     // Extract to temp directory first
     const extractDir = path.join(tempDir, "extracted");

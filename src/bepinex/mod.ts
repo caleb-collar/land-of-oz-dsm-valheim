@@ -6,6 +6,7 @@
 // Installer
 export {
   BEPINEX_URLS,
+  BEPINEX_VERSIONS,
   type BepInExInstallProgress,
   type BepInExProgressCallback,
   installBepInEx,

@@ -28,6 +28,7 @@ vi.mock("./paths.js", () => ({
 import fs from "node:fs/promises";
 import {
   BEPINEX_URLS,
+  BEPINEX_VERSIONS,
   uninstallBepInEx,
   verifyBepInExSetup,
 } from "./installer.js";
@@ -38,20 +39,48 @@ afterEach(() => {
 });
 
 describe("BepInEx Installer", () => {
+  describe("BEPINEX_VERSIONS", () => {
+    it("has thunderstore version", () => {
+      expect(BEPINEX_VERSIONS.thunderstore).toBeDefined();
+      expect(BEPINEX_VERSIONS.thunderstore).toMatch(/^\d+\.\d+\.\d+$/);
+    });
+
+    it("has github version", () => {
+      expect(BEPINEX_VERSIONS.github).toBeDefined();
+      expect(BEPINEX_VERSIONS.github).toMatch(/^\d+\.\d+\.\d+\.\d+$/);
+    });
+  });
+
   describe("BEPINEX_URLS", () => {
-    it("has valheimPack URL", () => {
+    it("has valheimPack URL pointing to thunderstore.io", () => {
       expect(BEPINEX_URLS.valheimPack).toBeDefined();
       expect(BEPINEX_URLS.valheimPack).toContain("thunderstore.io");
+      expect(BEPINEX_URLS.valheimPack).toContain(BEPINEX_VERSIONS.thunderstore);
     });
 
-    it("has generic fallback URL", () => {
-      expect(BEPINEX_URLS.generic).toBeDefined();
-      expect(BEPINEX_URLS.generic).toContain("github.com");
+    it("has platform-specific generic fallback URLs", () => {
+      expect(BEPINEX_URLS.generic.win32).toContain("github.com");
+      expect(BEPINEX_URLS.generic.linux).toContain("github.com");
+      expect(BEPINEX_URLS.generic.darwin).toContain("github.com");
     });
 
-    it("URLs are valid format", () => {
+    it("generic URLs include the correct version", () => {
+      expect(BEPINEX_URLS.generic.win32).toContain(BEPINEX_VERSIONS.github);
+      expect(BEPINEX_URLS.generic.linux).toContain(BEPINEX_VERSIONS.github);
+      expect(BEPINEX_URLS.generic.darwin).toContain(BEPINEX_VERSIONS.github);
+    });
+
+    it("all URLs are valid format", () => {
       expect(() => new URL(BEPINEX_URLS.valheimPack)).not.toThrow();
-      expect(() => new URL(BEPINEX_URLS.generic)).not.toThrow();
+      expect(() => new URL(BEPINEX_URLS.generic.win32)).not.toThrow();
+      expect(() => new URL(BEPINEX_URLS.generic.linux)).not.toThrow();
+      expect(() => new URL(BEPINEX_URLS.generic.darwin)).not.toThrow();
+    });
+
+    it("generic URLs contain correct platform identifiers", () => {
+      expect(BEPINEX_URLS.generic.win32).toContain("win_x64");
+      expect(BEPINEX_URLS.generic.linux).toContain("linux_x64");
+      expect(BEPINEX_URLS.generic.darwin).toContain("macos_universal");
     });
   });
 
