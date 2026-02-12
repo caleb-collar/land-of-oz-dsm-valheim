@@ -81,6 +81,8 @@ export class ValheimProcess {
   private _isDetached: boolean = false;
   /** PID for detached processes (when we don't have a direct handle) */
   private _detachedPid: number | null = null;
+  /** Interval for monitoring detached process status */
+  private _monitorInterval: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Creates a new Valheim process wrapper
@@ -379,10 +381,7 @@ export class ValheimProcess {
       }
     }, 2000);
 
-    // Store reference to clear on stop
-    (
-      this as unknown as { _monitorInterval?: ReturnType<typeof setInterval> }
-    )._monitorInterval = checkInterval;
+    this._monitorInterval = checkInterval;
   }
 
   /**
@@ -528,12 +527,9 @@ export class ValheimProcess {
    */
   private async cleanup(): Promise<void> {
     // Stop monitor interval
-    const self = this as unknown as {
-      _monitorInterval?: ReturnType<typeof setInterval>;
-    };
-    if (self._monitorInterval) {
-      clearInterval(self._monitorInterval);
-      self._monitorInterval = undefined;
+    if (this._monitorInterval) {
+      clearInterval(this._monitorInterval);
+      this._monitorInterval = null;
     }
 
     // Stop log tailer
@@ -598,10 +594,14 @@ export class ValheimProcess {
    */
   private getEnvironment(): Record<string, string> {
     const platform = getPlatform();
-    const env: Record<string, string> = { ...process.env } as Record<
-      string,
-      string
-    >;
+    const env: Record<string, string> = {};
+
+    // Copy existing env vars, filtering out undefined values
+    for (const [key, value] of Object.entries(process.env)) {
+      if (value !== undefined) {
+        env[key] = value;
+      }
+    }
 
     if (platform === "linux") {
       // Linux needs LD_LIBRARY_PATH for Steam runtime libraries

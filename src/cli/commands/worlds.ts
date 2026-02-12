@@ -4,6 +4,7 @@
  */
 
 import * as fs from "node:fs/promises";
+import nodePath from "node:path";
 import {
   deleteWorld,
   exportWorld,
@@ -162,7 +163,9 @@ async function importWorldCommand(
   }
 
   // Determine db and fwl paths
-  const dbPath = path.endsWith(".db") ? path : `${path}/${name}.db`;
+  const dbPath = path.endsWith(".db")
+    ? path
+    : nodePath.join(path, `${name}.db`);
   const fwlPath = dbPath.replace(".db", ".fwl");
 
   console.log(`\nImporting world '${name}'...`);
@@ -229,8 +232,8 @@ async function exportWorldCommand(
 
     console.log("");
     console.log(`✓ World '${name}' exported successfully.`);
-    console.log(`  Database: ${path}/${name}.db`);
-    console.log(`  Metadata: ${path}/${name}.fwl`);
+    console.log(`  Database: ${nodePath.join(path, `${name}.db`)}`);
+    console.log(`  Metadata: ${nodePath.join(path, `${name}.fwl`)}`);
   } catch (error) {
     console.error(`\nError exporting world: ${(error as Error).message}`);
     process.exit(1);

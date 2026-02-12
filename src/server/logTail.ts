@@ -192,9 +192,10 @@ export class LogTailer {
    */
   async readLastLines(lineCount = 100): Promise<ServerLogEntry[]> {
     const entries: ServerLogEntry[] = [];
+    let handle: FileHandle | null = null;
 
     try {
-      const handle = await open(this.filePath, "r");
+      handle = await open(this.filePath, "r");
       const stats = await handle.stat();
       const fileSize = stats.size;
 
@@ -214,8 +215,6 @@ export class LogTailer {
         position = Math.max(0, position - chunkSize);
       }
 
-      await handle.close();
-
       // Take last N lines and parse them
       const lastLines = lines.slice(-lineCount);
       for (const line of lastLines) {
@@ -223,6 +222,10 @@ export class LogTailer {
       }
     } catch {
       // File may not exist, return empty
+    } finally {
+      if (handle) {
+        await handle.close();
+      }
     }
 
     return entries;

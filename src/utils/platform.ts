@@ -92,8 +92,11 @@ export function getValheimSaveDir(): string {
 
   switch (platform) {
     case "windows":
+      // Valheim uses LocalLow for save data, not Roaming
       return path.join(
-        process.env.APPDATA ?? path.join(home, "AppData", "Roaming"),
+        home,
+        "AppData",
+        "LocalLow",
         "IronGate",
         "Valheim",
         "worlds_local"

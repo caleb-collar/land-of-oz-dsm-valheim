@@ -120,7 +120,7 @@ export async function sendServerCommand(
     try {
       const response = await rconClient.send(command);
       return { success: true, response };
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof RconError) {
         return { success: false, response: `RCON error: ${error.message}` };
       }
@@ -142,7 +142,7 @@ export async function sendServerCommand(
       const response = await client.send(command);
       client.disconnect();
       return { success: true, response };
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof RconError) {
         return { success: false, response: `RCON error: ${error.message}` };
       }

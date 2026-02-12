@@ -6,21 +6,22 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { z } from "zod";
 import { getAppConfigDir, getConfigDir } from "../utils/platform.js";
 
+/** Zod schema for validating PID file contents */
+const PidFileSchema = z.object({
+  pid: z.number().int().positive(),
+  startedAt: z.string(),
+  world: z.string(),
+  port: z.number().int(),
+  logFile: z.string().optional(),
+  detached: z.boolean().optional(),
+  serverName: z.string().optional(),
+});
+
 /** PID file data structure */
-export type PidFileData = {
-  pid: number;
-  startedAt: string;
-  world: string;
-  port: number;
-  /** Path to the server log file (for detached mode) */
-  logFile?: string;
-  /** Whether the server was started in detached mode */
-  detached?: boolean;
-  /** Server name */
-  serverName?: string;
-};
+export type PidFileData = z.infer<typeof PidFileSchema>;
 
 /**
  * Gets the path to the server logs directory
@@ -70,7 +71,14 @@ export async function readPidFile(): Promise<PidFileData | null> {
 
   try {
     const content = await fs.readFile(pidPath, "utf-8");
-    return JSON.parse(content) as PidFileData;
+    const parsed = JSON.parse(content);
+    const result = PidFileSchema.safeParse(parsed);
+    if (!result.success) {
+      // Invalid PID file format — remove the corrupt file
+      await removePidFile();
+      return null;
+    }
+    return result.data;
   } catch {
     return null;
   }

@@ -4,6 +4,7 @@
  */
 
 import * as fs from "node:fs/promises";
+import path from "node:path";
 import {
   getInstalledVersion,
   getSteamPaths,
@@ -132,7 +133,7 @@ async function validateInstallation(
     console.log(`    Path: ${paths.valheimDir}`);
 
     // Check if executable exists
-    const exePath = `${paths.valheimDir}/${paths.executable}`;
+    const exePath = path.join(paths.valheimDir, paths.executable);
     try {
       const stat = await fs.stat(exePath);
       if (stat.isFile()) {

@@ -59,17 +59,36 @@ export async function readList(
     .filter((line) => line.length > 0 && !line.startsWith("//"));
 }
 
+/** Regex for valid Steam64 IDs (17-digit numeric string) */
+const STEAM_ID_PATTERN = /^\d{17}$/;
+
+/**
+ * Validates that a string is a valid Steam64 ID
+ * @param steamId Steam ID to validate
+ * @returns True if the Steam ID is valid
+ */
+export function isValidSteamId(steamId: string): boolean {
+  return STEAM_ID_PATTERN.test(steamId);
+}
+
 /**
  * Adds a Steam ID to a player list
  * @param type Type of list
  * @param steamId Steam ID to add
  * @param savedir Valheim save directory
+ * @throws Error if steamId is not a valid Steam64 ID
  */
 export async function addToList(
   type: ListType,
   steamId: string,
   savedir: string
 ): Promise<void> {
+  if (!isValidSteamId(steamId)) {
+    throw new Error(
+      `Invalid Steam ID: "${steamId}". Expected a 17-digit Steam64 ID.`
+    );
+  }
+
   const entries = await readList(type, savedir);
 
   if (!entries.includes(steamId)) {
