@@ -1,6 +1,6 @@
 {
   "name": "valheim-oz-dsm",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "description": "Land of OZ - Valheim Dedicated Server Manager",
   "type": "module",
   "bin": {
@@ -10,8 +10,7 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE",
-    "CHANGELOG.md"
+    "LICENSE"
   ],
   "publishConfig": {
     "access": "public",
