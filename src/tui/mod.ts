@@ -8,12 +8,13 @@ import React from "react";
 import { App } from "./App.js";
 
 // Version
-export const TUI_VERSION = "1.6.1";
+export const TUI_VERSION = "1.10.0";
 
 // Core exports
 export { App } from "./App.js";
 // Components
 export {
+  AdminManager,
   ConfirmModal,
   Header,
   LogEntry as LogEntryComponent,
@@ -23,23 +24,34 @@ export {
   Modal,
   StatusBar,
 } from "./components/mod.js";
-export type { TerminalSize } from "./hooks/mod.js";
+export type { RconAvailability, TerminalSize } from "./hooks/mod.js";
 // Hooks
 export {
+  useAdminManager,
   useConfig,
   useConfigSync,
   useLogStream,
   useLogs,
+  usePlugins,
+  useRconAvailable,
   useServer,
   useTerminalSize,
 } from "./hooks/mod.js";
 // Screens
-export { Console, Dashboard, Settings, Worlds } from "./screens/mod.js";
+export {
+  Console,
+  Dashboard,
+  Plugins,
+  Settings,
+  Worlds,
+} from "./screens/mod.js";
 export type {
+  AdminRole,
   LogEntry,
   LogLevel,
   Screen,
   ServerStatus,
+  ServerUser,
   Store,
 } from "./store.js";
 export { useStore } from "./store.js";

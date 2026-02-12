@@ -7,6 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0]
+
+### Fixed
+- **`parseValue()` schema validation** — CLI `config set` now validates values against Zod schemas (`ServerConfigSchema`, `WatchdogConfigSchema`) before persisting, preventing invalid configuration
+- **`process.cwd()` fragile paths** — Startup task registration (`startup.ts`) now derives project root from `import.meta.url` instead of `process.cwd()`, making scheduled tasks independent of invocation directory
+- **Unhandled promise in watchdog** — `setTimeout` callback in `watchdog.ts` now uses synchronous wrapper with `.catch()` to route async restart errors to `onError` handler
+- **`updateConfig()` shallow merge** — Config store deep-merges nested sections (server, watchdog, tui, rcon, bepinex) so partial updates no longer overwrite sibling keys
+
+### Changed
+- **Upgraded `vitest`** from 3.x to 4.0.18
+- **Upgraded `@vitest/coverage-v8`** from 3.x to 4.0.18
+- **Upgraded `@types/node`** from 22.x to 25.2.3
+- **Upgraded `conf`** from 13.x to 15.1.0
+- Adjusted coverage thresholds to reflect current codebase coverage
+
+## [1.9.1]
+
+### Fixed
+- **CRITICAL: Valheim save directory** - Windows path used `AppData/Roaming` instead of correct `AppData/LocalLow` for `getValheimSaveDir()`
+- **SECURITY: Shell injection** in BepInEx zip extraction (`installer.ts`, `plugins.ts`) — unsanitized paths interpolated into PowerShell commands; now escapes single quotes
+- **SECURITY: Steam ID validation** — `addToList()` now validates Steam64 IDs (17-digit format) before writing to admin/ban/permitted lists
+- **SECURITY: Default RCON password** — Changed hardcoded default `"valheim-rcon"` to empty string requiring explicit configuration
+- **PID file validation** — `readPidFile()` now validates JSON with Zod schema instead of unsafe `JSON.parse` cast; corrupted files are automatically cleaned up
+- **File handle leak** in `LogTailer.readLastLines()` — added `finally` block to ensure handle is closed on error
+- **RCON request ID overflow** — Client IDs now wrap at 2^31 to stay within int32 range
+- **Forward-slash paths** in `install.ts` and `worlds.ts` — replaced template literal `${dir}/${file}` with `path.join()` for cross-platform correctness
+- **`_monitorInterval` type hack** in `ValheimProcess` — replaced unsafe `unknown` casts with proper private class field
+- **`process.env` spread typing** in `ValheimProcess.getEnvironment()` — replaced unsafe `as Record<string, string>` cast with explicit filtering of undefined values
+
+### Added
+- **RCON module** (`src/rcon/`) — recreated 6 missing source files and CLI command
+  - `types.ts` — RCON configuration, packet, and error types
+  - `protocol.ts` — Source RCON packet encode/decode
+  - `client.ts` — TCP RCON client with connect/disconnect/send
+  - `constants.ts` — Valheim event types and global key constants
+  - `manager.ts` — RCON manager singleton with 20+ command methods and auto-reconnect
+  - `mod.ts` — barrel exports
+  - `src/cli/commands/rcon.ts` — CLI `rcon` command with interactive mode
+- `isValidSteamId()` export in `src/valheim/lists.ts`
+- `protocol.test.ts` — 15 tests for RCON protocol encoding/decoding
+
+### Changed
+- Updated dependencies to latest patch/minor versions within semver range
+- Updated Biome schema URL from 2.3.13 to 2.3.15
+- Documentation: Fixed markdown link syntax, added `src/rcon/` to directory tree, updated CHANGELOG compare links
+
+## [1.9.0]
+
+### Added
+- **BepInEx Plugin Management** - Full support for BepInEx mod framework
+  - Install/uninstall BepInEx framework with progress tracking
+  - Manage curated server-side plugins (BepInEx.rcon, Server DevCommands)
+  - Enable/disable plugins, configure settings (RCON port/password)
+  - New Plugins screen (press `5`) for all plugin operations
+- **RCON Feature Gating** - RCON features now auto-activate based on plugin availability
+  - Dashboard shows plugin requirements when RCON unavailable
+  - All RCON-dependent modals (PlayerManager, EventManager, TimeControl, GlobalKeysManager, ServerInfoModal) show clear unavailable/missing plugin messages
+  - Visibility matrix: BepInEx → RCON plugin → DevCommands → Server online → Connected
+- **Admin Role Management** - Manage server admins and root users
+  - Steam64 ID validation and management
+  - Promote/demote players between player → admin → root roles
+  - Admin management modal (press `M`) with role badges
+  - File-based operations (adminlist.txt, DevCommands config) — no restart required
+- **TUI Layout Improvements** - Fixed text overflow across all screens
+  - Added `overflow="hidden"` to all screen containers
+  - Long paths truncated with `wrap="truncate-end"`
+  - Utility components: `TruncatedText`, `Row`
+  - Fixed duplicate `useInput` hook in ServerInfoModal (React rules of hooks violation)
+
+### Changed
+- RCON config defaults to `enabled: false` (requires BepInEx RCON plugin)
+- Config schema now includes `bepinex` section (autoInstall, enabledPlugins, customPluginPaths)
+- Store updated with BepInEx state slice, admin state slice, and "plugins" screen type
+
 ## [1.6.1] - 2026-02-03
 
 ### Fixed
@@ -220,7 +294,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Platform detection for Windows, Linux, macOS
 - Basic TUI framework with Ink
 
-[Unreleased]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.3...HEAD
+[Unreleased]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.9.1...HEAD
+[1.9.1]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.9.0...v1.9.1
+[1.9.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.6.1...v1.9.0
+[1.6.1]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.6.0...v1.6.1
+[1.6.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.4...v1.6.0
+[1.5.4]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.3...v1.5.4
 [1.5.3]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.2...v1.5.3
 [1.5.2]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.1...v1.5.2
 [1.5.1]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.5.0...v1.5.1

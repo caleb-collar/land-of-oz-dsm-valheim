@@ -3,6 +3,9 @@
  * Public API exports
  */
 
+// BepInEx plugin management
+export * from "./bepinex/mod.js";
+
 // CLI
 export * from "./cli/mod.js";
 
@@ -58,5 +61,5 @@ export {
 } from "./valheim/mod.js";
 
 // Version info
-export const VERSION = "1.8.0";
+export const VERSION = "1.10.0";
 export const APP_NAME = "Land of OZ - Valheim DSM";
