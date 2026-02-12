@@ -560,3 +560,167 @@ To create new animations:
 1. Use `mcp_ascii_motion__new_project` to start
 2. Draw frames with `mcp_ascii_motion__set_cell`
 3. Export with `mcp_ascii_motion__export_json`
+
+---
+
+## Responsive Layout & Overlap Prevention
+
+> **This section is mandatory reading for any agent modifying `.tsx` files.**
+
+Text overlap and misaligned layouts are the **single most frequent regression**
+introduced during agentic development. The Ink/Yoga layout engine behaves
+differently from browser CSS — it does **not** automatically wrap or scroll
+content. Every element must be explicitly constrained.
+
+### Terminal Size Targets
+
+| Size | Columns × Rows | Purpose |
+|------|-----------------|---------|
+| Minimum | 80 × 24 | Must render with zero overlap or truncation artifacts |
+| Comfortable | 120 × 40 | Optimise for this — show more data, wider columns |
+
+### Mandatory Layout Rules
+
+These rules apply to **every** `<Box>` and `<Text>` in the project:
+
+#### Rule 1 — Fixed zones must not collapse
+
+Any element with a known height (header, status rows, help bars, section
+dividers) must set `flexShrink={0}` so Yoga never compresses it:
+
+```tsx
+// ✅ Header that keeps its height
+<Box flexShrink={0} minHeight={1}>
+  <Text bold>─ Server Status ─</Text>
+</Box>
+
+// ❌ Will be crushed to 0 when space is tight
+<Box>
+  <Text bold>─ Server Status ─</Text>
+</Box>
+```
+
+#### Rule 2 — Scrollable zones must clip overflow
+
+Content areas that hold dynamic lists, log entries, or long text must use
+`flexGrow={1}` and `overflow="hidden"` together. This fills remaining space
+while preventing content from pushing siblings off-screen:
+
+```tsx
+// ✅ Scrollable area that clips
+<Box flexGrow={1} flexDirection="column" overflow="hidden">
+  {logEntries.map(e => <LogEntry key={e.id} entry={e} />)}
+</Box>
+
+// ❌ Grows without clipping — long lists push footer off screen
+<Box flexGrow={1} flexDirection="column">
+  {logEntries.map(e => <LogEntry key={e.id} entry={e} />)}
+</Box>
+```
+
+#### Rule 3 — Every info/status row needs `flexShrink={0}` + `minHeight={1}`
+
+This is the most commonly missed rule. Without it, individual rows collapse to
+zero height when the terminal is short:
+
+```tsx
+// ✅ Use the <Row> component from src/tui/components/Row.tsx
+<Row label="Port" value="2456" />
+
+// ✅ Or manually specify
+<Box flexShrink={0} minHeight={1}>
+  <Text>Port: </Text><Text color="cyan">2456</Text>
+</Box>
+```
+
+#### Rule 4 — Truncate all dynamic/user-supplied strings
+
+File paths, player names, log messages, world names, and any string whose
+length is not known at compile time **must** be truncated to prevent horizontal
+overflow:
+
+```tsx
+// ✅ Using Ink's built-in truncation
+<Text dimColor wrap="truncate-end">{longPath}</Text>
+
+// ✅ Using the project's TruncatedText component
+import { TruncatedText } from "./TruncatedText.tsx";
+<TruncatedText maxWidth={40}>{longPath}</TruncatedText>
+```
+
+Never render a raw dynamic string without a width constraint.
+
+#### Rule 5 — Fixed-width label columns
+
+When rendering key-value pairs, give the label a fixed `width` so values align
+vertically regardless of label length:
+
+```tsx
+<Box flexShrink={0} minHeight={1}>
+  <Box width={16}><Text>Server Name:</Text></Box>
+  <Text color="cyan">Land of OZ</Text>
+</Box>
+```
+
+#### Rule 6 — No unbounded horizontal content
+
+Never place a `<Text>` with potentially long content inside a
+`flexDirection="row"` `<Box>` without constraining it:
+
+```tsx
+// ✅ Value flexes, label stays fixed
+<Box flexDirection="row" flexShrink={0}>
+  <Box width={12}><Text>Path:</Text></Box>
+  <Box flexShrink={1}><Text wrap="truncate-end">{path}</Text></Box>
+</Box>
+
+// ❌ Long path pushes "Actions" off the right edge
+<Box flexDirection="row">
+  <Text>{longPath}</Text>
+  <Text>Actions</Text>
+</Box>
+```
+
+#### Rule 7 — Modal constraints
+
+Modals and overlays must not exceed the minimum terminal width. Cap modal width
+to a concrete value (e.g., `width={70}`) or use a percentage-based approach
+that degrades at 80 columns.
+
+### Layout Review Checklist
+
+Run this checklist **every time a `.tsx` file is created or modified**:
+
+- [ ] Every non-scrollable row has `flexShrink={0}`
+- [ ] The main scrollable content area has `overflow="hidden"`
+- [ ] Long strings (paths, player names, logs) use `wrap="truncate-end"` or
+      `<TruncatedText>`
+- [ ] Label columns have a fixed `width`
+- [ ] No `<Text>` with dynamic content sits in a row without a width constraint
+- [ ] Modals and overlays don't exceed terminal width at 80 cols
+- [ ] Help / action bars at the bottom are `flexShrink={0}`
+- [ ] Visually verify at 80×24 (narrow) **and** 120×40 (wide)
+
+### Reusable Layout Components
+
+The project provides these components specifically to enforce consistency:
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `<Row>` | `src/tui/components/Row.tsx` | Label-value pair with `flexShrink={0}` and `minHeight={1}` baked in |
+| `<TruncatedText>` | `src/tui/components/TruncatedText.tsx` | Truncates to a given `maxWidth` with ellipsis |
+
+**Prefer these over hand-rolling layout logic** for status rows and dynamic
+strings. If you need behaviour they don't cover, extend them rather than
+duplicating layout props across screens.
+
+### Common Mistakes & Fixes
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Rows disappear in short terminals | Missing `flexShrink={0}` | Add `flexShrink={0} minHeight={1}` |
+| Footer pushed off bottom of screen | Dynamic list has no `overflow="hidden"` | Add `overflow="hidden"` to the list container |
+| Text bleeds past right edge | Dynamic string with no truncation | Use `wrap="truncate-end"` or `<TruncatedText>` |
+| Values misaligned across rows | Labels have variable width | Give labels a fixed `width` |
+| Modal clips or wraps oddly | No max width on modal | Set explicit `width` or `maxWidth` on the outer `<Box>` |
+| Header/status bar shrinks to 1 line | `flexShrink` defaults to 1 | Set `flexShrink={0}` on the header `<Box>` |

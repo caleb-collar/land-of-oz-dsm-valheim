@@ -140,3 +140,8 @@ oz-dsm-valheim/
 3. Test on Windows, Linux, and macOS
 4. Bump version in `package.json` for all changes
 5. Run `npm run typecheck` before committing
+6. **TUI layout**: Every `.tsx` change must follow the TUI Layout Standards in
+   `AGENTS.md` — use `flexShrink={0}` on fixed rows, `overflow="hidden"` on
+   scrollable areas, and truncate all dynamic strings. Verify at 80×24 **and**
+   120×40. See `.agent-docs/01-tui-architecture.md` § *Responsive Layout &
+   Overlap Prevention* for full rules and the layout review checklist.

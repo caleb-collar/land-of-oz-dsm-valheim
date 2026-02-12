@@ -18,7 +18,7 @@ Whether you're running a private server for friends or managing a public realm, 
 - **Runtime:** Node.js 22.x with TypeScript 
 - **TUI Framework:** Ink 6.x—React, but for your terminal 
 - **Layout Engine:** Yoga flexbox—the same layout engine that powers React Native
-- **Animations:** (ASCII Motion)[https://ascii-motion.app/]—why settle for static ASCII art when you can have *animated* ASCII art?
+- **Animations:** [ASCII Motion](https://ascii-motion.app/)—why settle for static ASCII art when you can have *animated* ASCII art?
 - **State Management:** Zustand
 
 
@@ -116,9 +116,11 @@ npm start -- rcon --interactive
 | `2`       | Settings             |
 | `3`       | Worlds               |
 | `4`       | Console              |
+| `5`       | Plugins              |
 | `?`       | Show help overlay    |
 | `S`       | Start server         |
 | `X`       | Stop server          |
+| `M`       | Manage Admins        |
 | `Q`       | Quit application     |
 | `Ctrl+C`  | Force quit           |
 | `Esc`     | Close modal          |
@@ -141,6 +143,26 @@ npm start -- rcon --interactive
 - Import existing save files (.db, .fwl pairs) and run them.
 - Persistent configuration (settings, active world, etc persist between server
   and system restarts)
+
+### BepInEx Plugin Management
+
+The DSM includes built-in support for [BepInEx](https://github.com/BepInEx/BepInEx), the Unity modding framework. This enables server-side plugins that don't require clients to install anything.
+
+**Supported Plugins:**
+
+| Plugin | Author | Description |
+|--------|--------|-------------|
+| BepInEx.rcon | AviiNL | RCON protocol library for remote server management |
+| Server DevCommands | JereKuusela | Enhanced admin commands (kick, ban, events, time control) |
+
+**Plugin Features (press `5` for Plugins screen):**
+- Install/uninstall BepInEx framework
+- Enable/disable individual plugins
+- Configure plugin settings (RCON port, password)
+- RCON features auto-activate when plugins are installed
+- Admin role management (promote/demote players, manage root users)
+
+> **Note:** All supported plugins are server-side only — players connect with vanilla Valheim clients.
 
 ## TUI
 
@@ -195,6 +217,13 @@ land-of-oz-dsm-valheim/
 ├── src/
 │   ├── mod.ts                # Public API exports
 │   │
+│   ├── bepinex/
+│   │   ├── mod.ts            # BepInEx module exports
+│   │   ├── types.ts          # Plugin types and definitions
+│   │   ├── paths.ts          # BepInEx path detection
+│   │   ├── installer.ts      # BepInEx download and install
+│   │   └── plugins.ts        # Plugin management (install/enable/disable)
+│   │
 │   ├── cli/
 │   │   ├── mod.ts            # CLI module exports
 │   │   ├── args.ts           # Argument parsing (Cliffy or custom)
@@ -211,26 +240,45 @@ land-of-oz-dsm-valheim/
 │   │   ├── hooks/            # Custom React hooks
 │   │   │   ├── useServer.ts
 │   │   │   ├── useLogs.ts
-│   │   │   └── useConfig.ts
+│   │   │   ├── useConfig.ts
+│   │   │   ├── usePlugins.ts       # BepInEx plugin management
+│   │   │   ├── useRconAvailable.ts  # RCON feature gating
+│   │   │   └── useAdminManager.ts   # Admin role management
 │   │   ├── components/       # Reusable UI components
 │   │   │   ├── Header.tsx          # Animated ASCII header
 │   │   │   ├── StatusBar.tsx       # Server status indicators
 │   │   │   ├── LogFeed.tsx         # Real-time color-coded logs
 │   │   │   ├── Menu.tsx            # Navigation menu
-│   │   │   ├── SettingsPanel.tsx   # Server settings editor
-│   │   │   └── Modal.tsx           # Overlay dialogs
+│   │   │   ├── Modal.tsx           # Overlay dialogs
+│   │   │   ├── AdminManager.tsx    # Admin/root user management
+│   │   │   ├── PlayerManager.tsx   # Player kick/ban controls
+│   │   │   ├── EventManager.tsx    # Event triggering
+│   │   │   ├── TimeControl.tsx     # Time skip controls
+│   │   │   ├── GlobalKeysManager.tsx # Boss progression
+│   │   │   └── PluginItem.tsx      # Plugin list item
 │   │   └── screens/          # Full-screen views
 │   │       ├── Dashboard.tsx
 │   │       ├── Settings.tsx
 │   │       ├── Worlds.tsx
-│   │       └── Console.tsx
+│   │       ├── Console.tsx
+│   │       └── Plugins.tsx         # BepInEx plugin management
 │   │
 │   ├── server/
 │   │   ├── mod.ts            # Server management exports
 │   │   ├── process.ts        # Valheim process wrapper
+│   │   ├── pidfile.ts        # PID file management for detached servers
+│   │   ├── logTail.ts        # Log file tailing for detached mode
 │   │   ├── watchdog.ts       # Crash detection and auto-restart
 │   │   ├── logs.ts           # Log parsing and streaming
 │   │   └── commands.ts       # Runtime admin command execution
+│   │
+│   ├── rcon/
+│   │   ├── mod.ts            # RCON module exports
+│   │   ├── types.ts          # RCON types and configuration
+│   │   ├── protocol.ts       # Source RCON packet encode/decode
+│   │   ├── client.ts         # TCP RCON client
+│   │   ├── constants.ts      # Valheim RCON constants
+│   │   └── manager.ts        # RCON manager with auto-reconnect
 │   │
 │   ├── steamcmd/
 │   │   ├── mod.ts            # SteamCMD module exports
@@ -248,7 +296,8 @@ land-of-oz-dsm-valheim/
 │   │   ├── mod.ts            # Valheim-specific exports
 │   │   ├── settings.ts       # Server settings types and handlers
 │   │   ├── worlds.ts         # World file management (.db, .fwl)
-│   │   └── args.ts           # Valheim CLI argument builder
+│   │   ├── args.ts           # Valheim CLI argument builder
+│   │   └── admins.ts         # Admin/root user role management
 │   │
 │   └── utils/
 │       ├── mod.ts            # Utility exports

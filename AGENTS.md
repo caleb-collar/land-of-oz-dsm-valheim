@@ -71,6 +71,15 @@ The official Valheim-inspired color palette for the application:
 2. Command handlers (`src/cli/commands/`)
 3. World management (`src/valheim/worlds.ts`)
 
+### Phase 5: BepInEx & Plugin Management
+
+1. BepInEx types & path detection (`src/bepinex/types.ts`, `src/bepinex/paths.ts`)
+2. BepInEx installer (`src/bepinex/installer.ts`)
+3. Plugin manager (`src/bepinex/plugins.ts`)
+4. Plugin TUI screen (`src/tui/screens/Plugins.tsx`)
+5. RCON feature gating (`src/tui/hooks/useRconAvailable.ts`)
+6. Admin role management (`src/valheim/admins.ts`, `src/tui/components/AdminManager.tsx`)
+
 ## Coding Standards
 
 ### TypeScript Conventions
@@ -270,6 +279,101 @@ For detailed implementation guidance, see `.agent-docs/`:
 - Component tests for TUI (where possible)
 - Run tests with: `npm test`
 
+## TUI Layout Standards
+
+Text overlap and layout breakage are **the most common regression** during
+agentic development. Every TUI change—whether adding a new screen, editing an
+existing component, or changing data displayed in a row—**must** be reviewed
+against the rules below.
+
+### Minimum Supported Terminal Size
+
+| Dimension | Value |
+| --------- | ----- |
+| Width     | 80 columns |
+| Height    | 24 rows    |
+
+All screens must render without overlap or truncation artifacts at 80×24.
+Optimise for 120×40 as the comfortable default.
+
+### Mandatory Ink Layout Rules
+
+Apply these rules to **every** `<Box>` / `<Text>` you create or modify:
+
+1. **Fixed-height zones need `flexShrink={0}`** — Header, status bars, help
+   bars, section titles, and any row that should never collapse must set
+   `flexShrink={0}`. Without this, Yoga will shrink them when space is tight.
+
+2. **Scrollable / variable zones use `flexGrow={1}` + `overflow="hidden"`** —
+   Content areas that hold dynamic lists, logs, or long text must grow to fill
+   remaining space and clip overflow instead of pushing siblings off-screen.
+
+3. **Every status/info row gets `flexShrink={0}` and `minHeight={1}`** — This
+   prevents rows from being squashed to zero height in tight layouts.
+
+4. **Long text must be truncated** — Use `<Text wrap="truncate-end">` or the
+   `<TruncatedText>` component (`src/tui/components/TruncatedText.tsx`) for:
+   - File paths
+   - Log messages
+   - Player names
+   - Any user-supplied string
+
+5. **Use the `<Row>` component** (`src/tui/components/Row.tsx`) for label/value
+   pairs to guarantee consistent `flexShrink={0}` and `minHeight={1}` behavior.
+
+6. **Fixed-width columns for labels** — When displaying key-value pairs, give
+   the label a fixed `width` so values always align, even with varying label
+   lengths.
+
+7. **No unbounded horizontal content** — Never place a `<Text>` with
+   potentially long content inside a `flexDirection="row"` `<Box>` without
+   constraining it via `flexShrink={1}` + `wrap="truncate-end"` or a max width.
+
+### Layout Patterns (Quick Reference)
+
+```tsx
+// ✅ Correct: fixed row that won't collapse
+<Box flexShrink={0} minHeight={1}>
+  <Text>Status: </Text>
+  <Text color="green">Online</Text>
+</Box>
+
+// ✅ Correct: scrollable area that clips overflow
+<Box flexGrow={1} flexDirection="column" overflow="hidden">
+  {logEntries.map(e => <LogEntry key={e.id} entry={e} />)}
+</Box>
+
+// ✅ Correct: long path truncated
+<Box flexShrink={0}>
+  <Text>Path: </Text>
+  <Text dimColor wrap="truncate-end">{longPath}</Text>
+</Box>
+
+// ❌ Wrong: row can be crushed to 0 height
+<Box>
+  <Text>Port: 2456</Text>
+</Box>
+
+// ❌ Wrong: long text pushes neighbours off screen
+<Box flexDirection="row">
+  <Text>{veryLongLogMessage}</Text>
+  <Text>Actions</Text>
+</Box>
+```
+
+### Layout Review Checklist (use after every TUI edit)
+
+- [ ] Every non-scrollable row has `flexShrink={0}`
+- [ ] The main scrollable content area has `overflow="hidden"`
+- [ ] Long strings (paths, names, logs) use `wrap="truncate-end"` or `<TruncatedText>`
+- [ ] Label columns have a fixed `width`
+- [ ] No `<Text>` with dynamic content sits in a row without a width constraint
+- [ ] Modals and overlays don't exceed terminal width at 80 cols
+- [ ] Help / action bars at the bottom are `flexShrink={0}`
+- [ ] Visually verify at 80×24 (narrow) **and** 120×40 (wide)
+
+---
+
 ## Common Pitfalls
 
 1. **Ink requires React 19**: Use `react@19` for compatibility with Ink 6
@@ -277,6 +381,7 @@ For detailed implementation guidance, see `.agent-docs/`:
 3. **Windows paths**: Use `node:path` join, not string concatenation
 4. **Process cleanup**: Always handle SIGINT/SIGTERM for graceful shutdown
 5. **ES Modules**: Use `type: "module"` in package.json
+6. **TUI text overlap**: Always add `flexShrink={0}` to fixed rows and truncate long text (see [TUI Layout Standards](#tui-layout-standards))
 
 ## Getting Help
 
@@ -366,12 +471,14 @@ git push origin --tags
 - [ ] Export from `mod.ts` barrel files
 - [ ] Add JSDoc comments to public functions
 - [ ] Use `node:path` for cross-platform paths
+- [ ] **TUI changes**: Follow [TUI Layout Standards](#tui-layout-standards) (flexShrink, overflow, truncation)
 
 ### After Every File Edit
 
 - [ ] Run `npm run typecheck` on modified files
 - [ ] Fix any type errors immediately
 - [ ] Verify imports are correct
+- [ ] **If `.tsx` file changed**: Run the [Layout Review Checklist](#layout-review-checklist-use-after-every-tui-edit) on the modified component
 
 ### Before Completing Any Task
 
@@ -402,6 +509,7 @@ npx tsx main.ts --help
 4. **No Regressions**: Previously working functionality still works
 5. **Documentation**: Any new public APIs have JSDoc comments
 6. **Version Bump**: If implementing features or fixes, bump version in `package.json` (see [Version Management](#version-management))
+7. **TUI Layout**: If any `.tsx` file was touched, confirm no text overlap at 80×24 and 120×40 (see [TUI Layout Standards](#tui-layout-standards))
 
 ### Troubleshooting Common Issues
 
@@ -420,5 +528,6 @@ When completing a phase/task, provide:
 1. **Summary**: What was implemented
 2. **Files Changed**: List of new/modified files
 3. **Verification**: Evidence that checks pass (command output)
-4. **Next Steps**: What the next agent should work on
-5. **Known Issues**: Any remaining problems or TODOs
+4. **TUI Layout Status**: If any TUI files were modified, confirm that the Layout Review Checklist passed and note the terminal sizes tested
+5. **Next Steps**: What the next agent should work on
+6. **Known Issues**: Any remaining problems or TODOs
