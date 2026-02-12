@@ -24,6 +24,14 @@ class RconManager {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private state: ConnectionState = "disconnected";
+  private reconnectAttempts = 0;
+
+  /** Base reconnect delay in milliseconds */
+  private static readonly BASE_RECONNECT_DELAY = 5000;
+  /** Maximum reconnect delay in milliseconds (2 minutes) */
+  private static readonly MAX_RECONNECT_DELAY = 120_000;
+  /** Maximum consecutive reconnect attempts before giving up (0 = unlimited) */
+  private static readonly MAX_RECONNECT_ATTEMPTS = 20;
 
   /**
    * Initialize the manager with config and callbacks
@@ -79,6 +87,7 @@ class RconManager {
 
       await this.client.connect();
       this.setState("connected");
+      this.reconnectAttempts = 0;
       log.info("RCON connected");
 
       // Start polling for player list
@@ -101,6 +110,7 @@ class RconManager {
   disconnect(): void {
     this.stopPolling();
     this.clearReconnect();
+    this.reconnectAttempts = 0;
 
     if (this.client) {
       try {
@@ -225,8 +235,12 @@ class RconManager {
 
   // ─── Internal ────────────────────────────────────────────────────
 
-  /** Send a command, returning the response or null on error */
-  private async sendCommand(command: string): Promise<string | null> {
+  /**
+   * Send a command, returning the response or null on error.
+   * Exposed publicly so callers (e.g. forceSave) can avoid creating
+   * a second client connection.
+   */
+  async sendCommand(command: string): Promise<string | null> {
     if (!this.client?.isConnected()) {
       log.warn(`Cannot send command "${command}": not connected`);
       return null;
@@ -292,15 +306,37 @@ class RconManager {
     }
   }
 
-  /** Schedule a reconnect attempt */
+  /** Schedule a reconnect attempt with exponential backoff */
   private scheduleReconnect(): void {
     this.clearReconnect();
+
+    if (
+      RconManager.MAX_RECONNECT_ATTEMPTS > 0 &&
+      this.reconnectAttempts >= RconManager.MAX_RECONNECT_ATTEMPTS
+    ) {
+      log.warn(
+        `Max reconnect attempts (${RconManager.MAX_RECONNECT_ATTEMPTS}) reached, giving up`
+      );
+      return;
+    }
+
+    this.reconnectAttempts++;
+
+    // Exponential backoff: 5s, 10s, 20s, 40s, … capped at MAX_RECONNECT_DELAY
+    const delay = Math.min(
+      RconManager.BASE_RECONNECT_DELAY * 2 ** (this.reconnectAttempts - 1),
+      RconManager.MAX_RECONNECT_DELAY
+    );
+
+    log.info(
+      `RCON reconnect attempt ${this.reconnectAttempts} in ${Math.round(delay / 1000)}s...`
+    );
+
     this.reconnectTimer = setTimeout(() => {
-      log.info("Attempting RCON reconnect...");
       this.connect().catch(() => {
         // Reconnect failed, will be rescheduled in connect()
       });
-    }, 5000);
+    }, delay);
   }
 
   /** Clear scheduled reconnect */
