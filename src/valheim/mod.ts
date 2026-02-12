@@ -3,6 +3,30 @@
  * Provides Valheim-specific utilities and configurations
  */
 
+// Admin role management
+export {
+  type AdminRole,
+  addAdmin,
+  addRootUser,
+  demoteUser,
+  getAdminListPath,
+  getAdmins,
+  getBanListPath,
+  getDevCommandsConfigPath,
+  getPermittedListPath,
+  getRootUsers,
+  getUserRole,
+  isAdmin,
+  isRootUser,
+  isValidSteam64Id,
+  promoteUser,
+  ROLE_CAPABILITIES,
+  removeAdmin,
+  removeRootUser,
+  type ServerUser,
+  setUserRole,
+  validateSteamId,
+} from "./admins.js";
 // Argument builder
 export { buildServerArgs, parseServerArgs } from "./args.js";
 // Player lists
