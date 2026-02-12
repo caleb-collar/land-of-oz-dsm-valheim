@@ -10,6 +10,7 @@
  * - Only one server instance can run at a time (enforced via PID file)
  */
 
+import { disableBepInExConsole, isBepInExInstalled } from "../bepinex/mod.js";
 import {
   getRunningServer,
   type PidFileData,
@@ -136,6 +137,16 @@ export async function startServer(
       `A server is already running (PID: ${running.pid}, World: ${running.world}). ` +
         "Stop it first or attach to it."
     );
+  }
+
+  // If BepInEx is installed, disable its console window so it runs headless
+  // (logs will still be written to LogOutput.log and streamed to the TUI)
+  if (await isBepInExInstalled()) {
+    try {
+      await disableBepInExConsole();
+    } catch {
+      // Non-fatal - BepInEx console will just be visible
+    }
   }
 
   // Force detached mode for stability (prevents memory leaks from piping)
