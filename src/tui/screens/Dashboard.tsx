@@ -19,6 +19,7 @@ import {
   registerStartupTask,
   unregisterStartupTask,
 } from "../../utils/mod.js";
+import { AdminManager } from "../components/AdminManager.js";
 import { EventManager } from "../components/EventManager.js";
 import { GlobalKeysManager } from "../components/GlobalKeysManager.js";
 import { ConfirmModal } from "../components/Modal.js";
@@ -26,6 +27,7 @@ import { PlayerManager } from "../components/PlayerManager.js";
 import { ServerInfoModal } from "../components/ServerInfoModal.js";
 import { Spinner } from "../components/Spinner.js";
 import { TimeControl } from "../components/TimeControl.js";
+import { useRconAvailable } from "../hooks/useRconAvailable.js";
 import { useServer } from "../hooks/useServer.js";
 import { useStore } from "../store.js";
 import { getStatusColor, theme } from "../theme.js";
@@ -115,7 +117,6 @@ export const Dashboard: FC<DashboardProps> = () => {
   const startupPhase = useStore((s) => s.server.startupPhase);
   const config = useStore((s) => s.config);
   const rconConfig = useStore((s) => s.rcon);
-  const rconConnected = useStore((s) => s.rcon.connected);
   const modalOpen = useStore((s) => s.ui.modalOpen);
   const openModal = useStore((s) => s.actions.openModal);
   const closeModal = useStore((s) => s.actions.closeModal);
@@ -156,6 +157,12 @@ export const Dashboard: FC<DashboardProps> = () => {
   const resetValheimInstall = useStore((s) => s.actions.resetValheimInstall);
 
   const { start, stop, restart, update, forceSave } = useServer();
+  const {
+    available: rconAvailable,
+    connected: rconPluginConnected,
+    hasCommands: rconHasCommands,
+    reason: rconReason,
+  } = useRconAvailable();
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateProgress, setUpdateProgress] = useState("");
@@ -592,8 +599,8 @@ export const Dashboard: FC<DashboardProps> = () => {
       );
     }
 
-    // RCON Features (require RCON connection)
-    if (rconConnected && status === "online") {
+    // RCON Features (require RCON plugin connection + DevCommands)
+    if (rconPluginConnected && rconHasCommands && status === "online") {
       // P = Player Management
       if (input === "p" || input === "P") {
         openModal(<PlayerManager onClose={closeModal} />);
@@ -634,6 +641,11 @@ export const Dashboard: FC<DashboardProps> = () => {
           />
         );
       }
+    }
+
+    // M = Admin Manager (always available, works with file-based operations)
+    if (input === "m" || input === "M") {
+      openModal(<AdminManager onClose={closeModal} />);
     }
   });
 
@@ -778,7 +790,7 @@ export const Dashboard: FC<DashboardProps> = () => {
   }
 
   return (
-    <Box flexDirection="column" flexGrow={1} padding={1}>
+    <Box flexDirection="column" flexGrow={1} padding={1} overflow="hidden">
       {/* Title */}
       <Box marginBottom={1}>
         <Text bold color={theme.primary}>
@@ -803,7 +815,9 @@ export const Dashboard: FC<DashboardProps> = () => {
           {steamCmdInstalled && steamCmdPath && (
             <Box flexShrink={0}>
               <Text>Location: </Text>
-              <Text dimColor>{steamCmdPath}</Text>
+              <Text dimColor wrap="truncate-end">
+                {steamCmdPath}
+              </Text>
             </Box>
           )}
         </Box>
@@ -844,7 +858,9 @@ export const Dashboard: FC<DashboardProps> = () => {
           {valheimInstalled && valheimPath && (
             <Box flexShrink={0}>
               <Text>Location: </Text>
-              <Text dimColor>{valheimPath}</Text>
+              <Text dimColor wrap="truncate-end">
+                {valheimPath}
+              </Text>
             </Box>
           )}
         </Box>
@@ -906,32 +922,55 @@ export const Dashboard: FC<DashboardProps> = () => {
       <Box flexDirection="column" marginBottom={1}>
         <Text bold>RCON Status</Text>
         <Box marginLeft={2} flexDirection="column">
-          <Box flexShrink={0}>
-            <Text>RCON: </Text>
-            {rconConfig.enabled ? (
-              rconConnected ? (
-                <Text color={theme.success}>● Connected</Text>
-              ) : status === "online" ? (
-                <Text color={theme.warning}>○ Connecting...</Text>
-              ) : (
-                <Text dimColor>○ Waiting for server...</Text>
-              )
-            ) : (
-              <Text dimColor>○ Disabled</Text>
-            )}
-          </Box>
-          {rconConfig.enabled && (
+          {!rconAvailable ? (
             <>
               <Box flexShrink={0}>
-                <Text>Port: </Text>
-                <Text dimColor>{rconConfig.port}</Text>
+                <Text>Status: </Text>
+                <Text color={theme.warning}>○ Not Available</Text>
               </Box>
               <Box flexShrink={0}>
-                <Text>Auto-reconnect: </Text>
-                <Text dimColor>
-                  {rconConfig.autoReconnect ? "Enabled" : "Disabled"}
-                </Text>
+                <Text dimColor>{rconReason}</Text>
               </Box>
+              <Box flexShrink={0}>
+                <Text dimColor>[5] Go to Plugins to install</Text>
+              </Box>
+            </>
+          ) : (
+            <>
+              <Box flexShrink={0}>
+                <Text>RCON: </Text>
+                {rconPluginConnected ? (
+                  <Text color={theme.success}>
+                    ● Connected (port {rconConfig.port})
+                  </Text>
+                ) : status === "online" ? (
+                  <Text color={theme.warning}>○ Connecting...</Text>
+                ) : (
+                  <Text dimColor>○ Waiting for server...</Text>
+                )}
+              </Box>
+              {rconConfig.enabled && (
+                <>
+                  <Box flexShrink={0}>
+                    <Text>Port: </Text>
+                    <Text dimColor>{rconConfig.port}</Text>
+                  </Box>
+                  <Box flexShrink={0}>
+                    <Text>Auto-reconnect: </Text>
+                    <Text dimColor>
+                      {rconConfig.autoReconnect ? "Enabled" : "Disabled"}
+                    </Text>
+                  </Box>
+                </>
+              )}
+              {rconPluginConnected && !rconHasCommands && (
+                <Box flexShrink={0}>
+                  <Text color={theme.warning}>
+                    ⚠ Server DevCommands not installed - admin commands
+                    unavailable
+                  </Text>
+                </Box>
+              )}
             </>
           )}
         </Box>
@@ -1045,8 +1084,8 @@ export const Dashboard: FC<DashboardProps> = () => {
                   <Text>Kill Process</Text>
                 </Box>
 
-                {/* RCON Actions - only show if RCON connected */}
-                {rconConnected && (
+                {/* RCON Actions - only show if RCON available and connected with commands */}
+                {rconPluginConnected && rconHasCommands && (
                   <>
                     <Box marginTop={1} flexShrink={0}>
                       <Text bold color={theme.primary}>
@@ -1078,6 +1117,20 @@ export const Dashboard: FC<DashboardProps> = () => {
                       <Text>Remove Drops</Text>
                     </Box>
                   </>
+                )}
+                {rconPluginConnected && !rconHasCommands && (
+                  <Box marginTop={1} flexShrink={0}>
+                    <Text color={theme.warning}>
+                      [5] Install Server DevCommands for admin features
+                    </Text>
+                  </Box>
+                )}
+                {!rconAvailable && (
+                  <Box marginTop={1} flexShrink={0}>
+                    <Text color={theme.warning}>
+                      [5] Manage Plugins (RCON requires BepInEx plugins)
+                    </Text>
+                  </Box>
                 )}
               </Box>
             ) : (
@@ -1117,6 +1170,12 @@ export const Dashboard: FC<DashboardProps> = () => {
                 </Text>
               </Box>
             )}
+          </Box>
+
+          {/* Admin Management - always available (file-based) */}
+          <Box flexShrink={0}>
+            <Text color={theme.info}>[M] </Text>
+            <Text>Manage Admins</Text>
           </Box>
         </Box>
       </Box>

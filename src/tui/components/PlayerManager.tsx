@@ -6,6 +6,7 @@
 import { Box, Text, useInput } from "ink";
 import { type FC, useState } from "react";
 import { rconManager } from "../../rcon/mod.js";
+import { useRconAvailable } from "../hooks/useRconAvailable.js";
 import { useStore } from "../store.js";
 import { theme } from "../theme.js";
 
@@ -21,8 +22,8 @@ type View = "players" | "banned";
  */
 export const PlayerManager: FC<PlayerManagerProps> = ({ onClose }) => {
   const players = useStore((s) => s.server.players);
-  const rconConnected = useStore((s) => s.rcon.connected);
   const addLog = useStore((s) => s.actions.addLog);
+  const { available, connected, hasCommands, reason } = useRconAvailable();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [view, setView] = useState<View>("players");
   const [bannedPlayers, setBannedPlayers] = useState<string[]>([]);
@@ -108,7 +109,7 @@ export const PlayerManager: FC<PlayerManagerProps> = ({ onClose }) => {
     }
   });
 
-  if (!rconConnected) {
+  if (!available || !connected) {
     return (
       <Box
         flexDirection="column"
@@ -122,8 +123,39 @@ export const PlayerManager: FC<PlayerManagerProps> = ({ onClose }) => {
             ⚠ Player Management
           </Text>
         </Box>
-        <Text dimColor>RCON not connected</Text>
-        <Text dimColor>Player management requires RCON connection</Text>
+        <Text color={theme.warning}>RCON Not Available</Text>
+        <Text dimColor>{reason}</Text>
+        <Text dimColor>
+          Install required plugins via Plugins menu (press 5)
+        </Text>
+        <Box marginTop={1}>
+          <Text dimColor>[Esc/Q] Close</Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (!hasCommands) {
+    return (
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor={theme.warning}
+        padding={1}
+        width={60}
+      >
+        <Box marginBottom={1}>
+          <Text bold color={theme.warning}>
+            ⚠ Player Management
+          </Text>
+        </Box>
+        <Text color={theme.warning}>Admin Commands Not Available</Text>
+        <Text dimColor>
+          RCON connected but Server DevCommands plugin not installed
+        </Text>
+        <Text dimColor>
+          Install Server DevCommands for admin features (press 5)
+        </Text>
         <Box marginTop={1}>
           <Text dimColor>[Esc/Q] Close</Text>
         </Box>

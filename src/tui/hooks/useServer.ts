@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useRef } from "react";
-import { rconManager } from "../../rcon/mod.js";
+import { type ConnectionState, rconManager } from "../../rcon/mod.js";
 import type {
   ParsedEvent,
   ProcessState,
@@ -451,7 +451,7 @@ export function useServer() {
         autoReconnect: rconAutoReconnect,
       },
       {
-        onConnectionStateChange: (state) => {
+        onConnectionStateChange: (state: ConnectionState) => {
           const connected = state === "connected";
           actions.setRconConnected(connected);
 
@@ -463,7 +463,7 @@ export function useServer() {
             actions.addLog("info", "RCON disconnected");
           }
         },
-        onPlayerListUpdate: (players) => {
+        onPlayerListUpdate: (players: string[]) => {
           // Sync player list from RCON
           actions.setPlayers(players);
         },
@@ -495,7 +495,7 @@ export function useServer() {
     if (status === "online" && rconEnabled && !rconManager.isConnected()) {
       // Wait a moment for server to fully start before connecting
       const timer = setTimeout(() => {
-        rconManager.connect().catch((error) => {
+        rconManager.connect().catch((error: unknown) => {
           actions.addLog("warn", `RCON connection failed: ${error}`);
         });
       }, 3000); // 3 second delay

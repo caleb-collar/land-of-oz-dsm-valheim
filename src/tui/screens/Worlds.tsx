@@ -478,7 +478,7 @@ export const Worlds: FC = () => {
   // Render loading state
   if (worldsLoading && worlds.length === 0) {
     return (
-      <Box flexDirection="column" flexGrow={1} padding={1}>
+      <Box flexDirection="column" flexGrow={1} padding={1} overflow="hidden">
         <Box marginBottom={1}>
           <Text bold color={theme.primary}>
             ─ Worlds ─
@@ -492,7 +492,7 @@ export const Worlds: FC = () => {
   // Render error state
   if (error && worlds.length === 0) {
     return (
-      <Box flexDirection="column" flexGrow={1} padding={1}>
+      <Box flexDirection="column" flexGrow={1} padding={1} overflow="hidden">
         <Box marginBottom={1}>
           <Text bold color={theme.primary}>
             ─ Worlds ─
@@ -509,7 +509,7 @@ export const Worlds: FC = () => {
   // Render create world mode
   if (mode === "create") {
     return (
-      <Box flexDirection="column" flexGrow={1} padding={1}>
+      <Box flexDirection="column" flexGrow={1} padding={1} overflow="hidden">
         <Box marginBottom={1}>
           <Text bold color={theme.primary}>
             ─ Create New World ─
@@ -588,7 +588,7 @@ export const Worlds: FC = () => {
           : `Backup "${selectedWorld}" to path`;
 
     return (
-      <Box flexDirection="column" flexGrow={1} padding={1}>
+      <Box flexDirection="column" flexGrow={1} padding={1} overflow="hidden">
         <Box marginBottom={1}>
           <Text bold color={theme.primary}>
             ─ {modeTitle} ─

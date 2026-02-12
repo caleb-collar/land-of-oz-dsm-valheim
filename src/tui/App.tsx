@@ -15,6 +15,7 @@ import { Menu } from "./components/Menu.js";
 import { useConfigSync } from "./hooks/useConfig.js";
 import { Console } from "./screens/Console.js";
 import { Dashboard } from "./screens/Dashboard.js";
+import { Plugins } from "./screens/Plugins.js";
 import { Settings } from "./screens/Settings.js";
 import { Worlds } from "./screens/Worlds.js";
 import { cleanupOnExit } from "./serverManager.js";
@@ -27,6 +28,7 @@ const screens: Record<Screen, FC> = {
   settings: Settings,
   worlds: Worlds,
   console: Console,
+  plugins: Plugins,
 };
 
 /**
@@ -49,7 +51,7 @@ export const App: FC = () => {
   // Log startup message
   useEffect(() => {
     addLog("info", "TUI started");
-    addLog("info", "Press 1-4 to navigate, ? for help, Q to quit");
+    addLog("info", "Press 1-5 to navigate, ? for help, Q to quit");
   }, [addLog]);
 
   // Global keyboard handling
@@ -78,6 +80,7 @@ export const App: FC = () => {
     if (input === "2") setScreen("settings");
     if (input === "3") setScreen("worlds");
     if (input === "4") setScreen("console");
+    if (input === "5") setScreen("plugins");
   });
 
   // Get the active screen component

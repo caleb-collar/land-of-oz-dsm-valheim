@@ -49,7 +49,9 @@ export const Modal: FC<ModalProps> = (props: ModalProps) => {
       </Box>
 
       {/* Content */}
-      <Box flexDirection="column">{children}</Box>
+      <Box flexDirection="column" overflow="hidden">
+        {children}
+      </Box>
     </Box>
   );
 };

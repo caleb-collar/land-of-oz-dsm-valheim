@@ -21,6 +21,7 @@ const menuItems: MenuItemConfig[] = [
   { key: "2", label: "Settings", screen: "settings" },
   { key: "3", label: "Worlds", screen: "worlds" },
   { key: "4", label: "Console", screen: "console" },
+  { key: "5", label: "Plugins", screen: "plugins" },
   { key: "Q", label: "Quit", screen: null },
 ];
 

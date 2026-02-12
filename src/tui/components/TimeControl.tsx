@@ -6,6 +6,7 @@
 import { Box, Text, useInput } from "ink";
 import { type FC, useState } from "react";
 import { rconManager } from "../../rcon/mod.js";
+import { useRconAvailable } from "../hooks/useRconAvailable.js";
 import { useStore } from "../store.js";
 import { theme } from "../theme.js";
 
@@ -27,8 +28,8 @@ const TIME_OPTIONS = [
  * Allows skipping time or sleeping through night
  */
 export const TimeControl: FC<TimeControlProps> = ({ onClose }) => {
-  const rconConnected = useStore((s) => s.rcon.connected);
   const addLog = useStore((s) => s.actions.addLog);
+  const { available, connected, hasCommands, reason } = useRconAvailable();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const handleTimeSkip = async (seconds: number, label: string) => {
@@ -69,7 +70,7 @@ export const TimeControl: FC<TimeControlProps> = ({ onClose }) => {
     }
   });
 
-  if (!rconConnected) {
+  if (!available || !connected) {
     return (
       <Box
         flexDirection="column"
@@ -83,8 +84,39 @@ export const TimeControl: FC<TimeControlProps> = ({ onClose }) => {
             ⚠ Time Control
           </Text>
         </Box>
-        <Text dimColor>RCON not connected</Text>
-        <Text dimColor>Time control requires RCON connection</Text>
+        <Text color={theme.warning}>RCON Not Available</Text>
+        <Text dimColor>{reason}</Text>
+        <Text dimColor>
+          Install required plugins via Plugins menu (press 5)
+        </Text>
+        <Box marginTop={1}>
+          <Text dimColor>[Esc/Q] Close</Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (!hasCommands) {
+    return (
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor={theme.warning}
+        padding={1}
+        width={60}
+      >
+        <Box marginBottom={1}>
+          <Text bold color={theme.warning}>
+            ⚠ Time Control
+          </Text>
+        </Box>
+        <Text color={theme.warning}>Admin Commands Not Available</Text>
+        <Text dimColor>
+          RCON connected but Server DevCommands plugin not installed
+        </Text>
+        <Text dimColor>
+          Install Server DevCommands for time control (press 5)
+        </Text>
         <Box marginTop={1}>
           <Text dimColor>[Esc/Q] Close</Text>
         </Box>

@@ -6,6 +6,7 @@
 import { Box, Text, useInput } from "ink";
 import { type FC, useState } from "react";
 import { rconManager, ValheimEvents } from "../../rcon/mod.js";
+import { useRconAvailable } from "../hooks/useRconAvailable.js";
 import { useStore } from "../store.js";
 import { theme } from "../theme.js";
 
@@ -76,8 +77,8 @@ const EVENT_LIST: Array<{ key: string; name: string; description: string }> = [
  * Allows triggering and stopping random events
  */
 export const EventManager: FC<EventManagerProps> = ({ onClose }) => {
-  const rconConnected = useStore((s) => s.rcon.connected);
   const addLog = useStore((s) => s.actions.addLog);
+  const { available, connected, hasCommands, reason } = useRconAvailable();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const handleTriggerEvent = async (eventKey: string, eventName: string) => {
@@ -129,7 +130,7 @@ export const EventManager: FC<EventManagerProps> = ({ onClose }) => {
     }
   });
 
-  if (!rconConnected) {
+  if (!available || !connected) {
     return (
       <Box
         flexDirection="column"
@@ -143,8 +144,39 @@ export const EventManager: FC<EventManagerProps> = ({ onClose }) => {
             ⚠ Event Manager
           </Text>
         </Box>
-        <Text dimColor>RCON not connected</Text>
-        <Text dimColor>Event management requires RCON connection</Text>
+        <Text color={theme.warning}>RCON Not Available</Text>
+        <Text dimColor>{reason}</Text>
+        <Text dimColor>
+          Install required plugins via Plugins menu (press 5)
+        </Text>
+        <Box marginTop={1}>
+          <Text dimColor>[Esc/Q] Close</Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (!hasCommands) {
+    return (
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor={theme.warning}
+        padding={1}
+        width={60}
+      >
+        <Box marginBottom={1}>
+          <Text bold color={theme.warning}>
+            ⚠ Event Manager
+          </Text>
+        </Box>
+        <Text color={theme.warning}>Admin Commands Not Available</Text>
+        <Text dimColor>
+          RCON connected but Server DevCommands plugin not installed
+        </Text>
+        <Text dimColor>
+          Install Server DevCommands for event management (press 5)
+        </Text>
         <Box marginTop={1}>
           <Text dimColor>[Esc/Q] Close</Text>
         </Box>

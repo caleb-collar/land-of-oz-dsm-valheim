@@ -12,7 +12,12 @@ import type { WorldInfo } from "../valheim/worlds.js";
 export type ServerStatus = "offline" | "starting" | "online" | "stopping";
 
 /** Available screens */
-export type Screen = "dashboard" | "settings" | "worlds" | "console";
+export type Screen =
+  | "dashboard"
+  | "settings"
+  | "worlds"
+  | "console"
+  | "plugins";
 
 /** Log entry severity levels */
 export type LogLevel = "info" | "warn" | "error" | "debug";
@@ -181,6 +186,48 @@ type ValheimServerState = {
   buildId: string | null;
 };
 
+/** BepInEx framework state slice */
+type BepInExStoreState = {
+  /** Whether BepInEx is installed (null = not yet checked) */
+  installed: boolean | null;
+  /** Whether BepInEx installation is in progress */
+  installing: boolean;
+  /** Current installation progress message */
+  installProgress: string;
+  /** Installation progress percentage (0-100) */
+  installPercent: number;
+  /** Detected BepInEx version */
+  version: string | null;
+  /** BepInEx installation path */
+  path: string | null;
+  /** Plugin states */
+  plugins: {
+    id: string;
+    name: string;
+    enabled: boolean;
+    installed: boolean;
+    installing: boolean;
+  }[];
+};
+
+/** Admin role for a server user */
+export type AdminRole = "player" | "admin" | "root";
+
+/** Server user info */
+export type ServerUser = {
+  steamId: string;
+  name?: string;
+  role: AdminRole;
+};
+
+/** Admin management state slice */
+type AdminStoreState = {
+  admins: ServerUser[];
+  rootUsers: string[];
+  loading: boolean;
+  error: string | null;
+};
+
 /** Store actions */
 type Actions = {
   // Server actions
@@ -257,6 +304,24 @@ type Actions = {
   setValheimVerified: (verified: boolean | null) => void;
   setValheimBuildId: (buildId: string | null) => void;
   resetValheimInstall: () => void;
+
+  // BepInEx actions
+  setBepInExInstalled: (installed: boolean | null) => void;
+  setBepInExInstalling: (installing: boolean) => void;
+  setBepInExInstallProgress: (message: string, percent: number) => void;
+  setBepInExVersion: (version: string | null) => void;
+  setBepInExPath: (path: string | null) => void;
+  setPlugins: (plugins: BepInExStoreState["plugins"]) => void;
+  setPluginEnabled: (pluginId: string, enabled: boolean) => void;
+  setPluginInstalled: (pluginId: string, installed: boolean) => void;
+  setPluginInstalling: (pluginId: string, installing: boolean) => void;
+  resetBepInExInstall: () => void;
+
+  // Admin actions
+  setAdmins: (admins: ServerUser[]) => void;
+  setRootUsers: (rootUsers: string[]) => void;
+  setAdminsLoading: (loading: boolean) => void;
+  setAdminsError: (error: string | null) => void;
 };
 
 /** Complete store type */
@@ -272,6 +337,8 @@ export type Store = {
   worlds: WorldsState;
   steamcmd: SteamCmdState;
   valheim: ValheimServerState;
+  bepinex: BepInExStoreState;
+  admins: AdminStoreState;
   actions: Actions;
 };
 
@@ -394,6 +461,25 @@ export const useStore = create<Store>((set) => ({
     path: null,
     verified: null,
     buildId: null,
+  },
+
+  // Initial BepInEx state
+  bepinex: {
+    installed: null,
+    installing: false,
+    installProgress: "",
+    installPercent: 0,
+    version: null,
+    path: null,
+    plugins: [],
+  },
+
+  // Initial admin state
+  admins: {
+    admins: [],
+    rootUsers: [],
+    loading: false,
+    error: null,
   },
 
   // Actions
@@ -723,6 +809,102 @@ export const useStore = create<Store>((set) => ({
           installPercent: 0,
         },
       })),
+
+    // BepInEx actions
+    setBepInExInstalled: (installed) =>
+      set((state) => ({
+        bepinex: { ...state.bepinex, installed },
+      })),
+
+    setBepInExInstalling: (installing) =>
+      set((state) => ({
+        bepinex: { ...state.bepinex, installing },
+      })),
+
+    setBepInExInstallProgress: (message, percent) =>
+      set((state) => ({
+        bepinex: {
+          ...state.bepinex,
+          installProgress: message,
+          installPercent: percent,
+        },
+      })),
+
+    setBepInExVersion: (version) =>
+      set((state) => ({
+        bepinex: { ...state.bepinex, version },
+      })),
+
+    setBepInExPath: (bepinexPath) =>
+      set((state) => ({
+        bepinex: { ...state.bepinex, path: bepinexPath },
+      })),
+
+    setPlugins: (plugins) =>
+      set((state) => ({
+        bepinex: { ...state.bepinex, plugins },
+      })),
+
+    setPluginEnabled: (pluginId, enabled) =>
+      set((state) => ({
+        bepinex: {
+          ...state.bepinex,
+          plugins: state.bepinex.plugins.map((p) =>
+            p.id === pluginId ? { ...p, enabled } : p
+          ),
+        },
+      })),
+
+    setPluginInstalled: (pluginId, installed) =>
+      set((state) => ({
+        bepinex: {
+          ...state.bepinex,
+          plugins: state.bepinex.plugins.map((p) =>
+            p.id === pluginId ? { ...p, installed } : p
+          ),
+        },
+      })),
+
+    setPluginInstalling: (pluginId, installing) =>
+      set((state) => ({
+        bepinex: {
+          ...state.bepinex,
+          plugins: state.bepinex.plugins.map((p) =>
+            p.id === pluginId ? { ...p, installing } : p
+          ),
+        },
+      })),
+
+    resetBepInExInstall: () =>
+      set((state) => ({
+        bepinex: {
+          ...state.bepinex,
+          installing: false,
+          installProgress: "",
+          installPercent: 0,
+        },
+      })),
+
+    // Admin actions
+    setAdmins: (admins) =>
+      set((state) => ({
+        admins: { ...state.admins, admins },
+      })),
+
+    setRootUsers: (rootUsers) =>
+      set((state) => ({
+        admins: { ...state.admins, rootUsers },
+      })),
+
+    setAdminsLoading: (loading) =>
+      set((state) => ({
+        admins: { ...state.admins, loading },
+      })),
+
+    setAdminsError: (error) =>
+      set((state) => ({
+        admins: { ...state.admins, error },
+      })),
   },
 }));
 
@@ -788,6 +970,16 @@ export const selectSteamCmd = (state: Store) => state.steamcmd;
  * Selector for Valheim server state
  */
 export const selectValheim = (state: Store) => state.valheim;
+
+/**
+ * Selector for BepInEx state
+ */
+export const selectBepInEx = (state: Store) => state.bepinex;
+
+/**
+ * Selector for admin state
+ */
+export const selectAdmins = (state: Store) => state.admins;
 
 /**
  * Selector for actions

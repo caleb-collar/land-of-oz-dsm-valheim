@@ -6,6 +6,7 @@
 import { Box, Text, useInput } from "ink";
 import { type FC, useEffect, useState } from "react";
 import { rconManager, ValheimGlobalKeys } from "../../rcon/mod.js";
+import { useRconAvailable } from "../hooks/useRconAvailable.js";
 import { useStore } from "../store.js";
 import { theme } from "../theme.js";
 
@@ -27,8 +28,8 @@ const BOSS_KEYS: Array<{ key: string; name: string }> = [
  * Manage boss progression and global keys
  */
 export const GlobalKeysManager: FC<GlobalKeysManagerProps> = ({ onClose }) => {
-  const rconConnected = useStore((s) => s.rcon.connected);
   const addLog = useStore((s) => s.actions.addLog);
+  const { available, connected, hasCommands, reason } = useRconAvailable();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,10 +41,10 @@ export const GlobalKeysManager: FC<GlobalKeysManagerProps> = ({ onClose }) => {
       setActiveKeys(keys);
       setLoading(false);
     };
-    if (rconConnected) {
+    if (connected && hasCommands) {
       loadKeys();
     }
-  }, [rconConnected]);
+  }, [connected, hasCommands]);
 
   const isBossDefeated = (bossKey: string): boolean => {
     return activeKeys.some((key) =>
@@ -108,7 +109,7 @@ export const GlobalKeysManager: FC<GlobalKeysManagerProps> = ({ onClose }) => {
     }
   });
 
-  if (!rconConnected) {
+  if (!available || !connected) {
     return (
       <Box
         flexDirection="column"
@@ -122,8 +123,39 @@ export const GlobalKeysManager: FC<GlobalKeysManagerProps> = ({ onClose }) => {
             ⚠ Global Keys Manager
           </Text>
         </Box>
-        <Text dimColor>RCON not connected</Text>
-        <Text dimColor>Key management requires RCON connection</Text>
+        <Text color={theme.warning}>RCON Not Available</Text>
+        <Text dimColor>{reason}</Text>
+        <Text dimColor>
+          Install required plugins via Plugins menu (press 5)
+        </Text>
+        <Box marginTop={1}>
+          <Text dimColor>[Esc/Q] Close</Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (!hasCommands) {
+    return (
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor={theme.warning}
+        padding={1}
+        width={60}
+      >
+        <Box marginBottom={1}>
+          <Text bold color={theme.warning}>
+            ⚠ Global Keys Manager
+          </Text>
+        </Box>
+        <Text color={theme.warning}>Admin Commands Not Available</Text>
+        <Text dimColor>
+          RCON connected but Server DevCommands plugin not installed
+        </Text>
+        <Text dimColor>
+          Install Server DevCommands for boss key management (press 5)
+        </Text>
         <Box marginTop={1}>
           <Text dimColor>[Esc/Q] Close</Text>
         </Box>
