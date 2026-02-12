@@ -316,13 +316,30 @@ export function useConfigSync() {
         // Try to read the BepInEx.rcon plugin config — it's the source of
         // truth for what port/password the RCON server is actually using
         try {
-          const { readRconPluginConfig } = await import(
+          const { readRconPluginConfig, writeRconPluginConfig } = await import(
             "../../bepinex/rcon-config.js"
           );
           const pluginCfg = await readRconPluginConfig();
           if (pluginCfg) {
             rconPort = pluginCfg.port;
             rconPassword = pluginCfg.password;
+
+            // If the app has RCON enabled but the plugin config has it disabled,
+            // write the app's enabled state to the plugin config.
+            // The BepInEx.rcon plugin defaults to enabled=false, so we need to
+            // enable it for the RCON server to actually start.
+            if (stored.rcon.enabled && !pluginCfg.enabled) {
+              await writeRconPluginConfig({
+                enabled: true,
+                port: pluginCfg.port,
+                password: pluginCfg.password,
+              });
+              // Inform user they need to restart the server for RCON to work
+              actions.addLog(
+                "warn",
+                "RCON plugin was disabled — enabled it in config. Restart the server for RCON to work."
+              );
+            }
           }
         } catch {
           // Non-fatal: BepInEx may not be installed

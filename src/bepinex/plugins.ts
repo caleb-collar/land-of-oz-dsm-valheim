@@ -375,6 +375,25 @@ export async function installPlugin(
     }
   }
 
+  // For the RCON plugin, write an initial config with enabled=true
+  // The plugin defaults to enabled=false which would prevent RCON from working
+  if (pluginId === "bepinex-rcon") {
+    try {
+      const {
+        writeRconPluginConfig,
+        BEPINEX_RCON_DEFAULT_PORT,
+        BEPINEX_RCON_DEFAULT_PASSWORD,
+      } = await import("./rcon-config.js");
+      await writeRconPluginConfig({
+        enabled: true,
+        port: BEPINEX_RCON_DEFAULT_PORT,
+        password: BEPINEX_RCON_DEFAULT_PASSWORD,
+      });
+    } catch {
+      // Non-fatal: config write failure shouldn't fail installation
+    }
+  }
+
   onProgress?.({
     stage: "complete",
     message: `${plugin.name} installed successfully!`,

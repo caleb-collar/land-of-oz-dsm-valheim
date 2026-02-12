@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.3]
+
+### Fixed
+- **RCON plugin disabled by default** — The BepInEx.rcon plugin creates its config with `enabled = false` by default, meaning the RCON server never starts. Now:
+  - `useConfigSync` writes `enabled = true` to the plugin config when the app's RCON is enabled but the plugin has it disabled, and logs a warning that the server needs restart
+  - `installPlugin` writes an initial config with `enabled = true` when installing the RCON plugin for the first time
+
 ## [1.13.2]
 
 ### Fixed
