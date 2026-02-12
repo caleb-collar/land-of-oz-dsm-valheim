@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.1]
+
+### Fixed
+- **RCON error details hidden** — Connection errors now show the actual reason (e.g., "Connection refused", "Authentication failed") instead of generic "RCON connection error"
+- **Cascading effect race condition** — BepInEx config sync in auto-connect effect caused init effect to disconnect active connections; sync moved to `useConfigSync` on mount only
+- **Dead `.catch()` code** — Removed unreachable error handler since `rconManager.connect()` handles errors internally
+
+### Changed
+- `RconManagerCallbacks.onConnectionStateChange` now accepts optional `error` parameter
+- RCON auto-connect effect depends only on `status` and `rconEnabled` (removed port/password/timeout from deps)
+
 ## [1.12.0]
 
 ### Added
@@ -312,7 +323,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Platform detection for Windows, Linux, macOS
 - Basic TUI framework with Ink
 
-[Unreleased]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.12.0...HEAD
+[Unreleased]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.12.1...HEAD
+[1.12.1]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.12.0...v1.12.1
 [1.12.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.10.0...v1.12.0
 [1.10.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.9.1...v1.10.0
 [1.9.1]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.9.0...v1.9.1
