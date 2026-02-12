@@ -8,6 +8,25 @@ export type PluginId =
   | "bepinex-rcon" // RCON protocol library (AviiNL)
   | "server-devcommands"; // Enhanced admin commands (JereKuusela)
 
+/** Source for resolving plugin versions dynamically */
+export type ThunderstoreSource = {
+  type: "thunderstore";
+  /** Thunderstore namespace (author) */
+  namespace: string;
+  /** Thunderstore package name */
+  packageName: string;
+};
+
+export type GithubSource = {
+  type: "github";
+  /** GitHub owner/org */
+  owner: string;
+  /** GitHub repository name */
+  repo: string;
+};
+
+export type PluginSource = ThunderstoreSource | GithubSource;
+
 /** Definition of a supported plugin */
 export type PluginDefinition = {
   /** Unique plugin identifier */
@@ -16,12 +35,16 @@ export type PluginDefinition = {
   name: string;
   /** Plugin description */
   description: string;
-  /** Expected version */
+  /** Fallback version if dynamic resolution fails */
   version: string;
+  /** Major version constraint (only install within this major) */
+  majorVersion: number;
   /** Plugin author */
   author: string;
-  /** Download URL for the plugin */
+  /** Fallback download URL (used if dynamic resolution fails) */
   downloadUrl: string;
+  /** Source for resolving latest version dynamically */
+  source: PluginSource;
   /** Main DLL filename to check for installation */
   dllFile: string;
   /** Config file name (in BepInEx/config/) */

@@ -13,7 +13,12 @@ import {
   getPluginsPath,
   isBepInExInstalled,
 } from "./paths.js";
-import type { InstalledPlugin, PluginDefinition, PluginId } from "./types.js";
+import type {
+  InstalledPlugin,
+  PluginDefinition,
+  PluginId,
+  PluginSource,
+} from "./types.js";
 
 /** Curated plugin definitions - server-side only, no client install required */
 export const SUPPORTED_PLUGINS: PluginDefinition[] = [
@@ -21,10 +26,11 @@ export const SUPPORTED_PLUGINS: PluginDefinition[] = [
     id: "bepinex-rcon",
     name: "BepInEx.rcon",
     description: "RCON protocol library for remote server management",
-    version: "1.0.4",
+    version: "1.0.5",
+    majorVersion: 1,
     author: "AviiNL",
-    downloadUrl:
-      "https://github.com/AviiNL/BepInEx.rcon/releases/download/v1.0.4/rcon.dll",
+    downloadUrl: "https://thunderstore.io/package/download/AviiNL/rcon/1.0.5/",
+    source: { type: "thunderstore", namespace: "AviiNL", packageName: "rcon" },
     dllFile: "rcon.dll",
     configFile: "nl.avii.plugins.rcon.cfg",
     requiresBepInEx: true,
@@ -34,16 +40,142 @@ export const SUPPORTED_PLUGINS: PluginDefinition[] = [
     id: "server-devcommands",
     name: "Server DevCommands",
     description: "Enhanced admin commands for server management",
-    version: "1.74.0",
+    version: "1.102.0",
+    majorVersion: 1,
     author: "JereKuusela",
     downloadUrl:
-      "https://valheim.thunderstore.io/package/download/JereKuusela/Server_devcommands/1.74.0/",
+      "https://thunderstore.io/package/download/JereKuusela/Server_devcommands/1.102.0/",
+    source: {
+      type: "thunderstore",
+      namespace: "JereKuusela",
+      packageName: "Server_devcommands",
+    },
     dllFile: "ServerDevcommands.dll",
     configFile: "server_devcommands.cfg",
     requiresBepInEx: true,
     category: "core",
   },
 ];
+
+/**
+ * Resolves the latest download URL for a plugin within its major version.
+ * Queries the Thunderstore or GitHub API to find the latest compatible version.
+ * Falls back to the hardcoded URL if resolution fails.
+ *
+ * @param plugin The plugin definition
+ * @returns Object with the resolved version and download URL
+ */
+export async function resolveLatestPluginVersion(
+  plugin: PluginDefinition
+): Promise<{ version: string; downloadUrl: string }> {
+  try {
+    return await resolveFromSource(plugin.source, plugin.majorVersion);
+  } catch {
+    // Fall back to hardcoded version/URL if dynamic resolution fails
+    return { version: plugin.version, downloadUrl: plugin.downloadUrl };
+  }
+}
+
+/**
+ * Resolves a version and download URL from a plugin source API
+ */
+async function resolveFromSource(
+  source: PluginSource,
+  majorVersion: number
+): Promise<{ version: string; downloadUrl: string }> {
+  if (source.type === "thunderstore") {
+    return resolveThunderstoreLatest(
+      source.namespace,
+      source.packageName,
+      majorVersion
+    );
+  }
+  return resolveGithubLatest(source.owner, source.repo, majorVersion);
+}
+
+/**
+ * Queries Thunderstore experimental API for the latest package version
+ * within the specified major version.
+ */
+async function resolveThunderstoreLatest(
+  namespace: string,
+  packageName: string,
+  majorVersion: number
+): Promise<{ version: string; downloadUrl: string }> {
+  const apiUrl = `https://thunderstore.io/api/experimental/package/${namespace}/${packageName}/`;
+  const response = await fetch(apiUrl, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(10_000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Thunderstore API returned ${response.status}`);
+  }
+
+  const data = (await response.json()) as {
+    latest: { version_number: string; download_url: string };
+  };
+
+  const latestVersion = data.latest.version_number;
+  const latestMajor = Number.parseInt(latestVersion.split(".")[0], 10);
+
+  if (latestMajor !== majorVersion) {
+    throw new Error(
+      `Latest version ${latestVersion} is major ${latestMajor}, expected ${majorVersion}`
+    );
+  }
+
+  return {
+    version: latestVersion,
+    downloadUrl: `https://thunderstore.io/package/download/${namespace}/${packageName}/${latestVersion}/`,
+  };
+}
+
+/**
+ * Queries GitHub releases API for the latest release within the specified
+ * major version.
+ */
+async function resolveGithubLatest(
+  owner: string,
+  repo: string,
+  majorVersion: number
+): Promise<{ version: string; downloadUrl: string }> {
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases`;
+  const response = await fetch(apiUrl, {
+    headers: { Accept: "application/vnd.github+json" },
+    signal: AbortSignal.timeout(10_000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub API returned ${response.status}`);
+  }
+
+  const releases = (await response.json()) as Array<{
+    tag_name: string;
+    prerelease: boolean;
+    draft: boolean;
+    assets: Array<{ name: string; browser_download_url: string }>;
+  }>;
+
+  // Find the latest stable release within the major version
+  for (const release of releases) {
+    if (release.prerelease || release.draft) continue;
+
+    const tag = release.tag_name.replace(/^v/, "");
+    const relMajor = Number.parseInt(tag.split(".")[0], 10);
+    if (relMajor !== majorVersion) continue;
+
+    // Find the first DLL or zip asset
+    const asset = release.assets[0];
+    if (asset) {
+      return { version: tag, downloadUrl: asset.browser_download_url };
+    }
+  }
+
+  throw new Error(
+    `No compatible GitHub release found for major version ${majorVersion}`
+  );
+}
 
 /** Plugin installation progress callback */
 export type PluginInstallProgress = {
@@ -188,17 +320,26 @@ export async function installPlugin(
 
   onProgress?.({
     stage: "downloading",
-    message: `Downloading ${plugin.name}...`,
+    message: `Resolving latest ${plugin.name} version...`,
+    progress: 5,
+  });
+
+  // Dynamically resolve the latest version within the major version
+  const resolved = await resolveLatestPluginVersion(plugin);
+
+  onProgress?.({
+    stage: "downloading",
+    message: `Downloading ${plugin.name} v${resolved.version}...`,
     progress: 10,
   });
 
   // Determine if this is a direct DLL download or a zip package
-  const isDirectDll = plugin.downloadUrl.endsWith(".dll");
+  const isDirectDll = resolved.downloadUrl.endsWith(".dll");
 
   if (isDirectDll) {
     // Direct DLL download
     const dllPath = path.join(pluginsDir, plugin.dllFile);
-    await downloadToFile(plugin.downloadUrl, dllPath);
+    await downloadToFile(resolved.downloadUrl, dllPath);
   } else {
     // Zip/package download - extract and find the DLL
     const tempDir = path.join(pluginsDir, ".plugin_temp");
@@ -206,7 +347,7 @@ export async function installPlugin(
 
     try {
       const zipPath = path.join(tempDir, `${pluginId}.zip`);
-      await downloadToFile(plugin.downloadUrl, zipPath);
+      await downloadToFile(resolved.downloadUrl, zipPath);
 
       onProgress?.({
         stage: "installing",

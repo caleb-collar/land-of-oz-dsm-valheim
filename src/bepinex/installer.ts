@@ -16,12 +16,14 @@ import {
   isBepInExInstalled,
 } from "./paths.js";
 
-/** BepInEx version constants */
+/** BepInEx version constants (fallback values if dynamic resolution fails) */
 export const BEPINEX_VERSIONS = {
   /** Thunderstore BepInExPack_Valheim version */
   thunderstore: "5.4.2335",
   /** GitHub BepInEx release version */
   github: "5.4.23.5",
+  /** Major version constraint for Thunderstore pack */
+  majorVersion: 5,
 } as const;
 
 /** BepInEx download URLs */
@@ -44,6 +46,41 @@ function getGenericBepInExUrl(): string {
   if (platform === "win32") return BEPINEX_URLS.generic.win32;
   if (platform === "darwin") return BEPINEX_URLS.generic.darwin;
   return BEPINEX_URLS.generic.linux;
+}
+
+/**
+ * Resolves the latest BepInExPack_Valheim download URL from Thunderstore.
+ * Falls back to the hardcoded URL if the API is unreachable or returns
+ * a version outside the expected major version.
+ */
+async function resolveLatestBepInExUrl(): Promise<string> {
+  try {
+    const apiUrl =
+      "https://thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim/";
+    const response = await fetch(apiUrl, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!response.ok) throw new Error(`API returned ${response.status}`);
+
+    const data = (await response.json()) as {
+      latest: { version_number: string };
+    };
+
+    const latestVersion = data.latest.version_number;
+    const latestMajor = Number.parseInt(latestVersion.split(".")[0], 10);
+
+    if (latestMajor !== BEPINEX_VERSIONS.majorVersion) {
+      throw new Error(
+        `Latest version ${latestVersion} is major ${latestMajor}, expected ${BEPINEX_VERSIONS.majorVersion}`
+      );
+    }
+
+    return `https://thunderstore.io/package/download/denikson/BepInExPack_Valheim/${latestVersion}/`;
+  } catch {
+    return BEPINEX_URLS.valheimPack;
+  }
 }
 
 /** Installation progress callback */
@@ -175,9 +212,12 @@ export async function installBepInEx(
   const zipPath = path.join(tempDir, "bepinex.zip");
 
   try {
-    // Download BepInEx - try Thunderstore first, fall back to GitHub
+    // Resolve the latest BepInExPack_Valheim URL from Thunderstore API
+    const latestUrl = await resolveLatestBepInExUrl();
+
+    // Download BepInEx - try resolved Thunderstore URL first, fall back to GitHub
     try {
-      await downloadFile(BEPINEX_URLS.valheimPack, zipPath, onProgress);
+      await downloadFile(latestUrl, zipPath, onProgress);
     } catch (primaryError) {
       onProgress?.({
         stage: "downloading",

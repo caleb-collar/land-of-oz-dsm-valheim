@@ -31,6 +31,7 @@ import {
   getPluginDefinition,
   isPluginEnabled,
   isPluginInstalled,
+  resolveLatestPluginVersion,
   SUPPORTED_PLUGINS,
   uninstallPlugin,
   updatePluginConfig,
@@ -54,6 +55,12 @@ describe("BepInEx Plugin Manager", () => {
       expect(rcon?.dllFile).toBe("rcon.dll");
       expect(rcon?.requiresBepInEx).toBe(true);
       expect(rcon?.category).toBe("core");
+      expect(rcon?.majorVersion).toBe(1);
+      expect(rcon?.source).toEqual({
+        type: "thunderstore",
+        namespace: "AviiNL",
+        packageName: "rcon",
+      });
     });
 
     it("includes server-devcommands plugin", () => {
@@ -65,11 +72,26 @@ describe("BepInEx Plugin Manager", () => {
       expect(devCmd?.author).toBe("JereKuusela");
       expect(devCmd?.dllFile).toBe("ServerDevcommands.dll");
       expect(devCmd?.requiresBepInEx).toBe(true);
+      expect(devCmd?.majorVersion).toBe(1);
+      expect(devCmd?.source).toEqual({
+        type: "thunderstore",
+        namespace: "JereKuusela",
+        packageName: "Server_devcommands",
+      });
     });
 
     it("all plugins have valid download URLs", () => {
       for (const plugin of SUPPORTED_PLUGINS) {
         expect(() => new URL(plugin.downloadUrl)).not.toThrow();
+        expect(plugin.downloadUrl).toContain("thunderstore.io");
+      }
+    });
+
+    it("all plugins have source metadata", () => {
+      for (const plugin of SUPPORTED_PLUGINS) {
+        expect(plugin.source).toBeDefined();
+        expect(plugin.source.type).toBe("thunderstore");
+        expect(plugin.majorVersion).toBeGreaterThan(0);
       }
     });
 
@@ -319,6 +341,76 @@ describe("BepInEx Plugin Manager", () => {
       await expect(
         updatePluginConfig("nonexistent" as never, "data")
       ).rejects.toThrow("no configuration file");
+    });
+  });
+
+  describe("resolveLatestPluginVersion", () => {
+    it("resolves latest from Thunderstore API", async () => {
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          latest: {
+            version_number: "1.2.0",
+            download_url:
+              "https://thunderstore.io/package/download/AviiNL/rcon/1.2.0/",
+          },
+        }),
+      };
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockResponse));
+
+      const plugin = SUPPORTED_PLUGINS.find((p) => p.id === "bepinex-rcon")!;
+      const result = await resolveLatestPluginVersion(plugin);
+
+      expect(result.version).toBe("1.2.0");
+      expect(result.downloadUrl).toContain("AviiNL/rcon/1.2.0");
+      vi.unstubAllGlobals();
+    });
+
+    it("falls back to hardcoded URL when API fails", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
+
+      const plugin = SUPPORTED_PLUGINS.find((p) => p.id === "bepinex-rcon")!;
+      const result = await resolveLatestPluginVersion(plugin);
+
+      expect(result.version).toBe(plugin.version);
+      expect(result.downloadUrl).toBe(plugin.downloadUrl);
+      vi.unstubAllGlobals();
+    });
+
+    it("falls back when API returns non-OK", async () => {
+      const mockResponse = { ok: false, status: 500 };
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockResponse));
+
+      const plugin = SUPPORTED_PLUGINS.find(
+        (p) => p.id === "server-devcommands"
+      )!;
+      const result = await resolveLatestPluginVersion(plugin);
+
+      expect(result.version).toBe(plugin.version);
+      expect(result.downloadUrl).toBe(plugin.downloadUrl);
+      vi.unstubAllGlobals();
+    });
+
+    it("falls back when major version does not match", async () => {
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          latest: {
+            version_number: "2.0.0",
+            download_url:
+              "https://thunderstore.io/package/download/AviiNL/rcon/2.0.0/",
+          },
+        }),
+      };
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockResponse));
+
+      const plugin = SUPPORTED_PLUGINS.find((p) => p.id === "bepinex-rcon")!;
+      const result = await resolveLatestPluginVersion(plugin);
+
+      // Should fall back because major version 2 != expected 1
+      expect(result.version).toBe(plugin.version);
+      expect(result.downloadUrl).toBe(plugin.downloadUrl);
+      vi.unstubAllGlobals();
     });
   });
 });

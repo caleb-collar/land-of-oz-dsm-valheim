@@ -37,6 +37,7 @@ export {
   isPluginInstalled,
   type PluginInstallProgress,
   type PluginProgressCallback,
+  resolveLatestPluginVersion,
   SUPPORTED_PLUGINS,
   uninstallPlugin,
   updatePluginConfig,
@@ -44,7 +45,10 @@ export {
 // Types
 export type {
   BepInExState,
+  GithubSource,
   InstalledPlugin,
   PluginDefinition,
   PluginId,
+  PluginSource,
+  ThunderstoreSource,
 } from "./types.js";
