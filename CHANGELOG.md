@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0]
+
+### Fixed
+- **RCON server never started** — Config serializer wrote `[General]` section header but the BepInEx.rcon plugin reads from `[rcon]` section; BepInEx ignored all our settings and used defaults (`enabled = false`), so the RCON TCP listener never opened
+- **Auth failure silently timed out** — The plugin's `PacketBuilder` casts `-1` to `(byte)` producing `255`; our client checked `id === -1` but received `id === 255`, causing auth failures to be ignored and fall through to a 5-second timeout instead of an immediate error
+- **Password mismatch** — App defaulted RCON password to `""` (empty) but BepInEx.rcon defaults to `"ChangeMe"`; authentication always failed because the passwords didn't match
+- **Malformed packet crash** — Added try-catch in `handleData` to gracefully handle non-RCON data instead of crashing on protocol errors
+
+### Changed
+- Config section header `[General]` → `[rcon]` in `serializeRconConfig()` to match BepInEx's `Config.Bind("rcon", ...)` convention
+- BepInEx config format now includes `## description`, `# Setting type:`, and `# Default value:` annotations matching native BepInEx output
+- Default RCON password changed from `""` to `"ChangeMe"` in config schema, defaults, and parser to match BepInEx.rcon plugin default
+- Auth failure detection checks both `id === -1` (standard Source RCON) and `id === 255` (BepInEx byte-cast bug)
+- New exported constant `BEPINEX_RCON_DEFAULT_PASSWORD`
+
 ## [1.12.1]
 
 ### Fixed
@@ -323,7 +338,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Platform detection for Windows, Linux, macOS
 - Basic TUI framework with Ink
 
-[Unreleased]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.12.1...HEAD
+[Unreleased]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.13.0...HEAD
+[1.13.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.12.1...v1.13.0
 [1.12.1]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.12.0...v1.12.1
 [1.12.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.10.0...v1.12.0
 [1.10.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.9.1...v1.10.0
