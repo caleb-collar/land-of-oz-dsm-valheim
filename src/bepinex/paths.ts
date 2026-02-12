@@ -55,6 +55,30 @@ export function getCorePath(valheimPath?: string): string {
 }
 
 /**
+ * Gets the BepInEx log output file path
+ * BepInEx writes its console output to LogOutput.log in the BepInEx folder
+ * @param valheimPath Optional override for the Valheim server directory
+ * @returns Absolute path to the log file
+ */
+export function getBepInExLogPath(valheimPath?: string): string {
+  return path.join(getBepInExPath(valheimPath), "LogOutput.log");
+}
+
+/**
+ * Checks whether the BepInEx log file exists
+ * @param valheimPath Optional override for the Valheim server directory
+ * @returns True if the log file exists
+ */
+export async function bepInExLogExists(valheimPath?: string): Promise<boolean> {
+  try {
+    await fs.access(getBepInExLogPath(valheimPath));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Checks whether BepInEx is installed by looking for the core DLL
  * @param valheimPath Optional override for the Valheim server directory
  * @returns True if BepInEx core DLL exists

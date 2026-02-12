@@ -3,6 +3,19 @@
  * Provides BepInEx framework detection, installation, and plugin management
  */
 
+// Main config (BepInEx.cfg)
+export {
+  BEPINEX_CONFIG_FILE,
+  type BepInExFrameworkConfig,
+  DEFAULT_BEPINEX_FRAMEWORK_CONFIG,
+  disableBepInExConsole,
+  enableBepInExConsole,
+  getBepInExConfigFilePath,
+  isBepInExConsoleEnabled,
+  parseBepInExFrameworkConfig,
+  readBepInExFrameworkConfig,
+  writeBepInExFrameworkConfig,
+} from "./config.js";
 // Installer
 export {
   BEPINEX_URLS,
@@ -13,9 +26,19 @@ export {
   uninstallBepInEx,
   verifyBepInExSetup,
 } from "./installer.js";
+// Log tailing
+export {
+  type BepInExLogCallback,
+  type BepInExLogEntry,
+  type BepInExLogLevel,
+  bepInExLogManager,
+  parseBepInExLogLine,
+} from "./logTailer.js";
 
 // Paths and detection
 export {
+  bepInExLogExists,
+  getBepInExLogPath,
   getBepInExPath,
   getBepInExVersion,
   getConfigPath as getBepInExConfigPath,

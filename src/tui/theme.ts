@@ -86,6 +86,15 @@ export const logColors = {
 } as const;
 
 /**
+ * Log source colors for differentiation in the console
+ */
+export const sourceColors = {
+  server: valheimPalette.mandarin, // Orange for Valheim server
+  bepinex: valheimPalette.waikiki, // Teal for BepInEx
+  app: "gray", // Gray for app messages
+} as const;
+
+/**
  * Get status color based on server status
  */
 export function getStatusColor(

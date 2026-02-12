@@ -3,6 +3,7 @@
  */
 
 export { useAdminManager } from "./useAdminManager.js";
+export { useBepInExLogs } from "./useBepInExLogs.js";
 export { useConfig, useConfigSync } from "./useConfig.js";
 export { useLogStream, useLogs } from "./useLogs.js";
 export { usePlugins } from "./usePlugins.js";

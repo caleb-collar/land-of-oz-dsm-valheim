@@ -12,6 +12,7 @@ import { Header } from "./components/Header.js";
 import { HelpOverlay } from "./components/HelpOverlay.js";
 import { LogFeed } from "./components/LogFeed.js";
 import { Menu } from "./components/Menu.js";
+import { useBepInExLogs } from "./hooks/useBepInExLogs.js";
 import { useConfigSync } from "./hooks/useConfig.js";
 import { Console } from "./screens/Console.js";
 import { Dashboard } from "./screens/Dashboard.js";
@@ -47,6 +48,9 @@ export const App: FC = () => {
 
   // Sync configuration on mount
   useConfigSync();
+
+  // Initialize BepInEx log streaming (auto-starts when server is online)
+  useBepInExLogs();
 
   // Log startup message
   useEffect(() => {

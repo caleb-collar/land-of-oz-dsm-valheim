@@ -22,11 +22,15 @@ export type Screen =
 /** Log entry severity levels */
 export type LogLevel = "info" | "warn" | "error" | "debug";
 
+/** Log entry source */
+export type LogSource = "server" | "bepinex" | "app";
+
 /** A single log entry */
 export type LogEntry = {
   id: string;
   timestamp: Date;
   level: LogLevel;
+  source: LogSource;
   message: string;
 };
 
@@ -83,6 +87,7 @@ type LogsState = {
   entries: LogEntry[];
   maxEntries: number;
   filter: LogLevel | null;
+  sourceFilter: LogSource | null;
 };
 
 /** UI state slice */
@@ -247,9 +252,10 @@ type Actions = {
   setStartupPhase: (phase: StartupPhase) => void;
 
   // Logs actions
-  addLog: (level: LogLevel, message: string) => void;
+  addLog: (level: LogLevel, message: string, source?: LogSource) => void;
   clearLogs: () => void;
   setLogFilter: (filter: LogLevel | null) => void;
+  setSourceFilter: (source: LogSource | null) => void;
 
   // UI actions
   setScreen: (screen: Screen) => void;
@@ -373,6 +379,7 @@ export const useStore = create<Store>((set) => ({
     entries: [],
     maxEntries: 100,
     filter: null,
+    sourceFilter: null,
   },
 
   // Initial UI state
@@ -564,11 +571,12 @@ export const useStore = create<Store>((set) => ({
       })),
 
     // Logs actions
-    addLog: (level, message) => {
+    addLog: (level, message, source = "server") => {
       const entry: LogEntry = {
         id: createLogId(),
         timestamp: new Date(),
         level,
+        source,
         message,
       };
       set((state) => ({
@@ -587,6 +595,11 @@ export const useStore = create<Store>((set) => ({
     setLogFilter: (filter) =>
       set((state) => ({
         logs: { ...state.logs, filter },
+      })),
+
+    setSourceFilter: (sourceFilter) =>
+      set((state) => ({
+        logs: { ...state.logs, sourceFilter },
       })),
 
     // UI actions
@@ -922,8 +935,17 @@ export const selectLogs = (state: Store) => state.logs;
  * Selector for filtered logs
  */
 export const selectFilteredLogs = (state: Store) => {
-  const { entries, filter } = state.logs;
-  return filter ? entries.filter((e) => e.level === filter) : entries;
+  const { entries, filter, sourceFilter } = state.logs;
+  let result = entries;
+
+  if (filter) {
+    result = result.filter((e) => e.level === filter);
+  }
+  if (sourceFilter) {
+    result = result.filter((e) => e.source === sourceFilter);
+  }
+
+  return result;
 };
 
 /**

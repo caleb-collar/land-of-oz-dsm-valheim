@@ -5,8 +5,13 @@
 import { Box, Text, useInput } from "ink";
 import { type FC, useState } from "react";
 import { LogEntry } from "../components/LogEntry.js";
-import { type LogLevel, selectFilteredLogs, useStore } from "../store.js";
-import { logColors, theme } from "../theme.js";
+import {
+  type LogLevel,
+  type LogSource,
+  selectFilteredLogs,
+  useStore,
+} from "../store.js";
+import { logColors, sourceColors, theme } from "../theme.js";
 
 /** Available log filters */
 const LOG_FILTERS: (LogLevel | null)[] = [
@@ -17,13 +22,18 @@ const LOG_FILTERS: (LogLevel | null)[] = [
   "debug",
 ];
 
+/** Available source filters */
+const SOURCE_FILTERS: (LogSource | null)[] = [null, "server", "bepinex", "app"];
+
 /**
  * Console screen for viewing logs
  */
 export const Console: FC = () => {
   const entries = useStore(selectFilteredLogs);
   const filter = useStore((s) => s.logs.filter);
+  const sourceFilter = useStore((s) => s.logs.sourceFilter);
   const setLogFilter = useStore((s) => s.actions.setLogFilter);
+  const setSourceFilter = useStore((s) => s.actions.setSourceFilter);
   const clearLogs = useStore((s) => s.actions.clearLogs);
   const [scrollOffset, setScrollOffset] = useState(0);
 
@@ -62,6 +72,14 @@ export const Console: FC = () => {
       setScrollOffset(0);
     }
 
+    // Source filter (s key)
+    if (input === "s") {
+      const currentIndex = SOURCE_FILTERS.indexOf(sourceFilter);
+      const nextIndex = (currentIndex + 1) % SOURCE_FILTERS.length;
+      setSourceFilter(SOURCE_FILTERS[nextIndex]);
+      setScrollOffset(0);
+    }
+
     // Clear logs
     if (input === "c" || input === "C") {
       clearLogs();
@@ -77,6 +95,31 @@ export const Console: FC = () => {
     }
   });
 
+  /**
+   * Gets display label for source filter
+   */
+  const getSourceLabel = (source: LogSource | null): string => {
+    if (!source) return "ALL";
+    switch (source) {
+      case "server":
+        return "SERVER";
+      case "bepinex":
+        return "BEPINEX";
+      case "app":
+        return "APP";
+      default:
+        return "ALL";
+    }
+  };
+
+  /**
+   * Gets color for source filter display
+   */
+  const getSourceColor = (source: LogSource | null): string => {
+    if (!source) return theme.muted;
+    return sourceColors[source] ?? theme.muted;
+  };
+
   return (
     <Box flexDirection="column" flexGrow={1} padding={1} overflow="hidden">
       {/* Title and controls */}
@@ -85,11 +128,15 @@ export const Console: FC = () => {
           ─ Console ─
         </Text>
         <Box>
-          <Text dimColor>[F] Filter</Text>
+          <Text dimColor>[F] Level: </Text>
           <Text color={filter ? logColors[filter] : theme.muted}>
             {filter?.toUpperCase() ?? "ALL"}
           </Text>
-          <Text dimColor>| [C] Clear | ↑↓ Scroll</Text>
+          <Text dimColor> | [S] Source: </Text>
+          <Text color={getSourceColor(sourceFilter)}>
+            {getSourceLabel(sourceFilter)}
+          </Text>
+          <Text dimColor> | [C] Clear | ↑↓ Scroll</Text>
         </Box>
       </Box>
 
@@ -104,7 +151,9 @@ export const Console: FC = () => {
       >
         {visibleEntries.length === 0 ? (
           <Text dimColor>
-            No log entries{filter ? ` matching "${filter}"` : ""}
+            No log entries
+            {filter ? ` matching level "${filter}"` : ""}
+            {sourceFilter ? ` from source "${sourceFilter}"` : ""}
           </Text>
         ) : (
           visibleEntries.map((entry) => (
