@@ -90,10 +90,12 @@ describe("RconManager", () => {
 
       expect(rconManager.isConnected()).toBe(true);
       expect(defaultCallbacks.onConnectionStateChange).toHaveBeenCalledWith(
-        "connecting"
+        "connecting",
+        undefined
       );
       expect(defaultCallbacks.onConnectionStateChange).toHaveBeenCalledWith(
-        "connected"
+        "connected",
+        undefined
       );
     });
 
@@ -120,7 +122,8 @@ describe("RconManager", () => {
       rconManager.disconnect();
 
       expect(defaultCallbacks.onConnectionStateChange).toHaveBeenCalledWith(
-        "disconnected"
+        "disconnected",
+        undefined
       );
     });
   });

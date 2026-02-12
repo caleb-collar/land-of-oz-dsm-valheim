@@ -5,7 +5,6 @@
  */
 
 import { useCallback, useEffect, useRef } from "react";
-import { readRconPluginConfig } from "../../bepinex/rcon-config.js";
 import { type ConnectionState, rconManager } from "../../rcon/mod.js";
 import type {
   ParsedEvent,
@@ -441,14 +440,19 @@ export function useServer() {
         autoReconnect: rconAutoReconnect,
       },
       {
-        onConnectionStateChange: (state: ConnectionState) => {
+        onConnectionStateChange: (state: ConnectionState, error?: string) => {
           const connected = state === "connected";
           actions.setRconConnected(connected);
 
           if (connected) {
             actions.addLog("info", "RCON connected");
           } else if (state === "error") {
-            actions.addLog("warn", "RCON connection error");
+            actions.addLog(
+              "warn",
+              error
+                ? `RCON connection error: ${error}`
+                : "RCON connection error"
+            );
           } else if (state === "disconnected") {
             actions.addLog("info", "RCON disconnected");
           }
@@ -484,62 +488,13 @@ export function useServer() {
   useEffect(() => {
     if (status === "online" && rconEnabled && !rconManager.isConnected()) {
       // Wait for BepInEx plugins to load before attempting RCON connect.
-      // Also try to read the plugin config to pick up the actual port/password.
-      const timer = setTimeout(async () => {
-        // Try to sync port/password from the BepInEx.rcon plugin config
-        try {
-          const pluginCfg = await readRconPluginConfig();
-          if (pluginCfg) {
-            const needsSync =
-              pluginCfg.port !== rconPort ||
-              pluginCfg.password !== rconPassword;
-
-            if (needsSync) {
-              actions.updateRcon({
-                port: pluginCfg.port,
-                password: pluginCfg.password,
-              });
-              // Re-initialize rconManager with synced values
-              rconManager.initialize(
-                {
-                  host: "localhost",
-                  port: pluginCfg.port,
-                  password: pluginCfg.password,
-                  timeout: rconTimeout,
-                  enabled: rconEnabled,
-                  autoReconnect: rconAutoReconnect,
-                },
-                {
-                  onConnectionStateChange: (state: ConnectionState) => {
-                    const connected = state === "connected";
-                    actions.setRconConnected(connected);
-
-                    if (connected) {
-                      actions.addLog("info", "RCON connected");
-                    } else if (state === "error") {
-                      actions.addLog("warn", "RCON connection error");
-                    } else if (state === "disconnected") {
-                      actions.addLog("info", "RCON disconnected");
-                    }
-                  },
-                  onPlayerListUpdate: (players: string[]) => {
-                    actions.setPlayers(players);
-                  },
-                  pollInterval: 10000,
-                }
-              );
-              actions.addLog(
-                "info",
-                `Synced RCON config from BepInEx plugin (port: ${pluginCfg.port})`
-              );
-            }
-          }
-        } catch {
-          // Non-fatal: plugin config may not exist yet
-        }
-
-        rconManager.connect().catch((error: unknown) => {
-          actions.addLog("warn", `RCON connection failed: ${error}`);
+      // Config sync (port/password from BepInEx plugin) is handled by
+      // useConfigSync on mount — we avoid doing it here to prevent
+      // cascading re-renders that kill in-flight connections.
+      const timer = setTimeout(() => {
+        rconManager.connect().catch(() => {
+          // Errors are handled internally by rconManager and surfaced
+          // through onConnectionStateChange callback.
         });
       }, 5000); // 5 second delay for BepInEx plugins to load
 
@@ -549,15 +504,7 @@ export function useServer() {
     if (status === "offline" && rconManager.isConnected()) {
       rconManager.disconnect();
     }
-  }, [
-    status,
-    rconEnabled,
-    rconPort,
-    rconPassword,
-    rconTimeout,
-    rconAutoReconnect,
-    actions,
-  ]);
+  }, [status, rconEnabled]);
 
   // NOTE: We intentionally do NOT cleanup on unmount here!
   // The server should keep running when navigating between screens.

@@ -65,7 +65,7 @@ export type ConnectionState =
 
 /** RCON manager callbacks for state updates */
 export type RconManagerCallbacks = {
-  onConnectionStateChange: (state: ConnectionState) => void;
+  onConnectionStateChange: (state: ConnectionState, error?: string) => void;
   onPlayerListUpdate: (players: string[]) => void;
   pollInterval: number;
 };

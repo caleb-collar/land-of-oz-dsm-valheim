@@ -93,8 +93,9 @@ class RconManager {
       // Start polling for player list
       this.startPolling();
     } catch (error) {
-      log.error("RCON connection failed", { error: String(error) });
-      this.setState("error");
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      log.error("RCON connection failed", { error: errorMsg });
+      this.setState("error", errorMsg);
       this.client = null;
 
       // Schedule reconnect if enabled
@@ -266,10 +267,10 @@ class RconManager {
   }
 
   /** Update connection state and notify callback */
-  private setState(state: ConnectionState): void {
+  private setState(state: ConnectionState, error?: string): void {
     if (this.state === state) return;
     this.state = state;
-    this.callbacks?.onConnectionStateChange(state);
+    this.callbacks?.onConnectionStateChange(state, error);
   }
 
   /** Start polling for player list updates */
