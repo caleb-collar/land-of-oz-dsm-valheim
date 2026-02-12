@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0]
+
+### Added
+- **BepInEx RCON plugin config sync** — New `rcon-config.ts` module reads/writes BepInEx.rcon plugin config (`nl.avii.plugins.rcon.cfg`), keeping app RCON settings and plugin config in sync
+- 25 tests for the RCON plugin config module
+
+### Fixed
+- **RCON connection failure** — Default port changed from 25575 (Minecraft) to 2458 (BepInEx.rcon default: game port + 2)
+- **Store/config default mismatch** — Aligned store initial state with config schema defaults (`enabled: true`, `port: 2458`, `password: ""`)
+- **forceSave opened duplicate connection** — Now uses singleton `rconManager.sendCommand("save")` instead of creating a new `RconClient`
+- **RCON reconnect flooding** — Added exponential backoff (5s → 10s → 20s → … max 2min) with 20-attempt limit
+- **Auto-connect too early** — Increased delay from 3s to 5s for BepInEx plugin loading
+- **Plugin config not synced** — App now reads BepInEx.rcon plugin config on startup and before RCON connect; writes plugin config when user changes RCON settings
+
+### Changed
+- `sendCommand` on `RconManager` is now public
+- RCON auto-connect effect tracks port/password/timeout/autoReconnect in dependency array
+
 ## [1.10.0]
 
 ### Fixed
@@ -294,7 +312,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Platform detection for Windows, Linux, macOS
 - Basic TUI framework with Ink
 
-[Unreleased]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.9.1...HEAD
+[Unreleased]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.12.0...HEAD
+[1.12.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.10.0...v1.12.0
+[1.10.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.9.1...v1.10.0
 [1.9.1]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.9.0...v1.9.1
 [1.9.0]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.6.1...v1.9.0
 [1.6.1]: https://github.com/caleb-collar/land-of-oz-dsm-valheim/compare/v1.6.0...v1.6.1
