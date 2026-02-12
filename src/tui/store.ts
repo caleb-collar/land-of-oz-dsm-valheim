@@ -428,7 +428,7 @@ export const useStore = create<Store>((set) => ({
     enabled: true,
     connected: false,
     port: 2458,
-    password: "",
+    password: "ChangeMe",
     host: "localhost",
     timeout: 5000,
     autoReconnect: true,

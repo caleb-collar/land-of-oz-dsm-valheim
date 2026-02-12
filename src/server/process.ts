@@ -559,11 +559,15 @@ export class ValheimProcess {
       String(this.config.port),
       "-world",
       this.config.world,
-      "-password",
-      this.config.password,
-      "-public",
-      this.config.public ? "1" : "0",
     ];
+
+    // Only include password if set — Valheim requires passwords to be ≥5
+    // characters when specified. Passing an empty string causes immediate exit.
+    if (this.config.password) {
+      args.push("-password", this.config.password);
+    }
+
+    args.push("-public", this.config.public ? "1" : "0");
 
     if (this.config.crossplay) {
       args.push("-crossplay");

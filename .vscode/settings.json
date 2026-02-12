@@ -24,6 +24,13 @@
   },
   "chat.tools.terminal.autoApprove": {
     "mv": true,
-    "npm version": true
+    "npm version": true,
+    "git add": true,
+    "git commit": true,
+    "/^gh release create v1\\.13\\.0 --title \"v1\\.13\\.0 - RCON Connection Fix\" -F release-notes\\.md$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "gh": true
   }
 }

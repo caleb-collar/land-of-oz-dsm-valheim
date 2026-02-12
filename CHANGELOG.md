@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.1]
+
+### Fixed
+- **Server immediately shuts down on start** — `ValheimProcess.buildArgs()` unconditionally passed `-password ""` when the server password was empty; Valheim requires the `-password` flag to carry a value ≥5 characters if present, so an empty argument caused an immediate exit. The flag is now omitted entirely when the password is empty, matching the correct behavior in `buildServerArgs()`.
+- **TUI store RCON password default mismatch** — Initial RCON password in Zustand store was `""` instead of `"ChangeMe"`, inconsistent with schema/defaults (cosmetic; `useConfigSync` overwrites on mount).
+
 ## [1.13.0]
 
 ### Fixed
