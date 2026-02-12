@@ -1,35 +1,34 @@
 /**
- * RCON Module
- *
- * Source RCON protocol implementation for Valheim servers.
- * Requires BepInEx + RCON mod on the server side.
- *
- * @module
+ * RCON module exports
+ * Source RCON protocol client for Valheim server administration
  */
 
+// Client
 export { RconClient } from "./client.js";
+export type { ValheimEventKey, ValheimGlobalKeyName } from "./constants.js";
+// Constants
+export { ValheimEvents, ValheimGlobalKeys } from "./constants.js";
+// Manager (singleton)
+export { rconManager } from "./manager.js";
+// Protocol
 export {
-  type RconManagerState,
-  rconManager,
-} from "./manager.js";
-export {
-  createAuthPacket,
-  createCommandPacket,
   decodePacket,
   encodePacket,
-  isAuthFailure,
-  isAuthResponse,
-  isAuthSuccess,
+  hasCompletePacket,
+  isValidBody,
+  SERVERDATA_AUTH,
+  SERVERDATA_AUTH_RESPONSE,
+  SERVERDATA_EXECCOMMAND,
+  SERVERDATA_RESPONSE_VALUE,
 } from "./protocol.js";
-export {
-  PacketType,
-  type PacketType as PacketTypeValue,
-  type RconConfig,
-  RconError,
-  type RconErrorCode,
-  type RconPacket,
-  type RconState,
-  ValheimCommands,
-  ValheimEvents,
-  ValheimGlobalKeys,
+// Types
+export type {
+  ConnectionState,
+  RconConfig,
+  RconErrorCode,
+  RconManagerCallbacks,
+  RconManagerConfig,
+  RconPacket,
+  RconResponse,
 } from "./types.js";
+export { RconError } from "./types.js";

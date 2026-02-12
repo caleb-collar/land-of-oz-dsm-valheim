@@ -1,91 +1,77 @@
 /**
- * RCON Manager Singleton
- * Manages RCON connection lifecycle, auto-reconnection, and player list polling
+ * RCON Manager
+ * Singleton manager for persistent RCON connections with auto-reconnect,
+ * player polling, and high-level Valheim command wrappers
  */
 
+import { createLogger } from "../utils/logger.js";
 import { RconClient } from "./client.js";
-import type { RconConfig } from "./types.js";
+import type {
+  ConnectionState,
+  RconManagerCallbacks,
+  RconManagerConfig,
+} from "./types.js";
 
-/** RCON connection state */
-export type RconManagerState =
-  | "disconnected"
-  | "connecting"
-  | "connected"
-  | "error";
-
-/** Callback for connection state changes */
-export type ConnectionStateCallback = (state: RconManagerState) => void;
-
-/** Callback for player list updates */
-export type PlayerListCallback = (players: string[]) => void;
-
-/** RCON manager options */
-type RconManagerOptions = {
-  onConnectionStateChange?: ConnectionStateCallback;
-  onPlayerListUpdate?: PlayerListCallback;
-  pollInterval?: number; // How often to poll for player list (ms)
-};
+const log = createLogger("rcon-manager");
 
 /**
- * Global RCON manager singleton
- * Handles connection lifecycle and player list polling
+ * Manages a persistent RCON connection with auto-reconnect and polling
  */
 class RconManager {
   private client: RconClient | null = null;
-  private config: RconConfig | null = null;
-  private state: RconManagerState = "disconnected";
+  private config: RconManagerConfig | null = null;
+  private callbacks: RconManagerCallbacks | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 10;
-  private reconnectDelay = 5000; // 5 seconds
-  private pollInterval = 10000; // 10 seconds
-  private onConnectionStateChange: ConnectionStateCallback | null = null;
-  private onPlayerListUpdate: PlayerListCallback | null = null;
-  private lastKnownPlayers: string[] = [];
-  private enabled = false;
+  private state: ConnectionState = "disconnected";
 
   /**
-   * Initialize the RCON manager
-   * @param config RCON configuration
-   * @param options Optional callbacks and settings
+   * Initialize the manager with config and callbacks
+   * Can be called multiple times to reconfigure
    */
-  initialize(
-    config: RconConfig & { enabled: boolean },
-    options: RconManagerOptions = {}
-  ): void {
-    this.config = config;
-    this.enabled = config.enabled;
-    this.onConnectionStateChange = options.onConnectionStateChange ?? null;
-    this.onPlayerListUpdate = options.onPlayerListUpdate ?? null;
-    if (options.pollInterval) {
-      this.pollInterval = options.pollInterval;
+  initialize(config: RconManagerConfig, callbacks: RconManagerCallbacks): void {
+    // If already connected with the same config, skip
+    if (
+      this.config &&
+      this.config.host === config.host &&
+      this.config.port === config.port &&
+      this.config.password === config.password &&
+      this.isConnected()
+    ) {
+      this.callbacks = callbacks;
+      return;
     }
 
-    // Auto-connect if enabled
-    if (this.enabled) {
-      this.connect();
-    }
+    // Disconnect existing connection
+    this.disconnect();
+
+    this.config = config;
+    this.callbacks = callbacks;
   }
 
   /**
-   * Connect to RCON server
+   * Connect to the RCON server
    */
-  async connect(): Promise<boolean> {
-    if (!this.config || !this.enabled) {
-      return false;
+  async connect(): Promise<void> {
+    if (!this.config) {
+      log.warn("Cannot connect: not initialized");
+      return;
     }
 
-    if (this.state === "connected" || this.state === "connecting") {
-      return true;
+    if (!this.config.enabled) {
+      log.info("RCON is disabled");
+      return;
+    }
+
+    if (this.isConnected()) {
+      return;
     }
 
     this.setState("connecting");
-    this.reconnectAttempts = 0;
 
     try {
       this.client = new RconClient({
-        host: "localhost",
+        host: this.config.host,
         port: this.config.port,
         password: this.config.password,
         timeout: this.config.timeout,
@@ -93,395 +79,248 @@ class RconManager {
 
       await this.client.connect();
       this.setState("connected");
-      this.reconnectAttempts = 0;
+      log.info("RCON connected");
 
       // Start polling for player list
-      this.startPlayerListPolling();
-
-      return true;
-    } catch (_error) {
+      this.startPolling();
+    } catch (error) {
+      log.error("RCON connection failed", { error: String(error) });
       this.setState("error");
       this.client = null;
 
-      // Schedule reconnect if auto-reconnect is enabled
-      if (this.config.autoReconnect && this.enabled) {
+      // Schedule reconnect if enabled
+      if (this.config.autoReconnect) {
         this.scheduleReconnect();
       }
-
-      return false;
     }
   }
 
   /**
-   * Disconnect from RCON server
+   * Disconnect from the RCON server
    */
   disconnect(): void {
-    this.enabled = false;
-    this.clearTimers();
+    this.stopPolling();
+    this.clearReconnect();
 
     if (this.client) {
-      this.client.disconnect();
+      try {
+        this.client.disconnect();
+      } catch {
+        // Ignore disconnect errors
+      }
       this.client = null;
     }
 
     this.setState("disconnected");
-    this.lastKnownPlayers = [];
   }
 
   /**
-   * Send a command to the RCON server
-   * @param command Command to send
-   * @returns Response from server, or null if not connected
+   * Check if currently connected
    */
-  async send(command: string): Promise<string | null> {
-    if (!this.client || this.state !== "connected") {
+  isConnected(): boolean {
+    return this.client?.isConnected() ?? false;
+  }
+
+  // ─── Player Management ───────────────────────────────────────────
+
+  /** Kick a player by name */
+  async kickPlayer(playerName: string): Promise<string | null> {
+    return this.sendCommand(`kick ${playerName}`);
+  }
+
+  /** Ban a player by name */
+  async banPlayer(playerName: string): Promise<string | null> {
+    return this.sendCommand(`ban ${playerName}`);
+  }
+
+  /** Unban a player */
+  async unbanPlayer(playerIdentifier: string): Promise<string | null> {
+    return this.sendCommand(`unban ${playerIdentifier}`);
+  }
+
+  /** Get list of banned players */
+  async getBannedPlayers(): Promise<string[]> {
+    const response = await this.sendCommand("banned");
+    if (!response) return [];
+    return response
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+  }
+
+  // ─── Event Management ────────────────────────────────────────────
+
+  /** Trigger a specific event */
+  async triggerEvent(eventKey: string): Promise<string | null> {
+    return this.sendCommand(`randomevent ${eventKey}`);
+  }
+
+  /** Trigger a random event */
+  async triggerRandomEvent(): Promise<string | null> {
+    return this.sendCommand("randomevent");
+  }
+
+  /** Stop the current event */
+  async stopEvent(): Promise<string | null> {
+    return this.sendCommand("stopevent");
+  }
+
+  // ─── Global Keys ─────────────────────────────────────────────────
+
+  /** List all active global keys */
+  async listGlobalKeys(): Promise<string[]> {
+    const response = await this.sendCommand("listkeys");
+    if (!response) return [];
+    return response
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+  }
+
+  /** Set a global key */
+  async setGlobalKey(keyName: string): Promise<string | null> {
+    return this.sendCommand(`setkey ${keyName}`);
+  }
+
+  /** Remove a global key */
+  async removeGlobalKey(keyName: string): Promise<string | null> {
+    return this.sendCommand(`removekey ${keyName}`);
+  }
+
+  /** Reset all global keys */
+  async resetGlobalKeys(): Promise<string | null> {
+    return this.sendCommand("resetkeys");
+  }
+
+  // ─── Time Control ────────────────────────────────────────────────
+
+  /** Sleep (skip to morning) */
+  async sleep(): Promise<string | null> {
+    return this.sendCommand("sleep");
+  }
+
+  /** Skip time by seconds */
+  async skipTime(seconds: number): Promise<string | null> {
+    return this.sendCommand(`skiptime ${seconds}`);
+  }
+
+  // ─── Server Info ─────────────────────────────────────────────────
+
+  /** Get server information */
+  async getServerInfo(): Promise<string | null> {
+    return this.sendCommand("info");
+  }
+
+  /** Ping the server */
+  async pingServer(): Promise<string | null> {
+    return this.sendCommand("ping");
+  }
+
+  // ─── Misc ────────────────────────────────────────────────────────
+
+  /** Remove all drops from the world */
+  async removeDrops(): Promise<string | null> {
+    return this.sendCommand("removedrops");
+  }
+
+  // ─── Internal ────────────────────────────────────────────────────
+
+  /** Send a command, returning the response or null on error */
+  private async sendCommand(command: string): Promise<string | null> {
+    if (!this.client?.isConnected()) {
+      log.warn(`Cannot send command "${command}": not connected`);
       return null;
     }
 
     try {
-      const response = await this.client.send(command);
-      return response;
-    } catch (_error) {
-      // Connection lost, attempt reconnect
-      this.setState("error");
-      if (this.config?.autoReconnect && this.enabled) {
-        this.scheduleReconnect();
+      return await this.client.send(command);
+    } catch (error) {
+      log.error(`Command failed: ${command}`, { error: String(error) });
+
+      // Connection may have been lost
+      if (!this.client.isConnected()) {
+        this.setState("disconnected");
+        this.client = null;
+
+        if (this.config?.autoReconnect) {
+          this.scheduleReconnect();
+        }
       }
+
       return null;
     }
   }
 
-  /**
-   * Get the current player list from the server
-   * @returns Array of player names, or empty array if unavailable
-   */
-  async getPlayerList(): Promise<string[]> {
-    const response = await this.send("status");
-    if (!response) {
-      return [];
-    }
-
-    // Parse player list from status response
-    // Valheim status format varies, try to extract player names
-    const players = this.parsePlayerList(response);
-    return players;
+  /** Update connection state and notify callback */
+  private setState(state: ConnectionState): void {
+    if (this.state === state) return;
+    this.state = state;
+    this.callbacks?.onConnectionStateChange(state);
   }
 
-  /**
-   * Parse player names from status command response
-   * @param statusText Raw status response from server
-   * @returns Array of player names
-   */
-  private parsePlayerList(statusText: string): string[] {
-    const players: string[] = [];
-    const lines = statusText.split("\n");
+  /** Start polling for player list updates */
+  private startPolling(): void {
+    this.stopPolling();
 
-    // Look for lines that indicate connected players
-    // Format may vary: "X player(s)" or list of names
-    for (const line of lines) {
-      // Try to match player names - this is heuristic
-      // Valheim's status command returns player count and names
-      if (line.includes("players:")) {
-        // Extract names after "players:"
-        const match = line.match(/players:\s*(.+)/);
-        if (match?.[1]) {
-          const names = match[1]
-            .split(",")
-            .map((n) => n.trim())
-            .filter((n) => n.length > 0);
-          players.push(...names);
-        }
-      }
-    }
-
-    return players;
-  }
-
-  /**
-   * Start polling for player list updates
-   */
-  private startPlayerListPolling(): void {
-    this.stopPlayerListPolling();
-
+    const interval = this.callbacks?.pollInterval ?? 10000;
     this.pollTimer = setInterval(async () => {
-      if (this.state !== "connected") {
-        return;
-      }
+      if (!this.isConnected()) return;
 
-      const players = await this.getPlayerList();
-
-      // Check if player list changed
-      if (this.hasPlayerListChanged(players)) {
-        this.lastKnownPlayers = players;
-        if (this.onPlayerListUpdate) {
-          this.onPlayerListUpdate(players);
+      try {
+        const response = await this.client!.send("players");
+        const players = this.parsePlayers(response);
+        this.callbacks?.onPlayerListUpdate(players);
+      } catch {
+        // Polling failure — connection may be lost
+        if (!this.client?.isConnected()) {
+          this.stopPolling();
+          this.setState("disconnected");
+          this.client = null;
+          if (this.config?.autoReconnect) {
+            this.scheduleReconnect();
+          }
         }
       }
-    }, this.pollInterval);
+    }, interval);
   }
 
-  /**
-   * Stop polling for player list
-   */
-  private stopPlayerListPolling(): void {
+  /** Stop player list polling */
+  private stopPolling(): void {
     if (this.pollTimer) {
       clearInterval(this.pollTimer);
       this.pollTimer = null;
     }
   }
 
-  /**
-   * Check if player list has changed
-   */
-  private hasPlayerListChanged(newPlayers: string[]): boolean {
-    if (newPlayers.length !== this.lastKnownPlayers.length) {
-      return true;
-    }
-
-    const sorted1 = [...newPlayers].sort();
-    const sorted2 = [...this.lastKnownPlayers].sort();
-
-    return !sorted1.every((name, i) => name === sorted2[i]);
-  }
-
-  /**
-   * Schedule a reconnect attempt
-   */
+  /** Schedule a reconnect attempt */
   private scheduleReconnect(): void {
-    if (this.reconnectTimer) {
-      return;
-    }
-
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      // Max attempts reached, stop trying
-      return;
-    }
-
-    this.reconnectAttempts++;
-    const delay = this.reconnectDelay * this.reconnectAttempts;
-
-    this.reconnectTimer = setTimeout(async () => {
-      this.reconnectTimer = null;
-      await this.connect();
-    }, delay);
+    this.clearReconnect();
+    this.reconnectTimer = setTimeout(() => {
+      log.info("Attempting RCON reconnect...");
+      this.connect().catch(() => {
+        // Reconnect failed, will be rescheduled in connect()
+      });
+    }, 5000);
   }
 
-  /**
-   * Update the connection state and notify listeners
-   */
-  private setState(newState: RconManagerState): void {
-    if (this.state === newState) {
-      return;
-    }
-
-    this.state = newState;
-
-    if (this.onConnectionStateChange) {
-      this.onConnectionStateChange(newState);
-    }
-  }
-
-  /**
-   * Clear all timers
-   */
-  private clearTimers(): void {
+  /** Clear scheduled reconnect */
+  private clearReconnect(): void {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
-
-    this.stopPlayerListPolling();
   }
 
-  /**
-   * Get the current connection state
-   */
-  getState(): RconManagerState {
-    return this.state;
-  }
+  /** Parse player names from server response */
+  private parsePlayers(response: string): string[] {
+    if (!response || response.trim().length === 0) return [];
 
-  /**
-   * Check if RCON is connected
-   */
-  isConnected(): boolean {
-    return this.state === "connected";
-  }
-
-  /**
-   * Get the last known player list
-   */
-  getLastKnownPlayers(): string[] {
-    return [...this.lastKnownPlayers];
-  }
-
-  /**
-   * Kick a player from the server
-   * @param playerName Player name to kick
-   * @returns Response message
-   */
-  async kickPlayer(playerName: string): Promise<string | null> {
-    return this.send(`kick ${playerName}`);
-  }
-
-  /**
-   * Ban a player from the server
-   * @param playerName Player name to ban
-   * @returns Response message
-   */
-  async banPlayer(playerName: string): Promise<string | null> {
-    return this.send(`ban ${playerName}`);
-  }
-
-  /**
-   * Unban a player
-   * @param playerName Player name to unban
-   * @returns Response message
-   */
-  async unbanPlayer(playerName: string): Promise<string | null> {
-    return this.send(`unban ${playerName}`);
-  }
-
-  /**
-   * Get list of banned players
-   * @returns Array of banned player names/IDs
-   */
-  async getBannedPlayers(): Promise<string[]> {
-    const response = await this.send("banned");
-    if (!response) return [];
-    // Parse banned list from response
-    return response.split("\n").filter((line) => line.trim().length > 0);
-  }
-
-  /**
-   * Get server information
-   * @returns Server info response
-   */
-  async getServerInfo(): Promise<string | null> {
-    return this.send("info");
-  }
-
-  /**
-   * Ping the server
-   * @returns Ping response
-   */
-  async pingServer(): Promise<string | null> {
-    return this.send("ping");
-  }
-
-  /**
-   * Trigger a random event
-   * @param eventName Event name (e.g., "army_eikthyr")
-   * @returns Response message
-   */
-  async triggerEvent(eventName: string): Promise<string | null> {
-    return this.send(`event ${eventName}`);
-  }
-
-  /**
-   * Trigger a random event
-   * @returns Response message
-   */
-  async triggerRandomEvent(): Promise<string | null> {
-    return this.send("randomevent");
-  }
-
-  /**
-   * Stop the current event
-   * @returns Response message
-   */
-  async stopEvent(): Promise<string | null> {
-    return this.send("stopevent");
-  }
-
-  /**
-   * Skip time by specified seconds
-   * @param seconds Number of seconds to skip
-   * @returns Response message
-   */
-  async skipTime(seconds: number): Promise<string | null> {
-    return this.send(`skiptime ${seconds}`);
-  }
-
-  /**
-   * Sleep through the night
-   * @returns Response message
-   */
-  async sleep(): Promise<string | null> {
-    return this.send("sleep");
-  }
-
-  /**
-   * Remove all dropped items from the world
-   * @returns Response message
-   */
-  async removeDrops(): Promise<string | null> {
-    return this.send("removedrops");
-  }
-
-  /**
-   * Set a global key
-   * @param key Global key name
-   * @returns Response message
-   */
-  async setGlobalKey(key: string): Promise<string | null> {
-    return this.send(`setkey ${key}`);
-  }
-
-  /**
-   * Remove a global key
-   * @param key Global key name
-   * @returns Response message
-   */
-  async removeGlobalKey(key: string): Promise<string | null> {
-    return this.send(`removekey ${key}`);
-  }
-
-  /**
-   * Reset all global keys
-   * @returns Response message
-   */
-  async resetGlobalKeys(): Promise<string | null> {
-    return this.send("resetkeys");
-  }
-
-  /**
-   * List all global keys
-   * @returns Array of global key names
-   */
-  async listGlobalKeys(): Promise<string[]> {
-    const response = await this.send("listkeys");
-    if (!response) return [];
-    // Parse keys from response
-    return response.split("\n").filter((line) => line.trim().length > 0);
-  }
-
-  /**
-   * Set LOD bias (0-5, lower = better performance)
-   * @param value LOD bias value
-   * @returns Response message
-   */
-  async setLodBias(value: number): Promise<string | null> {
-    return this.send(`lodbias ${value}`);
-  }
-
-  /**
-   * Set LOD distance (100-6000)
-   * @param value LOD distance value
-   * @returns Response message
-   */
-  async setLodDistance(value: number): Promise<string | null> {
-    return this.send(`loddist ${value}`);
-  }
-
-  /**
-   * Clean up resources
-   */
-  cleanup(): void {
-    this.disconnect();
+    return response
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0 && line !== "Players:");
   }
 }
 
-// Singleton instance
-const rconManager = new RconManager();
-
-export { rconManager };
+/** Singleton RCON manager instance */
+export const rconManager = new RconManager();
