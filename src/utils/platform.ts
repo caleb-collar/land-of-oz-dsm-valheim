@@ -5,6 +5,7 @@
 
 import path from "node:path";
 import process from "node:process";
+import steamcmd from "@caleb-collar/steamcmd";
 
 /** Supported operating systems */
 export type Platform = "windows" | "darwin" | "linux";
@@ -134,7 +135,8 @@ export function getAppConfigDir(): string {
  * @returns The absolute path to the SteamCMD directory
  */
 export function getSteamCmdDir(): string {
-  return path.join(getLocalDataDir(), "steamcmd");
+  // Use the @caleb-collar/steamcmd package as source of truth
+  return steamcmd.getInfo().directory;
 }
 
 /**
@@ -172,13 +174,7 @@ export function getValheimExecutable(): string {
  * @returns The absolute path to the SteamCMD executable
  */
 export function getSteamCmdExecutable(): string {
-  const platform = getPlatform();
-  const steamCmdDir = getSteamCmdDir();
-
-  switch (platform) {
-    case "windows":
-      return path.join(steamCmdDir, "steamcmd.exe");
-    default:
-      return path.join(steamCmdDir, "steamcmd.sh");
-  }
+  // Use the @caleb-collar/steamcmd package as source of truth
+  const info = steamcmd.getInfo();
+  return info.executable ?? path.join(info.directory, "steamcmd.exe");
 }

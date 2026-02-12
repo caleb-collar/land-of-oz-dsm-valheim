@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.4]
+
+### Fixed
+- **BepInEx/RCON config written to wrong path** — The `@caleb-collar/steamcmd` package installs SteamCMD under a `Data` subdirectory (e.g., `steamcmd\Data\steamapps\common\...`), but BepInEx path utilities used a hardcoded path without `Data` (e.g., `steamcmd\steamapps\common\...`). This caused all BepInEx config writes (including `enabled = true` for RCON) to go to a non-existent location. Both `src/bepinex/paths.ts` and `src/utils/platform.ts` now use the `steamcmd.getInfo()` directory as the source of truth.
+
 ## [1.13.3]
 
 ### Fixed

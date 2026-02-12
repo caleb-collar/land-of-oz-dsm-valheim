@@ -5,7 +5,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import { getValheimServerDir } from "../utils/platform.js";
+import { getSteamPaths } from "../steamcmd/paths.js";
 
 /**
  * Gets the root BepInEx directory path
@@ -13,7 +13,8 @@ import { getValheimServerDir } from "../utils/platform.js";
  * @returns Absolute path to the BepInEx directory
  */
 export function getBepInExPath(valheimPath?: string): string {
-  const serverDir = valheimPath ?? getValheimServerDir();
+  // Use the steamcmd package path (source of truth) unless overridden
+  const serverDir = valheimPath ?? getSteamPaths().valheimDir;
   return path.join(serverDir, "BepInEx");
 }
 
