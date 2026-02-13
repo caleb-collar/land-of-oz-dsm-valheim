@@ -316,8 +316,7 @@ LogConsoleToUnityLog = false
 # Default value: false
 Enabled = ${config.consoleEnabled}
 
-## If enabled, will prevent closing the console (either by user or by Windows background
-management).
+## If enabled, will prevent closing the console (either by user or by Windows background management).
 # Setting type: Boolean
 # Default value: false
 PreventClose = false
