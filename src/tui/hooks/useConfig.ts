@@ -18,6 +18,7 @@ import { useStore } from "../store.js";
  */
 export function useConfig() {
   const config = useStore((s) => s.config);
+  const appSettings = useStore((s) => s.appSettings);
   const modifiers = useStore((s) => s.modifiers);
   const watchdog = useStore((s) => s.watchdog);
   const tuiConfig = useStore((s) => s.tuiConfig);
@@ -43,6 +44,8 @@ export function useConfig() {
           crossplay: boolean;
           saveinterval: number;
           backups: number;
+          backupshort: number;
+          backuplong: number;
         }> = {};
 
         if (partial.serverName !== undefined) {
@@ -62,6 +65,12 @@ export function useConfig() {
         }
         if (partial.backups !== undefined) {
           serverUpdate.backups = partial.backups;
+        }
+        if (partial.backupShort !== undefined) {
+          serverUpdate.backupshort = partial.backupShort;
+        }
+        if (partial.backupLong !== undefined) {
+          serverUpdate.backuplong = partial.backupLong;
         }
 
         if (Object.keys(serverUpdate).length > 0) {
@@ -175,6 +184,24 @@ export function useConfig() {
   );
 
   /**
+   * Update app-level settings (auto-install, auto-update)
+   */
+  const updateAppSettings = useCallback(
+    async (partial: Partial<typeof appSettings>) => {
+      // Update store immediately
+      actions.updateAppSettings(partial);
+
+      // Persist to disk
+      try {
+        await persistConfig(partial);
+      } catch (error) {
+        actions.addLog("error", `Failed to save app settings: ${error}`);
+      }
+    },
+    [actions]
+  );
+
+  /**
    * Reload all configuration from disk
    */
   const reload = useCallback(async () => {
@@ -191,6 +218,14 @@ export function useConfig() {
         crossplay: stored.server.crossplay,
         saveInterval: stored.server.saveinterval,
         backups: stored.server.backups,
+        backupShort: stored.server.backupshort,
+        backupLong: stored.server.backuplong,
+      });
+
+      // Load app settings
+      actions.loadAppSettingsFromStore({
+        steamcmdAutoInstall: stored.steamcmdAutoInstall,
+        autoUpdate: stored.autoUpdate,
       });
 
       // Load modifiers
@@ -241,6 +276,7 @@ export function useConfig() {
 
   return {
     config,
+    appSettings,
     modifiers,
     watchdog,
     tuiConfig,
@@ -250,6 +286,7 @@ export function useConfig() {
     updateWatchdogConfig,
     updateTuiSettings,
     updateRconConfig,
+    updateAppSettings,
     reload,
     // Legacy alias
     update: updateServerConfig,
@@ -280,6 +317,14 @@ export function useConfigSync() {
           crossplay: stored.server.crossplay,
           saveInterval: stored.server.saveinterval,
           backups: stored.server.backups,
+          backupShort: stored.server.backupshort,
+          backupLong: stored.server.backuplong,
+        });
+
+        // Load app settings
+        actions.loadAppSettingsFromStore({
+          steamcmdAutoInstall: stored.steamcmdAutoInstall,
+          autoUpdate: stored.autoUpdate,
         });
 
         // Load modifiers

@@ -35,7 +35,13 @@ type SettingDef = {
   description?: string;
 };
 
-type SettingSection = "server" | "modifiers" | "watchdog" | "rcon" | "tui";
+type SettingSection =
+  | "server"
+  | "modifiers"
+  | "watchdog"
+  | "rcon"
+  | "tui"
+  | "app";
 
 const SECTION_LABELS: Record<SettingSection, string> = {
   server: "Server",
@@ -43,6 +49,7 @@ const SECTION_LABELS: Record<SettingSection, string> = {
   watchdog: "Watchdog (Auto-Restart)",
   rcon: "RCON (Remote Console)",
   tui: "TUI Settings",
+  app: "App Settings",
 };
 
 const SECTION_ORDER: SettingSection[] = [
@@ -51,6 +58,7 @@ const SECTION_ORDER: SettingSection[] = [
   "watchdog",
   "rcon",
   "tui",
+  "app",
 ];
 
 // Preset options
@@ -119,6 +127,7 @@ const COLOR_SCHEME_OPTIONS: SelectOption<string>[] = [
 export const Settings: FC = () => {
   const {
     config,
+    appSettings,
     modifiers,
     watchdog,
     tuiConfig,
@@ -128,6 +137,7 @@ export const Settings: FC = () => {
     updateWatchdogConfig,
     updateTuiSettings,
     updateRconConfig,
+    updateAppSettings,
   } = useConfig();
 
   const { worlds } = useWorlds();
@@ -243,6 +253,32 @@ export const Settings: FC = () => {
       setValue: async (v) => updateServerConfig({ backups: v as number }),
       min: 1,
       max: 100,
+    },
+    {
+      key: "backupShort",
+      label: "Short Backup Interval",
+      section: "server",
+      type: "number",
+      getValue: () => config.backupShort,
+      setValue: async (v) => updateServerConfig({ backupShort: v as number }),
+      min: 60,
+      max: 86400,
+      step: 60,
+      suffix: "s",
+      description: "60-86400 seconds",
+    },
+    {
+      key: "backupLong",
+      label: "Long Backup Interval",
+      section: "server",
+      type: "number",
+      getValue: () => config.backupLong,
+      setValue: async (v) => updateServerConfig({ backupLong: v as number }),
+      min: 3600,
+      max: 604800,
+      step: 3600,
+      suffix: "s",
+      description: "3600-604800 seconds",
     },
 
     // Modifiers settings
@@ -370,14 +406,6 @@ export const Settings: FC = () => {
       setValue: async (v) => updateRconConfig({ enabled: v as boolean }),
     },
     {
-      key: "rconHost",
-      label: "Host",
-      section: "rcon",
-      type: "text",
-      getValue: () => rcon.host,
-      setValue: async (v) => updateRconConfig({ host: v as string }),
-    },
-    {
       key: "rconPort",
       label: "Port",
       section: "rcon",
@@ -460,6 +488,27 @@ export const Settings: FC = () => {
       max: 5000,
       step: 100,
       suffix: "ms",
+    },
+
+    // App settings
+    {
+      key: "steamcmdAutoInstall",
+      label: "Auto-Install SteamCMD",
+      section: "app",
+      type: "toggle",
+      getValue: () => appSettings.steamcmdAutoInstall,
+      setValue: async (v) =>
+        updateAppSettings({ steamcmdAutoInstall: v as boolean }),
+      description: "Automatically install SteamCMD",
+    },
+    {
+      key: "autoUpdate",
+      label: "Auto-Update Server",
+      section: "app",
+      type: "toggle",
+      getValue: () => appSettings.autoUpdate,
+      setValue: async (v) => updateAppSettings({ autoUpdate: v as boolean }),
+      description: "Automatically update Valheim server",
     },
   ];
 
