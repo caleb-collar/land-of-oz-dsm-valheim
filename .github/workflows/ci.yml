@@ -46,7 +46,7 @@ jobs:
           verbose: true
 
       - name: Coverage Report Summary
-        if: matrix.os == 'ubuntu-latest' && always()
+        if: matrix.os == 'ubuntu-latest' && success()
         uses: davelosert/vitest-coverage-report-action@v2
         with:
           json-summary-path: coverage/coverage-summary.json
