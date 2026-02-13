@@ -14,6 +14,7 @@ import { LogFeed } from "./components/LogFeed.js";
 import { Menu } from "./components/Menu.js";
 import { useBepInExLogs } from "./hooks/useBepInExLogs.js";
 import { useConfigSync } from "./hooks/useConfig.js";
+import { useRcon } from "./hooks/useRcon.js";
 import { Console } from "./screens/Console.js";
 import { Dashboard } from "./screens/Dashboard.js";
 import { Plugins } from "./screens/Plugins.js";
@@ -51,6 +52,9 @@ export const App: FC = () => {
 
   // Initialize BepInEx log streaming (auto-starts when server is online)
   useBepInExLogs();
+
+  // Initialize persistent RCON connection (persists across screen changes)
+  useRcon();
 
   // Log startup message
   useEffect(() => {

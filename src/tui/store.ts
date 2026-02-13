@@ -109,6 +109,14 @@ type ConfigState = {
   crossplay: boolean;
   saveInterval: number;
   backups: number;
+  backupShort: number;
+  backupLong: number;
+};
+
+/** App-level config state slice */
+type AppSettingsState = {
+  steamcmdAutoInstall: boolean;
+  autoUpdate: boolean;
 };
 
 /** Modifiers config state slice */
@@ -268,6 +276,10 @@ type Actions = {
   updateConfig: (partial: Partial<ConfigState>) => void;
   loadConfigFromStore: (config: ConfigState) => void;
 
+  // App settings actions
+  updateAppSettings: (partial: Partial<AppSettingsState>) => void;
+  loadAppSettingsFromStore: (settings: AppSettingsState) => void;
+
   // Modifiers actions
   updateModifiers: (partial: Partial<ModifiersState>) => void;
   setPreset: (preset: Preset | null) => void;
@@ -336,6 +348,7 @@ export type Store = {
   logs: LogsState;
   ui: UiState;
   config: ConfigState;
+  appSettings: AppSettingsState;
   modifiers: ModifiersState;
   watchdog: WatchdogState;
   tuiConfig: TuiState;
@@ -401,6 +414,14 @@ export const useStore = create<Store>((set) => ({
     crossplay: false,
     saveInterval: 1800,
     backups: 4,
+    backupShort: 7200,
+    backupLong: 43200,
+  },
+
+  // Initial app settings state
+  appSettings: {
+    steamcmdAutoInstall: true,
+    autoUpdate: true,
   },
 
   // Initial modifiers state
@@ -637,6 +658,17 @@ export const useStore = create<Store>((set) => ({
     loadConfigFromStore: (config) =>
       set(() => ({
         config,
+      })),
+
+    // App settings actions
+    updateAppSettings: (partial) =>
+      set((state) => ({
+        appSettings: { ...state.appSettings, ...partial },
+      })),
+
+    loadAppSettingsFromStore: (settings) =>
+      set(() => ({
+        appSettings: settings,
       })),
 
     // Modifiers actions
@@ -957,6 +989,11 @@ export const selectUi = (state: Store) => state.ui;
  * Selector for config
  */
 export const selectConfig = (state: Store) => state.config;
+
+/**
+ * Selector for app settings
+ */
+export const selectAppSettings = (state: Store) => state.appSettings;
 
 /**
  * Selector for modifiers

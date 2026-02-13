@@ -2,10 +2,13 @@
  * useServer hook - Server control and status
  * Integrates with ValheimProcess and Watchdog for real server management
  * Supports detached mode where the server runs independently of the TUI
+ *
+ * Note: RCON connection management is handled by useRcon hook at App level.
+ * This hook only uses rconManager for commands like forceSave.
  */
 
 import { useCallback, useEffect, useRef } from "react";
-import { type ConnectionState, rconManager } from "../../rcon/mod.js";
+import { rconManager } from "../../rcon/mod.js";
 import type {
   ParsedEvent,
   ProcessState,
@@ -407,106 +410,8 @@ export function useServer() {
     return () => clearInterval(interval);
   }, [status, actions]);
 
-  // Extract stable RCON config values (excluding 'connected' to avoid infinite loops)
-  const rconEnabled = rcon.enabled;
-  const rconPort = rcon.port;
-  const rconPassword = rcon.password;
-  const rconTimeout = rcon.timeout;
-  const rconAutoReconnect = rcon.autoReconnect;
-
-  // Track if RCON has been initialized to avoid redundant cleanup
-  const rconInitialized = useRef(false);
-
-  // Initialize RCON when config changes or server comes online
-  useEffect(() => {
-    if (!rconEnabled) {
-      // RCON disabled, disconnect if connected
-      if (rconManager.isConnected()) {
-        rconManager.disconnect();
-        actions.setRconConnected(false);
-      }
-      rconInitialized.current = false;
-      return;
-    }
-
-    // Initialize RCON manager with config
-    rconManager.initialize(
-      {
-        host: "localhost",
-        port: rconPort,
-        password: rconPassword,
-        timeout: rconTimeout,
-        enabled: rconEnabled,
-        autoReconnect: rconAutoReconnect,
-      },
-      {
-        onConnectionStateChange: (state: ConnectionState, error?: string) => {
-          const connected = state === "connected";
-          actions.setRconConnected(connected);
-
-          if (connected) {
-            actions.addLog("info", "RCON connected");
-          } else if (state === "error") {
-            actions.addLog(
-              "warn",
-              error
-                ? `RCON connection error: ${error}`
-                : "RCON connection error"
-            );
-          } else if (state === "disconnected") {
-            actions.addLog("info", "RCON disconnected");
-          }
-        },
-        onPlayerListUpdate: (players: string[]) => {
-          // Sync player list from RCON
-          actions.setPlayers(players);
-        },
-        pollInterval: 10000, // Poll every 10 seconds
-      }
-    );
-    rconInitialized.current = true;
-
-    // Cleanup on unmount only (not on re-renders)
-    return () => {
-      // Only disconnect if this is a true unmount, not just a config update
-      // The next effect run will re-initialize if needed
-      if (rconInitialized.current) {
-        rconManager.disconnect();
-        rconInitialized.current = false;
-      }
-    };
-  }, [
-    rconEnabled,
-    rconPort,
-    rconPassword,
-    rconTimeout,
-    rconAutoReconnect,
-    actions,
-  ]);
-
-  // Auto-connect RCON when server comes online
-  useEffect(() => {
-    if (status === "online" && rconEnabled && !rconManager.isConnected()) {
-      // Wait for BepInEx plugins to load before attempting RCON connect.
-      // Config sync (port/password from BepInEx plugin) is handled by
-      // useConfigSync on mount — we avoid doing it here to prevent
-      // cascading re-renders that kill in-flight connections.
-      const timer = setTimeout(() => {
-        rconManager.connect().catch(() => {
-          // Errors are handled internally by rconManager and surfaced
-          // through onConnectionStateChange callback.
-        });
-      }, 5000); // 5 second delay for BepInEx plugins to load
-
-      return () => clearTimeout(timer);
-    }
-
-    if (status === "offline" && rconManager.isConnected()) {
-      rconManager.disconnect();
-    }
-  }, [status, rconEnabled]);
-
-  // NOTE: We intentionally do NOT cleanup on unmount here!
+  // NOTE: RCON connection management is handled by useRcon hook at App level.
+  // This hook (useServer) only uses rconManager for commands like forceSave.
   // The server should keep running when navigating between screens.
   // Cleanup happens only when the entire TUI exits (handled in App.tsx)
 
