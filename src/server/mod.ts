@@ -43,6 +43,7 @@ export {
 export {
   cleanupOldLogs,
   ensureLogsDir,
+  findValheimProcesses,
   getPidFilePath,
   getRunningServer,
   getServerLogFile,

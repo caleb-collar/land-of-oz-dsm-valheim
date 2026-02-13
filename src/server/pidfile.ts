@@ -113,6 +113,61 @@ export function isProcessRunning(pid: number): boolean {
 }
 
 /**
+ * Scans for running Valheim server processes on the system
+ * Used as a fallback when no PID file exists to detect orphan servers
+ * @returns Array of PIDs for running valheim_server processes
+ */
+export async function findValheimProcesses(): Promise<number[]> {
+  const { execSync } = await import("node:child_process");
+  const { getPlatform } = await import("../utils/platform.js");
+
+  const platform = getPlatform();
+  const pids: number[] = [];
+
+  try {
+    if (platform === "windows") {
+      // Windows: use tasklist with filter (works on all Windows versions)
+      const output = execSync(
+        'tasklist /FI "IMAGENAME eq valheim_server.exe" /FO CSV /NH',
+        { encoding: "utf-8", timeout: 5000 }
+      );
+      // Output format: "valheim_server.exe","12824","Console","1","123,456 K"
+      const lines = output.split("\n").map((l) => l.trim());
+      for (const line of lines) {
+        if (line.startsWith('"valheim_server')) {
+          const parts = line.split(",");
+          if (parts.length >= 2) {
+            // PID is second field, strip quotes
+            const pidStr = parts[1]?.replace(/"/g, "");
+            const pid = Number.parseInt(pidStr ?? "", 10);
+            if (!Number.isNaN(pid) && pid > 0) {
+              pids.push(pid);
+            }
+          }
+        }
+      }
+    } else {
+      // Linux/macOS: use pgrep
+      const output = execSync("pgrep -f valheim_server", {
+        encoding: "utf-8",
+        timeout: 5000,
+      });
+      const lines = output.split("\n").map((l) => l.trim());
+      for (const line of lines) {
+        const pid = Number.parseInt(line, 10);
+        if (!Number.isNaN(pid) && pid > 0) {
+          pids.push(pid);
+        }
+      }
+    }
+  } catch {
+    // Command failed (e.g., no processes found) - that's OK
+  }
+
+  return pids;
+}
+
+/**
  * Kills a process by PID
  * @param pid Process ID to kill
  * @param force If true, use SIGKILL instead of SIGTERM
@@ -130,23 +185,44 @@ export function killProcess(pid: number, force = false): boolean {
 
 /**
  * Gets the running server info from PID file, validating the process is still alive
+ * Falls back to scanning for valheim_server processes if no PID file exists
  * @returns PID file data if server is running, null otherwise
  */
 export async function getRunningServer(): Promise<PidFileData | null> {
   const data = await readPidFile();
 
-  if (!data) {
+  if (data) {
+    // Check if the process is actually running
+    if (!isProcessRunning(data.pid)) {
+      // Process is dead, clean up stale PID file
+      await removePidFile();
+      return null;
+    }
+    return data;
+  }
+
+  // No PID file - scan for orphan Valheim processes
+  const pids = await findValheimProcesses();
+  if (pids.length === 0) {
     return null;
   }
 
-  // Check if the process is actually running
-  if (!isProcessRunning(data.pid)) {
-    // Process is dead, clean up stale PID file
-    await removePidFile();
-    return null;
-  }
+  // Found an orphan server - create minimal PidFileData for attachment
+  // Use the first PID found (should only be one server running)
+  const orphanPid = pids[0]!;
+  const orphanData: PidFileData = {
+    pid: orphanPid,
+    startedAt: new Date().toISOString(), // Unknown, use now as approximation
+    world: "Unknown", // Cannot determine without access to process args
+    port: 2456, // Default port
+    detached: true,
+    serverName: "Valheim Server (detected)",
+  };
 
-  return data;
+  // Write PID file so we don't have to scan next time
+  await writePidFile(orphanData);
+
+  return orphanData;
 }
 
 /**
