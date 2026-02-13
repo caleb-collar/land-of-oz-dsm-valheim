@@ -147,8 +147,10 @@ export async function findValheimProcesses(): Promise<number[]> {
         }
       }
     } else {
-      // Linux/macOS: use pgrep
-      const output = execSync("pgrep -f valheim_server", {
+      // Linux/macOS: use pgrep with exact process name match
+      // The Valheim server binary on Linux is valheim_server.x86_64
+      // Using -x for exact match to avoid matching paths containing "valheim"
+      const output = execSync("pgrep -x valheim_server.x86_64", {
         encoding: "utf-8",
         timeout: 5000,
       });
